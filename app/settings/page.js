@@ -250,6 +250,22 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuration</CardTitle>
+            <CardDescription>Manage system settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/settings/bizmodels">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Shield className="h-4 w-4" />
+                Business Model Configuration
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
