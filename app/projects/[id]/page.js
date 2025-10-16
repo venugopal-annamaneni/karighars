@@ -294,6 +294,82 @@ export default function ProjectDetailPage() {
     return (parseFloat(amount) * parseFloat(percentage)) / 100;
   };
 
+  const handleInvoiceUpload = async (file) => {
+    if (!file) return;
+    
+    // Check if user is Finance role
+    if (session.user.role !== 'finance' && session.user.role !== 'admin') {
+      toast.error('Only Finance team can upload invoices');
+      return;
+    }
+    
+    setUploadingInvoice(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setInvoiceData(prev => ({ ...prev, invoice_url: data.url }));
+        toast.success('Invoice uploaded successfully');
+      } else {
+        toast.error('Failed to upload invoice');
+      }
+    } catch (error) {
+      console.error('Error uploading invoice:', error);
+      toast.error('Upload failed');
+    } finally {
+      setUploadingInvoice(false);
+    }
+  };
+
+  const handleInvoiceSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_url: invoiceData.invoice_url,
+          revenue_realized: invoiceData.revenue_realized
+        })
+      });
+
+      if (res.ok) {
+        // Create document record
+        if (invoiceData.invoice_url) {
+          await fetch('/api/documents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              related_entity: 'project',
+              related_id: projectId,
+              document_type: 'project_invoice',
+              document_url: invoiceData.invoice_url,
+              file_name: 'Project Invoice',
+              remarks: `Invoice for revenue realized: ₹${invoiceData.revenue_realized}`
+            })
+          });
+        }
+
+        toast.success('Invoice uploaded successfully');
+        setShowInvoiceDialog(false);
+        setInvoiceData({ invoice_url: null, revenue_realized: '' });
+        fetchProjectData();
+      } else {
+        toast.error('Failed to save invoice');
+      }
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
