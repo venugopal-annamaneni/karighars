@@ -559,6 +559,7 @@ export default function ProjectDetailPage() {
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="boqs">Vendor BOQs</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
 
