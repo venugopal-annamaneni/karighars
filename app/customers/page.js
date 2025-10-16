@@ -30,7 +30,21 @@ export default function CustomersPage() {
     email: '',
     address: '',
     gst_number: '',
+    kyc_type: 'none',
+    business_type: 'B2C',
+    bank_details: {
+      account_number: '',
+      ifsc_code: '',
+      bank_name: '',
+      branch_name: ''
+    }
   });
+  const [kycFiles, setKycFiles] = useState({
+    aadhar: null,
+    pan: null,
+    cheque: null
+  });
+  const [uploadingKyc, setUploadingKyc] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
