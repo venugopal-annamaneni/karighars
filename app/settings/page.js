@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { Users, Shield, Edit } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
