@@ -208,7 +208,9 @@ export async function GET(request, { params }) {
       const stats = await query(`
         SELECT 
           (SELECT COUNT(*) FROM projects WHERE status = 'active') as active_projects,
-          (SELECT COALESCE(SUM(total_value), 0) FROM project_estimations WHERE status = 'finalized') as total_project_value,
+          (SELECT COALESCE(SUM(COALESCE(final_value, total_value)), 0) 
+           FROM project_estimations 
+           WHERE status IN ('draft', 'finalized', 'approved')) as total_project_value,
           (SELECT COALESCE(SUM(amount), 0) FROM customer_payments_in WHERE status = 'approved') as total_received,
           (SELECT COALESCE(SUM(amount), 0) FROM payments_out) as total_paid
       `);
