@@ -407,21 +407,51 @@ export default function EstimationPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="finalized">Finalized</SelectItem>
-                      <SelectItem value="locked">Locked</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="finalized">Finalized</SelectItem>
+                        <SelectItem value="locked">Locked</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Service Charge (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                        value={formData.service_charge_percentage}
+                        onChange={(e) => setFormData({ ...formData, service_charge_percentage: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Discount (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                        value={formData.discount_percentage}
+                        onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
