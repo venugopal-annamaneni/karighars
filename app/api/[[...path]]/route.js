@@ -209,7 +209,7 @@ export async function GET(request, { params }) {
         SELECT 
           (SELECT COUNT(*) FROM projects WHERE status = 'active') as active_projects,
           (SELECT COALESCE(SUM(total_value), 0) FROM project_estimations WHERE status = 'finalized') as total_project_value,
-          (SELECT COALESCE(SUM(amount), 0) FROM customer_payments_in) as total_received,
+          (SELECT COALESCE(SUM(amount), 0) FROM customer_payments_in WHERE status = 'approved') as total_received,
           (SELECT COALESCE(SUM(amount), 0) FROM payments_out) as total_paid
       `);
       return NextResponse.json({ stats: stats.rows[0] });
