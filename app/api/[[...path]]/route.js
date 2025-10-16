@@ -573,6 +573,45 @@ export async function POST(request, { params }) {
       return NextResponse.json({ document: result.rows[0] });
     }
 
+    // Create BizModel
+    if (path === 'biz-models') {
+      if (session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      
+      const result = await query(
+        `INSERT INTO biz_models (code, name, version, description, service_charge_percentage, max_discount_percentage, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [body.code, body.name, body.version, body.description, body.service_charge_percentage, 
+         body.max_discount_percentage, body.is_active !== false]
+      );
+
+      // Add stages if provided
+      if (body.stages && body.stages.length > 0) {
+        for (const stage of body.stages) {
+          await query(
+            `INSERT INTO biz_model_stages (biz_model_id, stage_code, stage_name, sequence_order, description)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [result.rows[0].id, stage.stage_code, stage.stage_name, stage.sequence_order, stage.description]
+          );
+        }
+      }
+
+      // Add milestones if provided
+      if (body.milestones && body.milestones.length > 0) {
+        for (const milestone of body.milestones) {
+          await query(
+            `INSERT INTO biz_model_milestones (biz_model_id, milestone_code, milestone_name, direction, default_percentage, stage_code, description, sequence_order)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [result.rows[0].id, milestone.milestone_code, milestone.milestone_name, milestone.direction,
+             milestone.default_percentage, milestone.stage_code, milestone.description, milestone.sequence_order]
+          );
+        }
+      }
+
+      return NextResponse.json({ bizModel: result.rows[0] });
+    }
+
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     console.error('API Error:', error);
