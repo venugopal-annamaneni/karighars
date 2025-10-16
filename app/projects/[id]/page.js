@@ -1038,6 +1038,124 @@ export default function ProjectDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="documents" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Project Documents</CardTitle>
+                    <CardDescription>View all documents related to this project</CardDescription>
+                  </div>
+                  {(session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
+                    <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Upload Invoice
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Upload Project Invoice</DialogTitle>
+                          <DialogDescription>
+                            Upload invoice and record revenue realized
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleInvoiceSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="invoice_file">Invoice Document *</Label>
+                            <Input
+                              id="invoice_file"
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => handleInvoiceUpload(e.target.files[0])}
+                              disabled={uploadingInvoice}
+                              required={!invoiceData.invoice_url}
+                            />
+                            {invoiceData.invoice_url && <p className="text-xs text-green-600">✓ Invoice uploaded</p>}
+                            {uploadingInvoice && <p className="text-xs text-blue-600">Uploading...</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="revenue_realized">Revenue Realized (₹)</Label>
+                            <Input
+                              id="revenue_realized"
+                              type="number"
+                              step="0.01"
+                              placeholder="Enter revenue amount"
+                              value={invoiceData.revenue_realized}
+                              onChange={(e) => setInvoiceData({ ...invoiceData, revenue_realized: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => setShowInvoiceDialog(false)}>Cancel</Button>
+                            <Button type="submit" disabled={uploadingInvoice || !invoiceData.invoice_url}>Upload Invoice</Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {project.invoice_url && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-green-900">Project Invoice</p>
+                        <p className="text-sm text-green-700">Revenue Realized: ₹{project.revenue_realized?.toLocaleString('en-IN') || '0'}</p>
+                        <p className="text-xs text-green-600 mt-1">Uploaded on {project.invoice_uploaded_at ? formatDate(project.invoice_uploaded_at) : 'N/A'}</p>
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={project.invoice_url} target="_blank" rel="noopener noreferrer">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-3">
+                  {documents.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">No documents uploaded yet</p>
+                    </div>
+                  ) : (
+                    documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
+                        <div>
+                          <p className="font-medium">{doc.file_name || 'Document'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {doc.document_type === 'kyc_aadhar' && 'KYC - Aadhar Card'}
+                            {doc.document_type === 'kyc_pan' && 'KYC - PAN Card'}
+                            {doc.document_type === 'kyc_cheque' && 'KYC - Blank Cheque'}
+                            {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
+                            {doc.document_type === 'project_invoice' && 'Project Invoice'}
+                            {doc.document_type === 'other' && 'Other Document'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.uploaded_at)}
+                          </p>
+                          {doc.remarks && (
+                            <p className="text-xs text-muted-foreground mt-1">Note: {doc.remarks}</p>
+                          )}
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
+                            <FileText className="h-4 w-4 mr-2" />
+                            View
+                          </a>
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="details" className="space-y-4">
             <Card>
               <CardHeader>
