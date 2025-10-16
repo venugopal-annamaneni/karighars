@@ -354,11 +354,14 @@ export async function POST(request, { params }) {
       const projectCode = `PRJ-${Date.now()}`;
       const salesOrderId = `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
       
-      // Get default BizModel V1
-      const bizModelRes = await query(
-        "SELECT id FROM biz_models WHERE code = 'BIZ_MODEL_V1' AND is_active = true LIMIT 1"
-      );
-      const bizModelId = bizModelRes.rows[0]?.id || null;
+      // Use provided bizModel or default to V1
+      let bizModelId = body.biz_model_id ? parseInt(body.biz_model_id) : null;
+      if (!bizModelId) {
+        const bizModelRes = await query(
+          "SELECT id FROM biz_models WHERE code = 'BIZ_MODEL_V1' AND is_active = true LIMIT 1"
+        );
+        bizModelId = bizModelRes.rows[0]?.id || null;
+      }
       
       const result = await query(
         `INSERT INTO projects (project_code, customer_id, name, location, phase, biz_model_id, sales_order_id, created_by)
