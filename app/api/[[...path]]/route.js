@@ -251,6 +251,76 @@ export async function GET(request, { params }) {
       }
     }
 
+    // BizModels
+    if (path === 'biz-models') {
+      const result = await query(`
+        SELECT * FROM biz_models WHERE is_active = true ORDER BY version
+      `);
+      return NextResponse.json({ bizModels: result.rows });
+    }
+
+    // BizModel Details
+    if (path.startsWith('biz-models/') && path.split('/').length === 2) {
+      const bizModelId = path.split('/')[1];
+      const [modelRes, stagesRes, milestonesRes] = await Promise.all([
+        query('SELECT * FROM biz_models WHERE id = $1', [bizModelId]),
+        query('SELECT * FROM biz_model_stages WHERE biz_model_id = $1 ORDER BY sequence_order', [bizModelId]),
+        query('SELECT * FROM biz_model_milestones WHERE biz_model_id = $1 ORDER BY direction, sequence_order', [bizModelId])
+      ]);
+
+      return NextResponse.json({
+        model: modelRes.rows[0],
+        stages: stagesRes.rows,
+        milestones: milestonesRes.rows
+      });
+    }
+
+    // Project Ledger
+    if (path.startsWith('projects/') && path.endsWith('/ledger')) {
+      const projectId = path.split('/')[1];
+      const result = await query(`
+        SELECT pl.*, 
+               CASE 
+                 WHEN pl.source_table = 'customer_payments_in' THEN 'Customer Payment'
+                 WHEN pl.source_table = 'payments_out' THEN 'Vendor Payment'
+                 ELSE pl.source_table
+               END as transaction_type,
+               CASE
+                 WHEN pl.source_table = 'customer_payments_in' THEN (
+                   SELECT json_build_object('customer_name', c.name, 'payment_type', cp.payment_type, 'reference', cp.reference_number)
+                   FROM customer_payments_in cp
+                   LEFT JOIN customers c ON cp.customer_id = c.id
+                   WHERE cp.id = pl.source_id
+                 )
+                 WHEN pl.source_table = 'payments_out' THEN (
+                   SELECT json_build_object('vendor_name', v.name, 'payment_stage', po.payment_stage, 'reference', po.reference_number)
+                   FROM payments_out po
+                   LEFT JOIN vendors v ON po.vendor_id = v.id
+                   WHERE po.id = pl.source_id
+                 )
+               END as transaction_details
+        FROM project_ledger pl
+        WHERE pl.project_id = $1
+        ORDER BY pl.entry_date DESC, pl.id DESC
+      `, [projectId]);
+
+      // Calculate running balance
+      let runningBalance = 0;
+      const ledgerWithBalance = result.rows.map(entry => {
+        if (entry.entry_type === 'credit') {
+          runningBalance += parseFloat(entry.amount);
+        } else {
+          runningBalance -= parseFloat(entry.amount);
+        }
+        return {
+          ...entry,
+          running_balance: runningBalance
+        };
+      }).reverse(); // Reverse to show chronological order with running balance
+
+      return NextResponse.json({ ledger: ledgerWithBalance.reverse() }); // Reverse back for latest first
+    }
+
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     console.error('API Error:', error);
