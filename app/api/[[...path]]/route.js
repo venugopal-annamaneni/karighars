@@ -49,11 +49,11 @@ export async function GET(request, { params }) {
         LIMIT 1
       `, [projectId]);
 
-      // Get payment summary
+      // Get payment summary (only approved payments)
       const paymentsIn = await query(`
         SELECT COALESCE(SUM(amount), 0) as total
         FROM customer_payments_in
-        WHERE project_id = $1
+        WHERE project_id = $1 AND status = 'approved'
       `, [projectId]);
 
       const paymentsOut = await query(`
