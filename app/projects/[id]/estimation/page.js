@@ -64,7 +64,9 @@ export default function EstimationPage() {
         if (data.estimation) {
           setFormData({
             remarks: data.estimation.remarks || '',
-            status: data.estimation.status
+            status: data.estimation.status,
+            service_charge_percentage: data.estimation.service_charge_percentage || 0,
+            discount_percentage: data.estimation.discount_percentage || 0
           });
           
           const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
