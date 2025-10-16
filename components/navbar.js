@@ -33,6 +33,7 @@ const navigation = [
   { name: 'Vendors', href: '/vendors', icon: Package, roles: ['project_manager', 'finance', 'admin'] },
   { name: 'Payments', href: '/payments', icon: CreditCard, roles: ['finance', 'admin'] },
   { name: 'Reports', href: '/reports', icon: FileText, roles: ['finance', 'admin'] },
+  { name: 'Settings', href: '/settings', icon: Settings, roles: ['admin'] },
 ];
 
 export function Navbar() {
