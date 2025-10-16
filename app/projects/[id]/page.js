@@ -798,6 +798,14 @@ export default function ProjectDetailPage() {
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
+                    <p className="text-sm text-muted-foreground mb-1">Sales Order ID</p>
+                    <p className="font-medium">{project.sales_order_id || 'Not Generated'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Business Model</p>
+                    <p className="font-medium">{project.biz_model_name || 'No BizModel'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-muted-foreground mb-1">Project Code</p>
                     <p className="font-medium">{project.project_code}</p>
                   </div>
