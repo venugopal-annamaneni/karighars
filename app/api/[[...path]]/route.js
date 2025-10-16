@@ -234,6 +234,23 @@ export async function GET(request, { params }) {
       return NextResponse.json({ users: result.rows });
     }
 
+    // Documents
+    if (path.startsWith('documents/')) {
+      const parts = path.split('/');
+      if (parts.length === 3) {
+        const relatedEntity = parts[1];
+        const relatedId = parts[2];
+        const result = await query(`
+          SELECT d.*, u.name as uploaded_by_name
+          FROM documents d
+          LEFT JOIN users u ON d.uploaded_by = u.id
+          WHERE d.related_entity = $1 AND d.related_id = $2
+          ORDER BY d.created_at DESC
+        `, [relatedEntity, relatedId]);
+        return NextResponse.json({ documents: result.rows });
+      }
+    }
+
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     console.error('API Error:', error);
