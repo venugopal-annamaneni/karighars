@@ -745,18 +745,31 @@ export default function ProjectDetailPage() {
                   <div className="space-y-3">
                     {ledger.map((entry) => (
                       <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{entry.description}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium capitalize">{entry.transaction_type}</p>
+                            {entry.entry_type === 'credit' && (
+                              <Badge className="bg-green-100 text-green-700">Inflow</Badge>
+                            )}
+                            {entry.entry_type === 'debit' && (
+                              <Badge className="bg-red-100 text-red-700">Outflow</Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(entry.transaction_date)} • {entry.transaction_type}
-                            {entry.reference_number && ` • ${entry.reference_number}`}
+                            {formatDate(entry.entry_date)}
+                            {entry.transaction_details && (
+                              <> • {JSON.parse(entry.transaction_details).customer_name || JSON.parse(entry.transaction_details).vendor_name}</>
+                            )}
                           </p>
+                          {entry.remarks && (
+                            <p className="text-sm text-muted-foreground mt-1">{entry.remarks}</p>
+                          )}
                         </div>
-                        <div className="text-right">
+                        <div className="text-right ml-6">
                           <p className={`text-xl font-bold ${
-                            entry.amount > 0 ? 'text-green-600' : 'text-red-600'
+                            entry.entry_type === 'credit' ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            {entry.amount > 0 ? '+' : ''}{formatCurrency(entry.amount)}
+                            {entry.entry_type === 'credit' ? '+' : '-'}{formatCurrency(entry.amount)}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Balance: {formatCurrency(entry.running_balance)}
