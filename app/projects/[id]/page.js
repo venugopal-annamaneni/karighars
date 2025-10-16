@@ -48,14 +48,17 @@ export default function ProjectDetailPage() {
   const [showPhaseDialog, setShowPhaseDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showEstimationDialog, setShowEstimationDialog] = useState(false);
+  const [milestones, setMilestones] = useState([]);
   
   const [phaseUpdate, setPhaseUpdate] = useState({ phase: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
+    milestone_id: '',
     payment_type: 'advance_10',
     amount: '',
     mode: 'bank',
     reference_number: '',
-    remarks: ''
+    remarks: '',
+    override_reason: ''
   });
 
   useEffect(() => {
