@@ -39,6 +39,11 @@ export default function NewProjectPage() {
     email: '',
     address: '',
     gst_number: '',
+    customer_type: 'B2C',
+    bank_name: '',
+    bank_account_number: '',
+    bank_ifsc: '',
+    bank_account_holder: '',
   });
 
   useEffect(() => {
