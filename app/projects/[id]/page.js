@@ -56,6 +56,9 @@ export default function ProjectDetailPage() {
     revenue_realized: ''
   });
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [uploadingReceipt, setUploadingReceipt] = useState({});
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   
   const [phaseUpdate, setPhaseUpdate] = useState({ phase: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
