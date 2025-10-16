@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the KG Interiors ERP backend APIs for authentication, CRUD operations, financial operations, and database connectivity"
+user_problem_statement: "Test the enhanced KG Interiors ERP backend with new BizModel features including BizModel System, Project Creation with BizModel, Enhanced Estimation, Flexible Payment Milestones, Project Ledger, Payment with Milestone Override, and Database Integrity"
 
 backend:
   - task: "Database Connection"
