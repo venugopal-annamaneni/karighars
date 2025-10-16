@@ -193,30 +193,12 @@ export default function ProjectDetailPage() {
           is_gst_applicable: paymentData.is_gst_applicable,
           gst_percentage: paymentData.gst_percentage || 0,
           gst_amount: gstAmount,
-          receipt_url: paymentData.receipt_url
+          status: 'pending' // Payment starts as pending until receipt is uploaded
         })
       });
 
       if (res.ok) {
-        const data = await res.json();
-        
-        // If receipt was uploaded, create document record
-        if (paymentData.receipt_url && data.payment) {
-          await fetch('/api/documents', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              related_entity: 'payment',
-              related_id: data.payment.id,
-              document_type: 'payment_receipt',
-              document_url: paymentData.receipt_url,
-              file_name: 'Payment Receipt',
-              remarks: `Receipt for payment of ₹${paymentData.amount}`
-            })
-          });
-        }
-        
-        toast.success('Payment recorded successfully');
+        toast.success('Payment recorded successfully. Pending receipt upload by Finance team.');
         setShowPaymentDialog(false);
         setPaymentData({
           milestone_id: '',
@@ -228,8 +210,7 @@ export default function ProjectDetailPage() {
           override_reason: '',
           is_gst_applicable: false,
           gst_percentage: '',
-          gst_amount: 0,
-          receipt_url: null
+          gst_amount: 0
         });
         fetchProjectData();
       } else {
