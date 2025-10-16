@@ -1,0 +1,79 @@
+<analysis>
+The AI engineer successfully initiated and developed a comprehensive Finance Workflow Automation Tool (ERP) for an interior design company, KG Interiors. The development followed a phased approach, starting with core functionalities, then advancing to complex financial workflows, reporting, and intelligent business model integration. Key milestones included PostgreSQL database setup, robust Google OAuth authentication, and a modular Next.js application with Shadcn UI. The engineer efficiently iterated on user feedback, implementing features like a flexible BizModel system, a detailed Project Ledger, Sales Order IDs, and dynamic estimation fields (service charge/discount). Recent work focused on enhancing data visibility and user configurability, tackling UI visibility issues, and addressing a critical batch of financial and document management features. The trajectory concludes with the engineer actively implementing customer KYC and GST features, demonstrating a systematic approach to feature integration.
+</analysis>
+
+<product_requirements>
+The client, KG Interiors, a large interior design company, requires an internal finance management platform to replace Excel-based operations. The goal is to provide real-time visibility into cash flow, commissions, and project financial health across Sales, Design, Shopping, and Civil Vendor departments.
+
+**Core Workflows & Features Implemented/Planned:**
+- **Sales Department:** Log new projects, collect 10% advance, hand over to Design.
+- **Design Department:** Collect 50% design fee (inclusive of advance), upload deliverables/receipts.
+- **Shopping/Décor Assistance:** Log 10% service charge for customer-direct purchases.
+- **Civil Vendor Workflow:** Manage two-quote system (NN, NN+10%), track 10% commission payback. Specific vendor types (Inhouse, External, Others) with distinct payment terms.
+- **Other Workflows:** Ad-hoc revenue, expense tracking, employee incentives.
+- **Finance Dashboard:** Real-time customer payments, department cash flow, vendor commissions, project profitability.
+- **Project Ledger:** Unified view of all financial activities per project.
+- **Reports & Analytics:** Department performance, revenue vs. GMV, cash flow summary, GST/invoice exports.
+- **User Roles:** Sales, Designer, Shopping Assistant, Vendor Manager, Finance, Admin/Management.
+- **Technical Notes:** Web app (mobile-optimized), role-based logins, PostgreSQL, React/Next.js, CSV/PDF export, Audit trail.
+- **Advanced Features:** Google Login (Custom OAuth), Custom Project Naming, Manual data entry, File Uploads, BizModel system (V1, V2, etc.) with configurable payment milestones/project stages, flexible payment milestone overrides, Sales Order ID generation, Service Charge/Discount in estimations (with approval flags), Project Ledger view, Dashboard with charts, Reports section, User Management, BizModel management UI.
+- **Pending/Current Enhancements:** Customer KYC (Aadhar, PAN, bank details, B2B/B2C), GST handling on payments, Payment Receipt uploads, Project Invoices for revenue realization, and displaying all documents in the project tab.
+</product_requirements>
+
+<key_technical_concepts>
+- **Full-stack Architecture:** Next.js (frontend & API routes), PostgreSQL (database).
+- **Authentication:** NextAuth.js with custom Google OAuth.
+- **Styling:** Tailwind CSS, Shadcn UI components.
+- **Database Management:**  for PostgreSQL interaction, SQL scripts for schema management.
+- **State Management:** React hooks (, ), possibly React Context/Recoil (implied).
+- **Charting:**  for dashboard visualizations.
+- **UI/UX:** Modals, drawers for form data; toast notifications ().
+- **File Uploads:** Backend API endpoint for document uploads.
+</key_technical_concepts>
+
+<code_architecture>
+The application follows a Next.js full-stack architecture, utilizing server components and API routes for backend logic, and client components for interactive UI. Data persistence is managed by PostgreSQL.
+
+
+
+-   ****: This is the central Next.js API route handler. It manages all backend CRUD operations for users, projects, customers, vendors, estimations, payments, biz_models, and documents. It interacts directly with the PostgreSQL database.
+-   ****: Defines the root layout for the application, including the  for NextAuth.js and global styling.
+-   ****: The main landing page, which redirects authenticated users to the dashboard.
+-   ****: Handles the Google OAuth sign-in flow.
+-   ****: Displays an overview of project financial data, including charts built with .
+-   ****: Lists all projects.
+-   ****: Provides the form for creating new projects, now including BizModel selection.
+-   ****: The detailed project view, featuring tabs for Project Details, Estimations, and a newly added Project Ledger. It displays Sales Order ID and Project BizModel.
+-   ****: The estimation builder interface, updated to include Service Charge and Discount fields.
+-   ****: Admin settings page with links to User Management and BizModel configuration.
+-   ****: UI for creating and managing BizModels, including their payment milestones and project stages.
+-   ****: The application's navigation bar, dynamically displaying links based on user roles, now including Settings.
+-   ****: A reusable dialog component for recording customer payments, now enhanced with milestone selection and percentage override capabilities.
+-   ****: Contains the PostgreSQL database connection logic, ensuring a single, reusable client.
+-   ****: Configures NextAuth.js for Google OAuth.
+-   ** files (, , , )**: These files define and manage the PostgreSQL database schema and provide utility for data manipulation.
+-   ****: Stores environment variables like  and Google OAuth credentials.
+</code_architecture>
+
+<pending_tasks>
+- Complete Customer KYC UI implementation (Aadhar, PAN, Blank cheque, B2B/B2C, Optional Bank details).
+- Implement GST amount field and update calculations for payments.
+- Develop UI for Finance team to upload Payment Receipts against customer payments.
+- Develop UI for Finance team to upload Invoices for project-level revenue realization.
+- Display all uploaded documents (Payment receipts and Invoices) within the project tab.
+</pending_tasks>
+
+<current_work>
+Immediately before this summary request, the AI engineer was addressing a new set of requirements from the user (Chat Message 197). This involves enhancing the financial and document management aspects of the ERP system.
+
+The work commenced with updating the PostgreSQL database schema. A new SQL script, , was created and applied to the database. This script introduced several crucial fields:
+-    (TEXT),  (TEXT), and  (JSONB) to the  table to support detailed KYC information.
+-    (NUMERIC) and  (BOOLEAN) to the  table to handle GST calculations.
+-    (TEXT),  (NUMERIC), and  (TIMESTAMP WITH TIME ZONE) to the  table to track project-level invoices and revenue.
+
+The database schema update was successfully completed (Chat Message 199). The immediate next step (Chat Message 200) is to update the frontend's customer creation form to incorporate the newly added KYC and bank details fields, allowing users to input this information. This is where the work currently stands, midway through implementing the document and financial features related to customer KYC and GST.
+</current_work>
+
+<optional_next_step>
+Update the customer creation form to include KYC and bank details based on the altered schema.
+</optional_next_step>
