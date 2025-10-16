@@ -205,6 +205,45 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleReceiptUpload = async (file) => {
+    if (!file) return;
+    
+    // Check if user is Finance role
+    if (session.user.role !== 'finance' && session.user.role !== 'admin') {
+      toast.error('Only Finance team can upload receipts');
+      return;
+    }
+    
+    setUploadingReceipt(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPaymentData(prev => ({ ...prev, receipt_url: data.url }));
+        toast.success('Receipt uploaded successfully');
+      } else {
+        toast.error('Failed to upload receipt');
+      }
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      toast.error('Upload failed');
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
+  const calculateGST = (amount, percentage) => {
+    if (!amount || !percentage) return 0;
+    return (parseFloat(amount) * parseFloat(percentage)) / 100;
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
