@@ -757,9 +757,16 @@ export default function ProjectDetailPage() {
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(entry.entry_date)}
-                            {entry.transaction_details && (
-                              <> • {JSON.parse(entry.transaction_details).customer_name || JSON.parse(entry.transaction_details).vendor_name}</>
-                            )}
+                            {entry.transaction_details && (() => {
+                              try {
+                                const details = typeof entry.transaction_details === 'string' 
+                                  ? JSON.parse(entry.transaction_details) 
+                                  : entry.transaction_details;
+                                return <> • {details.customer_name || details.vendor_name}</>;
+                              } catch (e) {
+                                return null;
+                              }
+                            })()}
                           </p>
                           {entry.remarks && (
                             <p className="text-sm text-muted-foreground mt-1">{entry.remarks}</p>
