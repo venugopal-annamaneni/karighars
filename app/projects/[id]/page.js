@@ -83,12 +83,13 @@ export default function ProjectDetailPage() {
 
   const fetchProjectData = async () => {
     try {
-      const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes, ledgerRes] = await Promise.all([
+      const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes, ledgerRes, docsRes] = await Promise.all([
         fetch(`/api/projects/${projectId}`),
         fetch(`/api/customer-payments?project_id=${projectId}`),
         fetch(`/api/vendor-payments?project_id=${projectId}`),
         fetch(`/api/vendor-boqs?project_id=${projectId}`),
-        fetch(`/api/projects/${projectId}/ledger`)
+        fetch(`/api/projects/${projectId}/ledger`),
+        fetch(`/api/documents/project/${projectId}`)
       ]);
 
       if (projectRes.ok) {
@@ -123,6 +124,11 @@ export default function ProjectDetailPage() {
       if (ledgerRes.ok) {
         const data = await ledgerRes.json();
         setLedger(data.ledger);
+      }
+
+      if (docsRes.ok) {
+        const data = await docsRes.json();
+        setDocuments(data.documents);
       }
 
       // Fetch milestones if project has bizModel
