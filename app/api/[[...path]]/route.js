@@ -421,6 +421,17 @@ export async function POST(request, { params }) {
       return NextResponse.json({ payment: result.rows[0] });
     }
 
+    // Upload Document
+    if (path === 'documents') {
+      const result = await query(
+        `INSERT INTO documents (related_entity, related_id, document_type, file_url, file_metadata, uploaded_by)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [body.related_entity, body.related_id, body.document_type, body.file_url, 
+         JSON.stringify(body.file_metadata || {}), session.user.id]
+      );
+      return NextResponse.json({ document: result.rows[0] });
+    }
+
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     console.error('API Error:', error);
