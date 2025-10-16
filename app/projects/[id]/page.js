@@ -877,14 +877,68 @@ export default function ProjectDetailPage() {
                   <div className="space-y-3">
                     {customerPayments.map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{payment.payment_type?.replace('_', ' ').toUpperCase()}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{payment.payment_type?.replace('_', ' ').toUpperCase()}</p>
+                            {payment.status === 'pending' && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                                Pending Receipt
+                              </Badge>
+                            )}
+                            {payment.status === 'approved' && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                                ✓ Approved
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {formatDate(payment.payment_date)} • {payment.mode} • {payment.reference_number}
                           </p>
+                          {payment.gst_amount > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              GST: ₹{payment.gst_amount?.toLocaleString('en-IN')} ({payment.gst_percentage}%)
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-green-600">{formatCurrency(payment.amount)}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className={`text-xl font-bold ${payment.status === 'approved' ? 'text-green-600' : 'text-gray-400'}`}>
+                              {formatCurrency(payment.amount)}
+                            </p>
+                            {payment.status === 'pending' && (
+                              <p className="text-xs text-amber-600">Not counted</p>
+                            )}
+                          </div>
+                          {payment.status === 'pending' && (session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
+                            <div>
+                              <input
+                                type="file"
+                                id={`receipt-${payment.id}`}
+                                accept="image/*,.pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) handlePaymentReceiptUpload(payment.id, file);
+                                }}
+                                disabled={uploadingReceipt[payment.id]}
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => document.getElementById(`receipt-${payment.id}`).click()}
+                                disabled={uploadingReceipt[payment.id]}
+                              >
+                                {uploadingReceipt[payment.id] ? 'Uploading...' : 'Upload Receipt'}
+                              </Button>
+                            </div>
+                          )}
+                          {payment.receipt_url && (
+                            <Button size="sm" variant="ghost" asChild>
+                              <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
