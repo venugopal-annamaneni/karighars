@@ -68,11 +68,12 @@ export default function ProjectDetailPage() {
 
   const fetchProjectData = async () => {
     try {
-      const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes] = await Promise.all([
+      const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes, ledgerRes] = await Promise.all([
         fetch(`/api/projects/${projectId}`),
         fetch(`/api/customer-payments?project_id=${projectId}`),
         fetch(`/api/vendor-payments?project_id=${projectId}`),
-        fetch(`/api/vendor-boqs?project_id=${projectId}`)
+        fetch(`/api/vendor-boqs?project_id=${projectId}`),
+        fetch(`/api/projects/${projectId}/ledger`)
       ]);
 
       if (projectRes.ok) {
