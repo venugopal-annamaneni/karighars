@@ -787,24 +787,15 @@ export default function ProjectDetailPage() {
                           )}
                         </div>
 
-                        {(session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
-                          <div className="border-t pt-4 space-y-2">
-                            <Label htmlFor="receipt">Payment Receipt (Finance Only)</Label>
-                            <Input
-                              id="receipt"
-                              type="file"
-                              accept="image/*,.pdf"
-                              onChange={(e) => handleReceiptUpload(e.target.files[0])}
-                              disabled={uploadingReceipt}
-                            />
-                            {paymentData.receipt_url && <p className="text-xs text-green-600">✓ Receipt uploaded</p>}
-                            {uploadingReceipt && <p className="text-xs text-blue-600">Uploading...</p>}
-                          </div>
-                        )}
+                        <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-4">
+                          <p className="text-sm text-amber-800">
+                            ℹ️ This payment will be marked as <strong>pending</strong> until Finance team uploads the receipt.
+                          </p>
+                        </div>
 
                         <div className="flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-                          <Button type="submit" disabled={uploadingReceipt}>Record Payment</Button>
+                          <Button type="submit">Record Payment</Button>
                         </div>
                       </form>
                     </DialogContent>
