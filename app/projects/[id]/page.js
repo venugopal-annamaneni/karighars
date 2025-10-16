@@ -240,6 +240,12 @@ export default function ProjectDetailPage() {
                   <Calendar className="h-4 w-4" />
                   {formatDate(project.created_at)}
                 </span>
+                {project.sales_order_id && (
+                  <span className="flex items-center gap-1 font-medium text-primary">
+                    <FileText className="h-4 w-4" />
+                    SO: {project.sales_order_id}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
