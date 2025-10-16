@@ -44,11 +44,18 @@ export default function ProjectDetailPage() {
   const [vendorPayments, setVendorPayments] = useState([]);
   const [vendorBOQs, setVendorBOQs] = useState([]);
   const [ledger, setLedger] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPhaseDialog, setShowPhaseDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showEstimationDialog, setShowEstimationDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [milestones, setMilestones] = useState([]);
+  const [invoiceData, setInvoiceData] = useState({
+    invoice_url: null,
+    revenue_realized: ''
+  });
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
   
   const [phaseUpdate, setPhaseUpdate] = useState({ phase: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
