@@ -104,6 +104,11 @@ export default function ProjectDetailPage() {
         const data = await boqsRes.json();
         setVendorBOQs(data.boqs);
       }
+
+      if (ledgerRes.ok) {
+        const data = await ledgerRes.json();
+        setLedger(data.ledger);
+      }
     } catch (error) {
       console.error('Error fetching project data:', error);
       toast.error('Failed to load project data');
