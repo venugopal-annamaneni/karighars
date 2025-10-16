@@ -648,6 +648,47 @@ export default function ProjectDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="ledger" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Ledger</CardTitle>
+                <CardDescription>Complete transaction history for this project</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {ledger.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No transactions recorded yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {ledger.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{entry.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(entry.transaction_date)} • {entry.transaction_type}
+                            {entry.reference_number && ` • ${entry.reference_number}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-xl font-bold ${
+                            entry.amount > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {entry.amount > 0 ? '+' : ''}{formatCurrency(entry.amount)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Balance: {formatCurrency(entry.running_balance)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="details" className="space-y-4">
             <Card>
               <CardHeader>
