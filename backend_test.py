@@ -57,6 +57,9 @@ def make_request(method, endpoint, data=None, expected_status=200):
             response_data = response.json()
         except:
             response_data = {"raw_response": response.text}
+            # Check if this is an authentication redirect
+            if response.status_code == 200 and "/api/auth/signin" in response.text:
+                response_data["auth_redirect"] = True
         
         return response, response_data
         
