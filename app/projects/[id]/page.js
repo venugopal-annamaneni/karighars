@@ -161,6 +161,7 @@ export default function ProjectDetailPage() {
           project_id: projectId,
           customer_id: project.customer_id,
           estimation_id: estimation?.id,
+          milestone_id: paymentData.milestone_id || null,
           ...paymentData
         })
       });
@@ -169,11 +170,13 @@ export default function ProjectDetailPage() {
         toast.success('Payment recorded successfully');
         setShowPaymentDialog(false);
         setPaymentData({
+          milestone_id: '',
           payment_type: 'advance_10',
           amount: '',
           mode: 'bank',
           reference_number: '',
-          remarks: ''
+          remarks: '',
+          override_reason: ''
         });
         fetchProjectData();
       } else {
@@ -182,6 +185,18 @@ export default function ProjectDetailPage() {
     } catch (error) {
       console.error('Error recording payment:', error);
       toast.error('An error occurred');
+    }
+  };
+
+  const handleMilestoneChange = (milestoneId) => {
+    setPaymentData({ ...paymentData, milestone_id: milestoneId });
+    
+    if (milestoneId && estimation) {
+      const milestone = milestones.find(m => m.id === parseInt(milestoneId));
+      if (milestone && milestone.default_percentage) {
+        const suggestedAmount = (parseFloat(estimation.final_value || estimation.total_value || 0) * milestone.default_percentage) / 100;
+        setPaymentData(prev => ({ ...prev, milestone_id: milestoneId, amount: suggestedAmount.toFixed(2) }));
+      }
     }
   };
 
