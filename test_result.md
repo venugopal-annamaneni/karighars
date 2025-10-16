@@ -261,6 +261,78 @@ backend:
           agent: "testing"
           comment: "Comprehensive PostgreSQL schema with proper foreign key relationships. Includes all required tables: users, customers, vendors, projects, estimations, payments, etc. Financial event definitions are pre-seeded."
 
+  - task: "BizModel System APIs"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "BizModel APIs implemented: GET /api/biz-models and GET /api/biz-models/{id}. Database schema verified with biz_models, biz_model_stages, and biz_model_milestones tables. BizModel V1 exists with 5 stages and 10 milestones as expected. Authentication properly protects endpoints."
+
+  - task: "Project Creation with BizModel"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Project creation automatically assigns sales_order_id (format: SO-YYYY-XXXXXX) and biz_model_id (defaults to BizModel V1). Database columns verified: projects table has sales_order_id and biz_model_id columns properly configured."
+
+  - task: "Enhanced Estimation with Service Charge & Discount"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Enhanced estimation API supports service_charge_percentage and discount_percentage. Auto-calculation logic implemented for service_charge_amount, discount_amount, and final_value. Approval workflow for discounts exceeding max percentage (requires_approval=true, approval_status='pending'). Database columns verified in project_estimations table."
+
+  - task: "Flexible Payment Milestones"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Customer payment API supports milestone_id with automatic calculation of expected_percentage and actual_percentage. Override tracking implemented with override_reason field. Database columns verified in customer_payments_in table: milestone_id, expected_percentage, actual_percentage, override_reason."
+
+  - task: "Project Ledger with Running Balance"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Project ledger API (GET /api/projects/{id}/ledger) implemented with running balance calculation. Transaction details JSON includes customer/vendor names. Supports both credit and debit entries with proper ledger entry creation from payments."
+
+  - task: "BizModel Database Schema"
+    implemented: true
+    working: true
+    file: "/app/biz_model_schema.sql"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Complete BizModel database schema verified: biz_models, biz_model_stages, biz_model_milestones tables exist. BizModel V1 seeded with 5 stages (onboarding, 2D, 3D, execution, handover) and 10 milestones (4 inflow, 6 outflow). All foreign key relationships and indexes properly configured."
+
 frontend:
   - task: "Authentication UI"
     implemented: true
