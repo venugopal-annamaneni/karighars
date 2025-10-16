@@ -701,6 +701,65 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ estimation: result.rows[0] });
     }
 
+    // Update Customer Payment (for receipt upload and approval)
+    if (path.startsWith('customer-payments/')) {
+      const paymentId = path.split('/')[1];
+      
+      // Check if user is Finance or Admin
+      if (session.user.role !== 'finance' && session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Only Finance team can approve payments' }, { status: 403 });
+      }
+
+      const updates = [];
+      const values = [];
+      let paramCounter = 1;
+
+      if (body.receipt_url !== undefined) {
+        updates.push(`receipt_url = $${paramCounter++}`);
+        values.push(body.receipt_url);
+      }
+
+      if (body.status !== undefined) {
+        updates.push(`status = $${paramCounter++}`);
+        values.push(body.status);
+        
+        if (body.status === 'approved') {
+          updates.push(`approved_by = $${paramCounter++}`);
+          values.push(session.user.id);
+          updates.push(`approved_at = NOW()`);
+        }
+      }
+
+      values.push(paymentId);
+
+      const result = await query(
+        `UPDATE customer_payments_in SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`,
+        values
+      );
+
+      // If payment is now approved, update the ledger
+      if (body.status === 'approved') {
+        const payment = result.rows[0];
+        
+        // Check if ledger entry already exists
+        const ledgerCheck = await query(
+          'SELECT id FROM project_ledger WHERE source_table = $1 AND source_id = $2',
+          ['customer_payments_in', paymentId]
+        );
+
+        // Only create ledger entry if it doesn't exist
+        if (ledgerCheck.rows.length === 0) {
+          await query(
+            `INSERT INTO project_ledger (project_id, source_table, source_id, entry_type, amount, remarks)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [payment.project_id, 'customer_payments_in', paymentId, 'credit', payment.amount, 'Payment approved by Finance']
+          );
+        }
+      }
+
+      return NextResponse.json({ payment: result.rows[0] });
+    }
+
     // Update Vendor BOQ
     if (path.startsWith('vendor-boqs/')) {
       const boqId = path.split('/')[1];
