@@ -102,9 +102,178 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the enhanced KG Interiors ERP backend with new BizModel features including BizModel System, Project Creation with BizModel, Enhanced Estimation, Flexible Payment Milestones, Project Ledger, Payment with Milestone Override, and Database Integrity"
+user_problem_statement: "Implement Customer KYC, GST on payments, and Document Management features for KG Interiors ERP. Features include: 1) Customer KYC UI (Aadhar, PAN, Blank Cheque, B2B/B2C, Optional Bank details), 2) GST amount field and calculations for payments, 3) UI for Finance team to upload Payment Receipts, 4) UI for Finance team to upload Project Invoices for revenue realization, 5) Display all uploaded documents within project tab"
 
 backend:
+  - task: "Database Schema - KYC, GST, and Documents"
+    implemented: true
+    working: "NA"
+    file: "/app/alter_kyc_gst_schema.sql"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created schema update file with: customers table updates (kyc_type, business_type, bank_details), customer_payments_in updates (gst_amount, is_gst_applicable, gst_percentage, receipt_url, milestone fields), projects updates (invoice_url, revenue_realized, invoice_uploaded_at), and new documents table for centralized document storage. Schema needs to be applied to database."
+
+  - task: "File Upload API"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/upload/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created file upload API endpoint at /api/upload. Handles file uploads, generates unique filenames, stores files in /app/uploads directory, and returns file URL. Requires authentication. Created /app/uploads directory with proper permissions."
+
+  - task: "Customer API - KYC and Bank Details"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated POST /api/customers endpoint to include kyc_type, business_type, and bank_details fields in the INSERT statement. Bank details stored as JSONB."
+
+  - task: "Customer Payments API - GST Fields"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated POST /api/customer-payments endpoint to include gst_amount, is_gst_applicable, gst_percentage, and receipt_url fields. API now accepts and stores GST data and receipt URL for each payment."
+
+  - task: "Project API - Invoice Upload"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated PUT /api/projects/{id} endpoint to support invoice_url and revenue_realized fields. Automatically sets invoice_uploaded_at timestamp when invoice_url is provided."
+
+  - task: "Documents API - Enhanced Schema"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated POST /api/documents endpoint to match new schema: document_url, file_name, file_size, mime_type, metadata, remarks. Supports document types: kyc_aadhar, kyc_pan, kyc_cheque, payment_receipt, project_invoice, other."
+
+  - task: "Schema Migration Endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/admin/migrate/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created admin-only migration endpoint to apply alter_kyc_gst_schema.sql. Accessible at POST /api/admin/migrate (requires admin role). This will be used to apply schema updates once user authenticates."
+
+frontend:
+  - task: "Customer Creation Form - KYC and Bank Details"
+    implemented: true
+    working: "NA"
+    file: "/app/app/customers/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Enhanced customer creation form with: Business Type dropdown (B2B/B2C), KYC document uploads (Aadhar, PAN, Blank Cheque) with real-time upload via /api/upload, Bank Details section (account number, IFSC, bank name, branch). Documents are uploaded first, then linked to customer via documents API after customer creation."
+
+  - task: "Payment Recording - GST Fields"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added GST section to payment recording dialog: GST Applicable checkbox, GST Percentage input with auto-calculation of GST amount, Display of calculated GST amount. GST data is submitted with payment."
+
+  - task: "Payment Recording - Receipt Upload (Finance Only)"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added receipt upload section in payment dialog (visible only to Finance/Admin roles). Receipt is uploaded via /api/upload, URL stored with payment, and document record created automatically after payment creation."
+
+  - task: "Project Invoice Upload (Finance Only)"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created Invoice Upload dialog accessible only to Finance/Admin. Features: Invoice file upload, Revenue Realized amount input, Upload Invoice button. Invoice is saved to project and document record is created. Dialog accessible from Documents tab."
+
+  - task: "Documents Tab in Project View"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added new Documents tab in project detail page. Displays: Project Invoice (if uploaded) with revenue realized and upload date, All documents (KYC docs, payment receipts, invoices) with metadata (type, uploader, date, remarks), View buttons for each document. Documents are fetched from /api/documents/project/{id}."
+
+metadata:
+  created_by: "main_agent"
+  version: "3.0"
+  test_sequence: 3
+  run_ui: false
+  kyc_gst_documents_features: true
+  last_updated: "2025-06-11"
+
+test_plan:
+  current_focus:
+    - "Database Schema - KYC, GST, and Documents"
+    - "File Upload API"
+    - "Customer API - KYC and Bank Details"
+    - "Customer Payments API - GST Fields"
+    - "Project API - Invoice Upload"
+    - "Documents API - Enhanced Schema"
+    - "Schema Migration Endpoint"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Implemented comprehensive KYC, GST, and Document Management features. IMPORTANT: Database schema updates need to be applied. User must authenticate and run POST /api/admin/migrate to apply schema changes. All backend API endpoints updated. Frontend forms enhanced with KYC uploads, GST calculations, receipt uploads (Finance only), and invoice uploads (Finance only). New Documents tab shows all project documents. Ready for backend testing after schema migration."
   - task: "Database Connection"
     implemented: true
     working: true
