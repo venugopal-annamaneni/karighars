@@ -65,8 +65,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({
         project: result.rows[0],
         estimation: estResult.rows[0] || null,
-        payments_received: parseFloat(paymentsIn.rows[0].total),
-        payments_made: parseFloat(paymentsOut.rows[0].total),
+        payments_received: parseFloat(paymentsIn.rows[0]?.total || 0),
+        payments_made: parseFloat(paymentsOut.rows[0]?.total || 0),
       });
     }
 
