@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   Clock
 } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
