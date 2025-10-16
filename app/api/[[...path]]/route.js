@@ -487,11 +487,38 @@ export async function POST(request, { params }) {
 
     // Create Customer Payment
     if (path === 'customer-payments') {
+      // If milestone_id provided, get milestone details
+      let expectedPercentage = null;
+      let actualPercentage = null;
+      
+      if (body.milestone_id) {
+        const milestoneRes = await query(
+          'SELECT default_percentage FROM biz_model_milestones WHERE id = $1',
+          [body.milestone_id]
+        );
+        if (milestoneRes.rows.length > 0) {
+          expectedPercentage = milestoneRes.rows[0].default_percentage;
+          
+          // Calculate actual percentage if estimation exists
+          if (body.estimation_id) {
+            const estRes = await query('SELECT final_value FROM project_estimations WHERE id = $1', [body.estimation_id]);
+            if (estRes.rows.length > 0 && estRes.rows[0].final_value > 0) {
+              actualPercentage = (parseFloat(body.amount) / parseFloat(estRes.rows[0].final_value)) * 100;
+            }
+          }
+        }
+      }
+      
       const result = await query(
-        `INSERT INTO customer_payments_in (project_id, estimation_id, customer_id, payment_type, amount, payment_date, mode, reference_number, remarks, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [body.project_id, body.estimation_id, body.customer_id, body.payment_type, body.amount, 
-         body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id]
+        `INSERT INTO customer_payments_in (
+          project_id, estimation_id, customer_id, payment_type, milestone_id, 
+          expected_percentage, actual_percentage, override_reason,
+          amount, payment_date, mode, reference_number, remarks, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+        [body.project_id, body.estimation_id, body.customer_id, body.payment_type, body.milestone_id || null,
+         expectedPercentage, actualPercentage, body.override_reason || null,
+         body.amount, body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id]
       );
 
       // Create ledger entry
@@ -506,7 +533,7 @@ export async function POST(request, { params }) {
         `INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [body.project_id, 'customer_payments_in', result.rows[0].id, session.user.id, 'payment_received', 
-         `Payment received: ₹${body.amount}`]
+         `Payment received: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''}`]
       );
 
       return NextResponse.json({ payment: result.rows[0] });
