@@ -20,6 +20,7 @@ export default function NewProjectPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [customers, setCustomers] = useState([]);
+  const [bizModels, setBizModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   
@@ -28,6 +29,7 @@ export default function NewProjectPage() {
     customer_id: '',
     location: '',
     phase: 'onboarding',
+    biz_model_id: '',
   });
 
   const [newCustomer, setNewCustomer] = useState({
