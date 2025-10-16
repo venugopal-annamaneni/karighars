@@ -413,7 +413,7 @@ export default function ProjectDetailPage() {
               <CardContent>
                 {estimation ? (
                   <div className="space-y-4">
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-4 gap-4">
                       <div className="bg-slate-50 p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground mb-1">Woodwork</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.woodwork_value)}</p>
@@ -426,7 +426,33 @@ export default function ProjectDetailPage() {
                         <p className="text-sm text-muted-foreground mb-1">Misc External</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.misc_external_value)}</p>
                       </div>
+                      <div className="bg-slate-50 p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Subtotal</p>
+                        <p className="text-xl font-bold">{formatCurrency(estimation.total_value)}</p>
+                      </div>
                     </div>
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-700 mb-1">Service Charge ({estimation.service_charge_percentage || 0}%)</p>
+                        <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.service_charge_amount || 0)}</p>
+                      </div>
+                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                        <p className="text-sm text-red-700 mb-1">Discount ({estimation.discount_percentage || 0}%)</p>
+                        <p className="text-xl font-bold text-red-700">-{formatCurrency(estimation.discount_amount || 0)}</p>
+                      </div>
+                      <div className="bg-primary/10 p-4 rounded-lg border border-primary">
+                        <p className="text-sm text-primary mb-1">Final Total</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(estimation.final_value || estimation.total_value)}</p>
+                      </div>
+                    </div>
+
+                    {estimation.requires_approval && (
+                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-amber-800">⚠️ This estimation requires approval</p>
+                        <p className="text-xs text-amber-700 mt-1">Discount exceeds maximum allowed percentage</p>
+                      </div>
+                    )}
 
                     {estimationItems.length > 0 && (
                       <div className="border rounded-lg overflow-hidden">
