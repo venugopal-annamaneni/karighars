@@ -27,7 +27,9 @@ export default function EstimationPage() {
   
   const [formData, setFormData] = useState({
     remarks: '',
-    status: 'draft'
+    status: 'draft',
+    service_charge_percentage: 0,
+    discount_percentage: 0
   });
   
   const [items, setItems] = useState([
