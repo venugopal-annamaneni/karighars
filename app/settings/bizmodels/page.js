@@ -6,9 +6,16 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Briefcase, TrendingUp, TrendingDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
+import { Settings, Briefcase, TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
 
 export default function BizModelsPage() {
   const { data: session, status } = useSession();
@@ -17,6 +24,25 @@ export default function BizModelsPage() {
   const [selectedModel, setSelectedModel] = useState(null);
   const [modelDetails, setModelDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
+  const [newModel, setNewModel] = useState({
+    code: '',
+    name: '',
+    version: '',
+    description: '',
+    service_charge_percentage: 10,
+    max_discount_percentage: 5,
+    is_active: true,
+  });
+
+  const [stages, setStages] = useState([
+    { stage_code: '', stage_name: '', sequence_order: 1, description: '' }
+  ]);
+
+  const [milestones, setMilestones] = useState([
+    { milestone_code: '', milestone_name: '', direction: 'inflow', default_percentage: 0, stage_code: '', description: '', sequence_order: 1 }
+  ]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -61,6 +87,85 @@ export default function BizModelsPage() {
     fetchModelDetails(modelId);
   };
 
+  const addStage = () => {
+    setStages([...stages, { 
+      stage_code: '', 
+      stage_name: '', 
+      sequence_order: stages.length + 1, 
+      description: '' 
+    }]);
+  };
+
+  const removeStage = (index) => {
+    setStages(stages.filter((_, i) => i !== index));
+  };
+
+  const updateStage = (index, field, value) => {
+    const updated = [...stages];
+    updated[index][field] = value;
+    setStages(updated);
+  };
+
+  const addMilestone = () => {
+    setMilestones([...milestones, { 
+      milestone_code: '', 
+      milestone_name: '', 
+      direction: 'inflow', 
+      default_percentage: 0, 
+      stage_code: '', 
+      description: '', 
+      sequence_order: milestones.length + 1 
+    }]);
+  };
+
+  const removeMilestone = (index) => {
+    setMilestones(milestones.filter((_, i) => i !== index));
+  };
+
+  const updateMilestone = (index, field, value) => {
+    const updated = [...milestones];
+    updated[index][field] = value;
+    setMilestones(updated);
+  };
+
+  const handleCreateModel = async () => {
+    try {
+      const res = await fetch('/api/biz-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newModel,
+          stages: stages.filter(s => s.stage_code && s.stage_name),
+          milestones: milestones.filter(m => m.milestone_code && m.milestone_name)
+        })
+      });
+
+      if (res.ok) {
+        toast.success('Business Model created successfully');
+        setShowCreateDialog(false);
+        fetchBizModels();
+        // Reset form
+        setNewModel({
+          code: '',
+          name: '',
+          version: '',
+          description: '',
+          service_charge_percentage: 10,
+          max_discount_percentage: 5,
+          is_active: true,
+        });
+        setStages([{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
+        setMilestones([{ milestone_code: '', milestone_name: '', direction: 'inflow', default_percentage: 0, stage_code: '', description: '', sequence_order: 1 }]);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to create business model');
+      }
+    } catch (error) {
+      console.error('Error creating model:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -77,15 +182,259 @@ export default function BizModelsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
+      <Toaster richColors position="top-right" />
       <main className="container mx-auto p-6 space-y-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Settings className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight">Business Model Configuration</h1>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Settings className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold tracking-tight">Business Model Configuration</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Manage project workflows, stages, and payment milestones
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Manage project workflows, stages, and payment milestones
-          </p>
+          {session.user.role === 'admin' && (
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create New BizModel
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Business Model</DialogTitle>
+                  <DialogDescription>
+                    Define a new business model with stages and payment milestones
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                    <TabsTrigger value="stages">Stages</TabsTrigger>
+                    <TabsTrigger value="milestones">Milestones</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="basic" className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Code *</Label>
+                        <Input
+                          placeholder="e.g., BIZ_MODEL_V2"
+                          value={newModel.code}
+                          onChange={(e) => setNewModel({ ...newModel, code: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Version *</Label>
+                        <Input
+                          placeholder="e.g., V2"
+                          value={newModel.version}
+                          onChange={(e) => setNewModel({ ...newModel, version: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Name *</Label>
+                        <Input
+                          placeholder="e.g., Premium Project Model"
+                          value={newModel.name}
+                          onChange={(e) => setNewModel({ ...newModel, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Description</Label>
+                        <Textarea
+                          placeholder="Describe this business model..."
+                          value={newModel.description}
+                          onChange={(e) => setNewModel({ ...newModel, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Service Charge (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.service_charge_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, service_charge_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Max Discount (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.max_discount_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, max_discount_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="stages" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-muted-foreground">Define project stages</p>
+                      <Button onClick={addStage} size="sm" variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Stage
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {stages.map((stage, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm font-medium">Stage {index + 1}</p>
+                            {stages.length > 1 && (
+                              <Button
+                                onClick={() => removeStage(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Stage Code</Label>
+                              <Input
+                                placeholder="e.g., onboarding"
+                                value={stage.stage_code}
+                                onChange={(e) => updateStage(index, 'stage_code', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Stage Name</Label>
+                              <Input
+                                placeholder="e.g., Onboarding"
+                                value={stage.stage_name}
+                                onChange={(e) => updateStage(index, 'stage_name', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                              <Label className="text-xs">Description</Label>
+                              <Input
+                                placeholder="Description..."
+                                value={stage.description}
+                                onChange={(e) => updateStage(index, 'description', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="milestones" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-muted-foreground">Define payment milestones</p>
+                      <Button onClick={addMilestone} size="sm" variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Milestone
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {milestones.map((milestone, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm font-medium">Milestone {index + 1}</p>
+                            {milestones.length > 1 && (
+                              <Button
+                                onClick={() => removeMilestone(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Milestone Code</Label>
+                              <Input
+                                placeholder="e.g., ADVANCE_10"
+                                value={milestone.milestone_code}
+                                onChange={(e) => updateMilestone(index, 'milestone_code', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Milestone Name</Label>
+                              <Input
+                                placeholder="e.g., Advance Payment"
+                                value={milestone.milestone_name}
+                                onChange={(e) => updateMilestone(index, 'milestone_name', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Direction</Label>
+                              <Select
+                                value={milestone.direction}
+                                onValueChange={(value) => updateMilestone(index, 'direction', value)}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="inflow">Inflow (Customer)</SelectItem>
+                                  <SelectItem value="outflow">Outflow (Vendor)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Default %</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0"
+                                value={milestone.default_percentage}
+                                onChange={(e) => updateMilestone(index, 'default_percentage', parseFloat(e.target.value))}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Stage Code</Label>
+                              <Input
+                                placeholder="e.g., 2D"
+                                value={milestone.stage_code}
+                                onChange={(e) => updateMilestone(index, 'stage_code', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Description</Label>
+                              <Input
+                                placeholder="Description..."
+                                value={milestone.description}
+                                onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateModel}>
+                    Create Business Model
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* BizModel Selection */}
