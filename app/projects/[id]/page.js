@@ -159,6 +159,12 @@ export default function ProjectDetailPage() {
   const handleRecordPayment = async (e) => {
     e.preventDefault();
     try {
+      // Calculate GST amount
+      let gstAmount = 0;
+      if (paymentData.is_gst_applicable && paymentData.gst_percentage) {
+        gstAmount = calculateGST(paymentData.amount, paymentData.gst_percentage);
+      }
+
       const res = await fetch('/api/customer-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,11 +173,38 @@ export default function ProjectDetailPage() {
           customer_id: project.customer_id,
           estimation_id: estimation?.id,
           milestone_id: paymentData.milestone_id || null,
-          ...paymentData
+          payment_type: paymentData.payment_type,
+          amount: paymentData.amount,
+          mode: paymentData.mode,
+          reference_number: paymentData.reference_number,
+          remarks: paymentData.remarks,
+          override_reason: paymentData.override_reason,
+          is_gst_applicable: paymentData.is_gst_applicable,
+          gst_percentage: paymentData.gst_percentage || 0,
+          gst_amount: gstAmount,
+          receipt_url: paymentData.receipt_url
         })
       });
 
       if (res.ok) {
+        const data = await res.json();
+        
+        // If receipt was uploaded, create document record
+        if (paymentData.receipt_url && data.payment) {
+          await fetch('/api/documents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              related_entity: 'payment',
+              related_id: data.payment.id,
+              document_type: 'payment_receipt',
+              document_url: paymentData.receipt_url,
+              file_name: 'Payment Receipt',
+              remarks: `Receipt for payment of ₹${paymentData.amount}`
+            })
+          });
+        }
+        
         toast.success('Payment recorded successfully');
         setShowPaymentDialog(false);
         setPaymentData({
@@ -181,7 +214,11 @@ export default function ProjectDetailPage() {
           mode: 'bank',
           reference_number: '',
           remarks: '',
-          override_reason: ''
+          override_reason: '',
+          is_gst_applicable: false,
+          gst_percentage: '',
+          gst_amount: 0,
+          receipt_url: null
         });
         fetchProjectData();
       } else {
