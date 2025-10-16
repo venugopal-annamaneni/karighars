@@ -68,10 +68,8 @@ export default function ProjectDetailPage() {
     override_reason: '',
     is_gst_applicable: false,
     gst_percentage: '',
-    gst_amount: 0,
-    receipt_url: null
+    gst_amount: 0
   });
-  const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
