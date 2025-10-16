@@ -384,12 +384,44 @@ export async function POST(request, { params }) {
       );
       const nextVersion = versionResult.rows[0].next_version;
 
+      // Get project's BizModel
+      const projectRes = await query('SELECT biz_model_id FROM projects WHERE id = $1', [body.project_id]);
+      const bizModelId = projectRes.rows[0]?.biz_model_id;
+      
+      let serviceChargePercentage = body.service_charge_percentage || 0;
+      let maxDiscountPercentage = 5; // default
+      
+      if (bizModelId) {
+        const bizModelRes = await query('SELECT service_charge_percentage, max_discount_percentage FROM biz_models WHERE id = $1', [bizModelId]);
+        if (bizModelRes.rows.length > 0) {
+          if (!body.service_charge_percentage) {
+            serviceChargePercentage = bizModelRes.rows[0].service_charge_percentage;
+          }
+          maxDiscountPercentage = bizModelRes.rows[0].max_discount_percentage;
+        }
+      }
+
+      const totalValue = parseFloat(body.total_value) || 0;
+      const discountPercentage = parseFloat(body.discount_percentage) || 0;
+      const serviceChargeAmount = (totalValue * serviceChargePercentage) / 100;
+      const discountAmount = (totalValue * discountPercentage) / 100;
+      const finalValue = totalValue + serviceChargeAmount - discountAmount;
+      
+      // Check if discount exceeds limit
+      const requiresApproval = discountPercentage > maxDiscountPercentage;
+      const approvalStatus = requiresApproval ? 'pending' : 'approved';
+
       const result = await query(
-        `INSERT INTO project_estimations (project_id, version, total_value, woodwork_value, misc_internal_value, misc_external_value, remarks, status, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [body.project_id, nextVersion, body.total_value || 0, body.woodwork_value || 0, 
-         body.misc_internal_value || 0, body.misc_external_value || 0, body.remarks, 
-         body.status || 'draft', session.user.id]
+        `INSERT INTO project_estimations (
+          project_id, version, total_value, woodwork_value, misc_internal_value, misc_external_value, 
+          service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
+          requires_approval, approval_status, remarks, status, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+        [body.project_id, nextVersion, totalValue, body.woodwork_value || 0, 
+         body.misc_internal_value || 0, body.misc_external_value || 0, 
+         serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
+         requiresApproval, approvalStatus, body.remarks, body.status || 'draft', session.user.id]
       );
 
       // Add estimation items if provided
