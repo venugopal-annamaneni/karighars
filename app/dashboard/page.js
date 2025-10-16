@@ -210,6 +210,78 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Charts Row */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Project Phase Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Phase Distribution</CardTitle>
+              <CardDescription>Projects across different phases</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Onboarding', value: projects.filter(p => p.phase === 'onboarding').length, color: '#3b82f6' },
+                      { name: '2D Design', value: projects.filter(p => p.phase === '2D').length, color: '#8b5cf6' },
+                      { name: '3D Design', value: projects.filter(p => p.phase === '3D').length, color: '#f59e0b' },
+                      { name: 'Execution', value: projects.filter(p => p.phase === 'execution').length, color: '#10b981' },
+                      { name: 'Handover', value: projects.filter(p => p.phase === 'handover').length, color: '#64748b' },
+                    ].filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[
+                      { name: 'Onboarding', value: projects.filter(p => p.phase === 'onboarding').length, color: '#3b82f6' },
+                      { name: '2D Design', value: projects.filter(p => p.phase === '2D').length, color: '#8b5cf6' },
+                      { name: '3D Design', value: projects.filter(p => p.phase === '3D').length, color: '#f59e0b' },
+                      { name: 'Execution', value: projects.filter(p => p.phase === 'execution').length, color: '#10b981' },
+                      { name: 'Handover', value: projects.filter(p => p.phase === 'handover').length, color: '#64748b' },
+                    ].filter(item => item.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Cash Flow Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Cash Flow Overview</CardTitle>
+              <CardDescription>Received vs Paid</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart
+                  data={[
+                    {
+                      name: 'Current',
+                      Received: parseFloat(stats?.total_received || 0),
+                      Paid: parseFloat(stats?.total_paid || 0),
+                    },
+                  ]}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend />
+                  <Bar dataKey="Received" fill="#10b981" />
+                  <Bar dataKey="Paid" fill="#ef4444" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Quick Actions */}
         <Card>
           <CardHeader>
