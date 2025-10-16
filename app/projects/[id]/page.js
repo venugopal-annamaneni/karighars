@@ -318,6 +318,68 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handlePaymentReceiptUpload = async (paymentId, file) => {
+    if (!file) return;
+
+    setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Upload file
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        toast.error('Failed to upload receipt');
+        return;
+      }
+
+      const uploadData = await uploadRes.json();
+
+      // Update payment status and receipt URL
+      const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receipt_url: uploadData.url,
+          status: 'approved'
+        })
+      });
+
+      if (!updateRes.ok) {
+        toast.error('Failed to approve payment');
+        return;
+      }
+
+      // Create document record
+      await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          related_entity: 'payment',
+          related_id: paymentId,
+          document_type: 'payment_receipt',
+          document_url: uploadData.url,
+          file_name: uploadData.fileName,
+          file_size: uploadData.size,
+          mime_type: uploadData.type,
+          remarks: 'Payment receipt'
+        })
+      });
+
+      toast.success('Receipt uploaded and payment approved!');
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      toast.error('An error occurred');
+    } finally {
+      setUploadingReceipt(prev => ({ ...prev, [paymentId]: false }));
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
