@@ -325,7 +325,7 @@ export default function NewProjectPage() {
                   <SelectContent>
                     {bizModels.map((model) => (
                       <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name} - {model.margin_percentage}% margin
+                        {model.name} ({model.version})
                       </SelectItem>
                     ))}
                   </SelectContent>
