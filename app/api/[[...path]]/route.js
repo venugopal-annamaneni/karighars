@@ -568,10 +568,11 @@ export async function POST(request, { params }) {
     // Upload Document
     if (path === 'documents') {
       const result = await query(
-        `INSERT INTO documents (related_entity, related_id, document_type, file_url, file_metadata, uploaded_by)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [body.related_entity, body.related_id, body.document_type, body.file_url, 
-         JSON.stringify(body.file_metadata || {}), session.user.id]
+        `INSERT INTO documents (related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, metadata, remarks)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [body.related_entity, body.related_id, body.document_type, body.document_url, 
+         body.file_name, body.file_size, body.mime_type, session.user.id, 
+         JSON.stringify(body.metadata || {}), body.remarks || null]
       );
       return NextResponse.json({ document: result.rows[0] });
     }
