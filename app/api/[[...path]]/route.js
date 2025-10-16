@@ -29,10 +29,11 @@ export async function GET(request, { params }) {
       const projectId = path.split('/')[1];
       const result = await query(`
         SELECT p.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
-               u.name as created_by_name
+               u.name as created_by_name, bm.name as biz_model_name, bm.version as biz_model_version
         FROM projects p
         LEFT JOIN customers c ON p.customer_id = c.id
         LEFT JOIN users u ON p.created_by = u.id
+        LEFT JOIN biz_models bm ON p.biz_model_id = bm.id
         WHERE p.id = $1
       `, [projectId]);
       
