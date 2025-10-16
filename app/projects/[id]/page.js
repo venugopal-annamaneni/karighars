@@ -112,6 +112,15 @@ export default function ProjectDetailPage() {
         const data = await ledgerRes.json();
         setLedger(data.ledger);
       }
+
+      // Fetch milestones if project has bizModel
+      if (data.project && data.project.biz_model_id) {
+        const milestonesRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
+        if (milestonesRes.ok) {
+          const bizData = await milestonesRes.json();
+          setMilestones(bizData.milestones.filter(m => m.direction === 'inflow'));
+        }
+      }
     } catch (error) {
       console.error('Error fetching project data:', error);
       toast.error('Failed to load project data');
