@@ -51,13 +51,26 @@ export default function NewProjectPage() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch('/api/customers');
-      if (res.ok) {
-        const data = await res.json();
+      const [customersRes, bizModelsRes] = await Promise.all([
+        fetch('/api/customers'),
+        fetch('/api/biz-models')
+      ]);
+      
+      if (customersRes.ok) {
+        const data = await customersRes.json();
         setCustomers(data.customers);
       }
+      
+      if (bizModelsRes.ok) {
+        const data = await bizModelsRes.json();
+        setBizModels(data.bizModels);
+        // Set default to first active bizmodel
+        if (data.bizModels.length > 0) {
+          setFormData(prev => ({ ...prev, biz_model_id: data.bizModels[0].id.toString() }));
+        }
+      }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
