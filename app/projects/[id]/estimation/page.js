@@ -237,13 +237,13 @@ export default function EstimationPage() {
         </div>
 
         {/* Totals Summary */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.woodwork_value)}</div>
+              <div className="text-xl font-bold">{formatCurrency(totals.woodwork_value)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -251,7 +251,7 @@ export default function EstimationPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Misc Internal</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.misc_internal_value)}</div>
+              <div className="text-xl font-bold">{formatCurrency(totals.misc_internal_value)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -259,15 +259,31 @@ export default function EstimationPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Misc External</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.misc_external_value)}</div>
+              <div className="text-xl font-bold">{formatCurrency(totals.misc_external_value)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Service Charge</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{formatCurrency(totals.total_value)}</div>
+              <div className="text-xl font-bold text-green-600">+{formatCurrency(totals.service_charge || 0)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Discount</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl font-bold text-red-600">-{formatCurrency(totals.discount || 0)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Final Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl font-bold text-primary">{formatCurrency(totals.total_value)}</div>
             </CardContent>
           </Card>
         </div>
