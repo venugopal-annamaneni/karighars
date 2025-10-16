@@ -360,9 +360,11 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
   run_ui: true
+  bizmodel_features_tested: true
+  last_updated: "2025-10-16T20:18:00Z"
 
 test_plan:
   current_focus:
