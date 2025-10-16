@@ -296,6 +296,19 @@ export default function CustomersPage() {
                       onChange={(e) => setFormData({ ...formData, gst_number: e.target.value })}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="business_type">Business Type *</Label>
+                    <select
+                      id="business_type"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={formData.business_type}
+                      onChange={(e) => setFormData({ ...formData, business_type: e.target.value })}
+                      required
+                    >
+                      <option value="B2C">B2C (Business to Consumer)</option>
+                      <option value="B2B">B2B (Business to Business)</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
@@ -305,11 +318,103 @@ export default function CustomersPage() {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
-                <div className="flex justify-end gap-2">
+                
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold mb-3">KYC Documents (Optional)</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="aadhar">Aadhar Card</Label>
+                      <Input
+                        id="aadhar"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileChange('aadhar', e.target.files[0])}
+                        disabled={uploadingKyc}
+                      />
+                      {kycFiles.aadhar && <p className="text-xs text-green-600">✓ Uploaded</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pan">PAN Card</Label>
+                      <Input
+                        id="pan"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileChange('pan', e.target.files[0])}
+                        disabled={uploadingKyc}
+                      />
+                      {kycFiles.pan && <p className="text-xs text-green-600">✓ Uploaded</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cheque">Blank Cheque</Label>
+                      <Input
+                        id="cheque"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileChange('cheque', e.target.files[0])}
+                        disabled={uploadingKyc}
+                      />
+                      {kycFiles.cheque && <p className="text-xs text-green-600">✓ Uploaded</p>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold mb-3">Bank Details (Optional)</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="account_number">Account Number</Label>
+                      <Input
+                        id="account_number"
+                        value={formData.bank_details.account_number}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          bank_details: { ...formData.bank_details, account_number: e.target.value }
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ifsc_code">IFSC Code</Label>
+                      <Input
+                        id="ifsc_code"
+                        value={formData.bank_details.ifsc_code}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          bank_details: { ...formData.bank_details, ifsc_code: e.target.value }
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_name">Bank Name</Label>
+                      <Input
+                        id="bank_name"
+                        value={formData.bank_details.bank_name}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          bank_details: { ...formData.bank_details, bank_name: e.target.value }
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="branch_name">Branch Name</Label>
+                      <Input
+                        id="branch_name"
+                        value={formData.bank_details.branch_name}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          bank_details: { ...formData.bank_details, branch_name: e.target.value }
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Create Customer</Button>
+                  <Button type="submit" disabled={uploadingKyc}>
+                    {uploadingKyc ? 'Uploading...' : 'Create Customer'}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
