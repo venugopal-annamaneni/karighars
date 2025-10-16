@@ -342,9 +342,10 @@ export async function POST(request, { params }) {
     // Create Customer
     if (path === 'customers') {
       const result = await query(
-        `INSERT INTO customers (name, contact_person, phone, email, address, gst_number)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [body.name, body.contact_person, body.phone, body.email, body.address, body.gst_number]
+        `INSERT INTO customers (name, contact_person, phone, email, address, gst_number, kyc_type, business_type, bank_details)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        [body.name, body.contact_person, body.phone, body.email, body.address, body.gst_number, 
+         body.kyc_type || null, body.business_type || null, JSON.stringify(body.bank_details || {})]
       );
       return NextResponse.json({ customer: result.rows[0] });
     }
