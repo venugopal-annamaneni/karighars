@@ -351,10 +351,18 @@ export async function POST(request, { params }) {
     // Create Project
     if (path === 'projects') {
       const projectCode = `PRJ-${Date.now()}`;
+      const salesOrderId = `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      
+      // Get default BizModel V1
+      const bizModelRes = await query(
+        "SELECT id FROM biz_models WHERE code = 'BIZ_MODEL_V1' AND is_active = true LIMIT 1"
+      );
+      const bizModelId = bizModelRes.rows[0]?.id || null;
+      
       const result = await query(
-        `INSERT INTO projects (project_code, customer_id, name, location, phase, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [projectCode, body.customer_id, body.name, body.location, body.phase || 'onboarding', session.user.id]
+        `INSERT INTO projects (project_code, customer_id, name, location, phase, biz_model_id, sales_order_id, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [projectCode, body.customer_id, body.name, body.location, body.phase || 'onboarding', bizModelId, salesOrderId, session.user.id]
       );
 
       // Log activity
