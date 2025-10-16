@@ -168,6 +168,8 @@ export default function EstimationPage() {
           ...totals,
           remarks: formData.remarks,
           status: formData.status,
+          service_charge_percentage: formData.service_charge_percentage,
+          discount_percentage: formData.discount_percentage,
           items: items.filter(item => item.description.trim() !== '')
         })
       });
