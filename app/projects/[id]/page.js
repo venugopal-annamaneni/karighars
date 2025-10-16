@@ -500,6 +500,24 @@ export default function ProjectDetailPage() {
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleRecordPayment} className="space-y-4">
+                        {milestones.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Milestone (Optional)</Label>
+                            <Select value={paymentData.milestone_id} onValueChange={handleMilestoneChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select milestone" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">No milestone</SelectItem>
+                                {milestones.map((milestone) => (
+                                  <SelectItem key={milestone.id} value={milestone.id.toString()}>
+                                    {milestone.name} ({milestone.default_percentage}%)
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div className="space-y-2">
                           <Label>Payment Type</Label>
                           <Select value={paymentData.payment_type} onValueChange={(value) => setPaymentData({ ...paymentData, payment_type: value })}>
