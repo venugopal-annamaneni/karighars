@@ -95,7 +95,12 @@ export default function ProjectDetailPage() {
 
       if (projectRes.ok) {
         const data = await projectRes.json();
-        setProject(data.project);
+        // Merge the project data with payment totals
+        setProject({
+          ...data.project,
+          payments_received: data.payments_received,
+          payments_made: data.payments_made
+        });
         setEstimation(data.estimation);
         
         if (data.estimation) {
