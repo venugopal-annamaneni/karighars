@@ -312,6 +312,26 @@ export default function NewProjectPage() {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="biz_model">Business Model *</Label>
+                <Select
+                  value={formData.biz_model_id}
+                  onValueChange={(value) => setFormData({ ...formData, biz_model_id: value })}
+                  required
+                >
+                  <SelectTrigger id="biz_model">
+                    <SelectValue placeholder="Select a business model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bizModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id.toString()}>
+                        {model.name} - {model.margin_percentage}% margin
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Link href="/projects">
                   <Button type="button" variant="outline">
