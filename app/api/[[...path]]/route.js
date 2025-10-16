@@ -519,28 +519,23 @@ export async function POST(request, { params }) {
           project_id, estimation_id, customer_id, payment_type, milestone_id, 
           expected_percentage, actual_percentage, override_reason,
           amount, payment_date, mode, reference_number, remarks, created_by,
-          gst_amount, is_gst_applicable, gst_percentage, receipt_url
+          gst_amount, is_gst_applicable, gst_percentage, receipt_url, status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *`,
         [body.project_id, body.estimation_id, body.customer_id, body.payment_type, body.milestone_id || null,
          expectedPercentage, actualPercentage, body.override_reason || null,
          body.amount, body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id,
-         body.gst_amount || 0, body.is_gst_applicable || false, body.gst_percentage || 0, body.receipt_url || null]
+         body.gst_amount || 0, body.is_gst_applicable || false, body.gst_percentage || 0, body.receipt_url || null, body.status || 'pending']
       );
 
-      // Create ledger entry
-      await query(
-        `INSERT INTO project_ledger (project_id, source_table, source_id, entry_type, amount, remarks)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [body.project_id, 'customer_payments_in', result.rows[0].id, 'credit', body.amount, body.remarks]
-      );
+      // DO NOT create ledger entry yet - only when payment is approved by Finance
 
       // Log activity
       await query(
         `INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [body.project_id, 'customer_payments_in', result.rows[0].id, session.user.id, 'payment_received', 
-         `Payment received: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''}`]
+        [body.project_id, 'customer_payments_in', result.rows[0].id, session.user.id, 'payment_recorded', 
+         `Payment recorded: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''} - Pending receipt upload`]
       );
 
       return NextResponse.json({ payment: result.rows[0] });
