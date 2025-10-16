@@ -145,11 +145,19 @@ export default function EstimationPage() {
       }
     });
     
+    const subtotal = woodwork + misc_internal + misc_external;
+    const serviceCharge = (subtotal * (formData.service_charge_percentage || 0)) / 100;
+    const discount = (subtotal * (formData.discount_percentage || 0)) / 100;
+    const finalTotal = subtotal + serviceCharge - discount;
+    
     return {
       woodwork_value: woodwork,
       misc_internal_value: misc_internal,
       misc_external_value: misc_external,
-      total_value: woodwork + misc_internal + misc_external
+      subtotal: subtotal,
+      service_charge: serviceCharge,
+      discount: discount,
+      total_value: finalTotal
     };
   };
 
