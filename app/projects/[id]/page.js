@@ -43,6 +43,7 @@ export default function ProjectDetailPage() {
   const [customerPayments, setCustomerPayments] = useState([]);
   const [vendorPayments, setVendorPayments] = useState([]);
   const [vendorBOQs, setVendorBOQs] = useState([]);
+  const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPhaseDialog, setShowPhaseDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
