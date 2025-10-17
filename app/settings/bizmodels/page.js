@@ -111,11 +111,13 @@ export default function BizModelsPage() {
     setMilestones([...milestones, { 
       milestone_code: '', 
       milestone_name: '', 
-      direction: 'inflow', 
-      default_percentage: 0, 
+      direction: 'inflow',
       stage_code: '', 
       description: '', 
-      sequence_order: milestones.length + 1 
+      is_mandatory: true,
+      sequence_order: milestones.length + 1,
+      woodwork_percentage: 0,
+      misc_percentage: 0
     }]);
   };
 
