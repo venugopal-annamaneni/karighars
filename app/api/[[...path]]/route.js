@@ -630,11 +630,14 @@ export async function POST(request, { params }) {
       
       if (body.milestone_id) {
         const milestoneRes = await query(
-          'SELECT default_percentage, woodwork_percentage, misc_percentage FROM biz_model_milestones WHERE id = $1',
+          'SELECT woodwork_percentage, misc_percentage FROM biz_model_milestones WHERE id = $1',
           [body.milestone_id]
         );
         if (milestoneRes.rows.length > 0) {
-          expectedPercentage = milestoneRes.rows[0].default_percentage;
+          // Expected percentage is the sum of woodwork and misc percentages
+          const woodworkPct = parseFloat(milestoneRes.rows[0].woodwork_percentage || 0);
+          const miscPct = parseFloat(milestoneRes.rows[0].misc_percentage || 0);
+          expectedPercentage = woodworkPct + miscPct;
           
           // Calculate actual percentage if estimation exists
           // IMPORTANT: Use final_value + gst_amount for percentage calculations
