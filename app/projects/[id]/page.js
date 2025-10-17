@@ -947,6 +947,22 @@ export default function ProjectDetailPage() {
                                   : '✓ Matches expected amount'}
                               </p>
                             )}
+                            
+                            {/* GST Breakdown */}
+                            {estimation && paymentData.amount && parseFloat(paymentData.amount) > 0 && (
+                              <div className="mt-3 pt-3 border-t border-blue-200 space-y-1">
+                                <p className="text-xs font-semibold text-blue-900 mb-2">GST Breakdown (at {estimation.gst_percentage || 18}%):</p>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-blue-700">Pre-Tax Amount:</span>
+                                  <span className="font-medium">₹{(parseFloat(paymentData.amount) / (1 + (estimation.gst_percentage || 18) / 100)).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-blue-700">GST Amount:</span>
+                                  <span className="font-medium">₹{(parseFloat(paymentData.amount) - (parseFloat(paymentData.amount) / (1 + (estimation.gst_percentage || 18) / 100))).toFixed(2)}</span>
+                                </div>
+                                <p className="text-xs text-blue-600 italic mt-1">* All amounts entered above should include GST</p>
+                              </div>
+                            )}
                           </div>
                         </div>
 
