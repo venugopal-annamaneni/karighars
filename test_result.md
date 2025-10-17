@@ -161,6 +161,9 @@ backend:
         - working: "NA"
           agent: "main"
           comment: "Updated /api/calculate-payment endpoint to include GST in all calculations. Fetches gst_amount from estimations, proportionally distributes GST between woodwork and misc, calculates all percentages and amounts based on GST-inclusive values."
+        - working: "NA"
+          agent: "testing"
+          comment: "Cannot test Calculate Payment API due to authentication requirements. API endpoints require valid session. Code review shows correct implementation: fetches gst_amount from estimations, calculates GST portions for woodwork/misc, returns GST-inclusive values. Requires authenticated testing."
   
   - task: "Migration Endpoint - GST Schema Application"
     implemented: true
