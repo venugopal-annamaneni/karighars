@@ -191,8 +191,36 @@ export default function EstimationPage() {
       });
 
       if (res.ok) {
-        toast.success('Estimation saved successfully');
-        router.push(`/projects/${projectId}`);
+        const data = await res.json();
+        
+        // Check if overpayment was detected
+        if (data.warning === 'overpayment_detected' && data.overpayment) {
+          // Show overpayment alert
+          toast.warning(
+            `⚠️ OVERPAYMENT DETECTED: ₹${data.overpayment.amount.toLocaleString('en-IN')}. ` +
+            `Admin approval required. ${data.overpayment.message}`,
+            { duration: 10000 }
+          );
+          
+          // Show confirmation dialog
+          if (confirm(
+            `⚠️ OVERPAYMENT ALERT\n\n` +
+            `This estimation revision creates an overpayment of ₹${data.overpayment.amount.toLocaleString('en-IN')}.\n\n` +
+            `Total Collected: ₹${(data.estimation.final_value + data.estimation.gst_amount + data.overpayment.amount).toLocaleString('en-IN')}\n` +
+            `New Estimation: ₹${(data.estimation.final_value + data.estimation.gst_amount).toLocaleString('en-IN')}\n\n` +
+            `Status: ${data.overpayment.status}\n\n` +
+            `Next steps:\n` +
+            `1. Admin must approve the overpayment\n` +
+            `2. Create credit reversal entry\n` +
+            `3. Finance uploads credit note\n\n` +
+            `Go to project page to approve?`
+          )) {
+            router.push(`/projects/${projectId}`);
+          }
+        } else {
+          toast.success('Estimation saved successfully');
+          router.push(`/projects/${projectId}`);
+        }
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to save estimation');
