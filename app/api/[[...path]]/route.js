@@ -984,11 +984,11 @@ export async function PUT(request, { params }) {
       );
 
       // Log stage change
-      if (body.phase) {
+      if (body.stage) {
         await query(
           `INSERT INTO project_status_history (project_id, new_status, changed_by, remarks)
            VALUES ($1, $2, $3, $4)`,
-          [projectId, body.phase, session.user.id, body.remarks || '']
+          [projectId, body.stage, session.user.id, body.remarks || '']
         );
       }
 
