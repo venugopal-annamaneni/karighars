@@ -565,9 +565,9 @@ export default function ProjectDetailPage() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Update Project Phase</DialogTitle>
+                    <DialogTitle>Update Project Stage</DialogTitle>
                     <DialogDescription>
-                      Move the project to the next phase
+                      Move the project to the next stage
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleStageUpdate} className="space-y-4">
