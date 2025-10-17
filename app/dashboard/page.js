@@ -238,11 +238,11 @@ export default function DashboardPage() {
                     dataKey="value"
                   >
                     {[
-                      { name: 'Onboarding', value: projects.filter(p => p.phase === 'onboarding').length, color: '#3b82f6' },
-                      { name: '2D Design', value: projects.filter(p => p.phase === '2D').length, color: '#8b5cf6' },
-                      { name: '3D Design', value: projects.filter(p => p.phase === '3D').length, color: '#f59e0b' },
-                      { name: 'Execution', value: projects.filter(p => p.phase === 'execution').length, color: '#10b981' },
-                      { name: 'Handover', value: projects.filter(p => p.phase === 'handover').length, color: '#64748b' },
+                      { name: 'Onboarding', value: projects.filter(p => p.stage === 'onboarding').length, color: '#3b82f6' },
+                      { name: '2D Design', value: projects.filter(p => p.stage === '2D').length, color: '#8b5cf6' },
+                      { name: '3D Design', value: projects.filter(p => p.stage === '3D').length, color: '#f59e0b' },
+                      { name: 'Execution', value: projects.filter(p => p.stage === 'execution').length, color: '#10b981' },
+                      { name: 'Handover', value: projects.filter(p => p.stage === 'handover').length, color: '#64748b' },
                     ].filter(item => item.value > 0).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
