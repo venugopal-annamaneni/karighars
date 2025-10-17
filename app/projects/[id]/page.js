@@ -1306,7 +1306,7 @@ export default function ProjectDetailPage() {
                           Upload Invoice
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Upload Project Invoice</DialogTitle>
                           <DialogDescription>
