@@ -644,6 +644,21 @@ export async function PUT(request, { params }) {
   const body = await request.json();
 
   try {
+    // Update Customer
+    if (path.startsWith('customers/') && path.split('/').length === 2) {
+      const customerId = path.split('/')[1];
+      const result = await query(
+        `UPDATE customers 
+         SET name = $1, contact_person = $2, phone = $3, email = $4, address = $5, 
+             gst_number = $6, kyc_type = $7, business_type = $8, bank_details = $9
+         WHERE id = $10 RETURNING *`,
+        [body.name, body.contact_person, body.phone, body.email, body.address,
+         body.gst_number, body.kyc_type, body.business_type, JSON.stringify(body.bank_details || {}), customerId]
+      );
+
+      return NextResponse.json({ customer: result.rows[0] });
+    }
+
     // Update Project
     if (path.startsWith('projects/')) {
       const projectId = path.split('/')[1];
