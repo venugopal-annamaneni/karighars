@@ -267,6 +267,7 @@ export default function CustomersPage() {
                   )}
                 </CardContent>
               </Card>
+              </Link>
             ))
           )}
         </div>
