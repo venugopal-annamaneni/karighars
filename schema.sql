@@ -1,7 +1,14 @@
 --
--- KG Interiors Finance Management System - Clean Database Schema
+-- KG Interiors Finance Management System - Database Schema
 -- PostgreSQL 15+
--- Generated: June 2025
+-- Last Updated: June 2025
+--
+-- RECENT CHANGES:
+-- - Added related_estimation_id to customer_payments_in (for credit note tracking)
+-- - Added overpayment workflow columns to project_estimations
+-- - Removed expected_percentage from customer_payments_in (kept in other tables)
+-- - Renamed projects.phase to projects.stage
+-- - Added stage_code-based workflow
 --
 
 -- Drop existing tables if they exist (optional - uncomment if needed)
