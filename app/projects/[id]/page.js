@@ -1508,7 +1508,7 @@ export default function ProjectDetailPage() {
                     <p className="font-medium">{project.location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Phase</p>
+                    <p className="text-sm text-muted-foreground mb-1">Stage</p>
                     <Badge className={getStageColor(project.stage)}>
                       {project.stage}
                     </Badge>
