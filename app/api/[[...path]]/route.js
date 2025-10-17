@@ -290,15 +290,18 @@ export async function GET(request, { params }) {
       }
 
       // Get all APPROVED payments for this project (cumulative)
+      // Note: woodwork_amount and misc_amount are stored as pre-tax values
+      // We need to add GST back to compare with GST-inclusive targets
       const paymentsRes = await query(`
-        SELECT COALESCE(SUM(woodwork_amount), 0) as total_woodwork,
-               COALESCE(SUM(misc_amount), 0) as total_misc
+        SELECT 
+          COALESCE(SUM(woodwork_amount * (1 + gst_percentage / 100)), 0) as total_woodwork_with_gst,
+          COALESCE(SUM(misc_amount * (1 + gst_percentage / 100)), 0) as total_misc_with_gst
         FROM customer_payments_in
         WHERE project_id = $1 AND status = 'approved'
       `, [projectId]);
 
-      const collectedWoodwork = parseFloat(paymentsRes.rows[0].total_woodwork || 0);
-      const collectedMisc = parseFloat(paymentsRes.rows[0].total_misc || 0);
+      const collectedWoodwork = parseFloat(paymentsRes.rows[0].total_woodwork_with_gst || 0);
+      const collectedMisc = parseFloat(paymentsRes.rows[0].total_misc_with_gst || 0);
 
       // Calculate collected percentages (based on GST-inclusive values)
       const collectedWoodworkPercentage = woodworkValueWithGst > 0 ? (collectedWoodwork / woodworkValueWithGst) * 100 : 0;
@@ -311,7 +314,7 @@ export async function GET(request, { params }) {
       const remainingWoodworkPercentage = Math.max(0, targetWoodworkPercentage - collectedWoodworkPercentage);
       const remainingMiscPercentage = Math.max(0, targetMiscPercentage - collectedMiscPercentage);
 
-      // Calculate expected amounts (GST-inclusive)
+      // Calculate expected amounts (GST-inclusive) - REMAINING amounts only
       const expectedWoodworkAmount = (woodworkValueWithGst * remainingWoodworkPercentage) / 100;
       const expectedMiscAmount = (miscValueWithGst * remainingMiscPercentage) / 100;
       const expectedTotal = expectedWoodworkAmount + expectedMiscAmount;
