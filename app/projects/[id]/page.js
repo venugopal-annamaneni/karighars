@@ -873,22 +873,80 @@ export default function ProjectDetailPage() {
                           </div>
                         )}
 
-                        <div className="space-y-2">
-                          <Label>Actual Amount Collected *</Label>
-                          <Input
-                            type="number"
-                            placeholder="Enter actual amount collected"
-                            value={paymentData.amount}
-                            onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
-                            required
-                          />
-                          {paymentData.expected_amount && paymentData.amount && (
-                            <p className={`text-sm ${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 ? 'text-amber-600' : 'text-green-600'}`}>
-                              {Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 
-                                ? `⚠️ Difference: ₹${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)).toFixed(2)}`
-                                : '✓ Matches expected amount'}
-                            </p>
-                          )}
+                        {/* Input fields for actual amounts */}
+                        <div className="border-t pt-4 space-y-3">
+                          <p className="text-sm font-semibold">Enter Actual Amount Collected:</p>
+                          
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label>Amount towards Woodwork (₹) *</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0"
+                                value={paymentData.woodwork_amount || ''}
+                                onChange={(e) => {
+                                  const woodwork = e.target.value;
+                                  const misc = paymentData.misc_amount || 0;
+                                  const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
+                                  setPaymentData({ 
+                                    ...paymentData, 
+                                    woodwork_amount: woodwork,
+                                    amount: total.toFixed(2)
+                                  });
+                                }}
+                                required
+                              />
+                              {paymentData.calculation && paymentData.calculation.expected_woodwork_amount > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  Expected: ₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Amount towards Misc (₹) *</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0"
+                                value={paymentData.misc_amount || ''}
+                                onChange={(e) => {
+                                  const misc = e.target.value;
+                                  const woodwork = paymentData.woodwork_amount || 0;
+                                  const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
+                                  setPaymentData({ 
+                                    ...paymentData, 
+                                    misc_amount: misc,
+                                    amount: total.toFixed(2)
+                                  });
+                                }}
+                                required
+                              />
+                              {paymentData.calculation && paymentData.calculation.expected_misc_amount > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  Expected: ₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Auto-calculated Total */}
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-semibold text-blue-900">Total Amount Collected:</span>
+                              <span className="text-2xl font-bold text-blue-700">
+                                ₹{paymentData.amount ? parseFloat(paymentData.amount).toLocaleString('en-IN') : '0'}
+                              </span>
+                            </div>
+                            {paymentData.expected_amount && paymentData.amount && (
+                              <p className={`text-xs mt-1 ${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 ? 'text-amber-600' : 'text-green-600'}`}>
+                                {Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 
+                                  ? `⚠️ Difference from expected: ₹${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)).toFixed(2)}`
+                                  : '✓ Matches expected amount'}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         <div className="space-y-2">
