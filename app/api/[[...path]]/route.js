@@ -983,7 +983,7 @@ export async function PUT(request, { params }) {
         values
       );
 
-      // Log status change
+      // Log stage change
       if (body.phase) {
         await query(
           `INSERT INTO project_status_history (project_id, new_status, changed_by, remarks)
