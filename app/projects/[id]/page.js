@@ -1542,6 +1542,66 @@ export default function ProjectDetailPage() {
           </TabsContent>
         </Tabs>
       </main>
+      
+      {/* Cancel Estimation Confirmation Modal */}
+      <Dialog open={showCancelConfirmModal} onOpenChange={setShowCancelConfirmModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-orange-900">Cancel Estimation & Revert?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <p className="text-sm text-orange-900 font-medium mb-2">You are about to:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-orange-800 ml-2">
+                <li>Delete estimation version {estimation?.version}</li>
+                <li>Revert to version {(estimation?.version || 1) - 1}</li>
+                <li>Remove all items from the cancelled version</li>
+              </ul>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This will cancel the pending overpayment approval and restore the previous estimation as active.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCancelConfirmModal(false)}
+            >
+              Keep Current Version
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/estimations/${estimation.id}/cancel-overpayment`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                  });
+                  if (res.ok) {
+                    toast.success('Estimation cancelled and reverted to previous version.');
+                    setShowCancelConfirmModal(false);
+                    fetchProjectData();
+                  } else {
+                    const data = await res.json();
+                    toast.error(data.error || 'Failed to cancel estimation');
+                  }
+                } catch (error) {
+                  console.error('Error:', error);
+                  toast.error('An error occurred');
+                }
+              }}
+            >
+              Yes, Cancel & Revert
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
