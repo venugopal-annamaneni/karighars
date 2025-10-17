@@ -1251,6 +1251,62 @@ export async function PUT(request, { params }) {
       });
     }
 
+    // Upload Credit Note Document (for reversal entry)
+    if (path.startsWith('customer-payments/') && path.endsWith('/upload-credit-note')) {
+      if (session.user.role !== 'admin' && session.user.role !== 'finance') {
+        return NextResponse.json({ error: 'Forbidden - Finance/Admin only' }, { status: 403 });
+      }
+
+      const paymentId = path.split('/')[1];
+      const { credit_note_url } = await request.json();
+      
+      if (!credit_note_url) {
+        return NextResponse.json({ error: 'credit_note_url is required' }, { status: 400 });
+      }
+      
+      // Get payment details
+      const paymentRes = await query(`
+        SELECT * FROM customer_payments_in WHERE id = $1 AND payment_type = 'credit_reversal'
+      `, [paymentId]);
+      
+      if (paymentRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Credit reversal entry not found' }, { status: 404 });
+      }
+      
+      const payment = paymentRes.rows[0];
+      
+      // Update payment with credit note and mark as approved
+      await query(`
+        UPDATE customer_payments_in 
+        SET credit_note_url = $1, 
+            status = 'approved',
+            approved_by = $2,
+            approved_at = NOW()
+        WHERE id = $3
+      `, [credit_note_url, session.user.id, paymentId]);
+      
+      // Update project with credit note URL
+      await query(`
+        UPDATE projects 
+        SET credit_note_url = $1, credit_note_uploaded_at = NOW()
+        WHERE id = $2
+      `, [credit_note_url, payment.project_id]);
+      
+      // Update ledger entry to mark as finalized
+      await query(`
+        UPDATE project_ledger 
+        SET description = description || ' [Credit Note Uploaded]'
+        WHERE source_table = 'customer_payments_in' 
+        AND source_id = $1
+      `, [paymentId]);
+      
+      return NextResponse.json({
+        message: 'Credit note uploaded and reversal approved',
+        payment_id: paymentId,
+        credit_note_url: credit_note_url
+      });
+    }
+
     // Update Purchase Order
     if (path.startsWith('purchase-orders/')) {
       const orderId = path.split('/')[1];
