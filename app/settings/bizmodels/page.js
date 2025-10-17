@@ -25,6 +25,7 @@ export default function BizModelsPage() {
   const [modelDetails, setModelDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingModelId, setEditingModelId] = useState(null);
   
   const [newModel, setNewModel] = useState({
     code: '',
