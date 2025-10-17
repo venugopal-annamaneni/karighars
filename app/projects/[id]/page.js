@@ -1419,10 +1419,10 @@ export default function ProjectDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium capitalize">{entry.transaction_type}</p>
-                            {entry.entry_type === 'credit' && (
+                            {entry.amount > 0 && (
                               <Badge className="bg-green-100 text-green-700">Inflow</Badge>
                             )}
-                            {entry.entry_type === 'debit' && (
+                            {entry.amount < 0 && (
                               <Badge className="bg-red-100 text-red-700">Outflow</Badge>
                             )}
                           </div>
