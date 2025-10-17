@@ -1205,28 +1205,42 @@ export default function ProjectDetailPage() {
                             <div>
                               <input
                                 type="file"
-                                id={`receipt-${payment.id}`}
+                                id={`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`}
                                 accept="image/*,.pdf"
                                 className="hidden"
                                 onChange={(e) => {
                                   const file = e.target.files[0];
-                                  if (file) handlePaymentReceiptUpload(payment.id, file);
+                                  if (file) {
+                                    if (payment.payment_type === 'credit_note_reversal') {
+                                      handleCreditNoteUpload(payment.id, file);
+                                    } else {
+                                      handlePaymentReceiptUpload(payment.id, file);
+                                    }
+                                  }
                                 }}
                                 disabled={uploadingReceipt[payment.id]}
                               />
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => document.getElementById(`receipt-${payment.id}`).click()}
+                                onClick={() => document.getElementById(`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
                                 disabled={uploadingReceipt[payment.id]}
+                                className={payment.payment_type === 'credit_note_reversal' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
                               >
-                                {uploadingReceipt[payment.id] ? 'Uploading...' : 'Upload Receipt'}
+                                {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'credit_note_reversal' ? 'Upload Credit Note' : 'Upload Receipt'}
                               </Button>
                             </div>
                           )}
                           {payment.receipt_url && (
                             <Button size="sm" variant="ghost" asChild>
                               <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
+                          {payment.credit_note_url && (
+                            <Button size="sm" variant="ghost" className="text-red-600" asChild>
+                              <a href={payment.credit_note_url} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                               </a>
                             </Button>
