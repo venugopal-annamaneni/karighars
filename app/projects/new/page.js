@@ -68,10 +68,12 @@ export default function NewProjectPage() {
       
       if (bizModelsRes.ok) {
         const data = await bizModelsRes.json();
-        setBizModels(data.bizModels);
-        // Set default to first active bizmodel
-        if (data.bizModels.length > 0) {
-          setFormData(prev => ({ ...prev, biz_model_id: data.bizModels[0].id.toString() }));
+        // Filter to only show published BizModels
+        const publishedModels = data.bizModels.filter(m => m.status === 'published');
+        setBizModels(publishedModels);
+        // Set default to first published bizmodel
+        if (publishedModels.length > 0) {
+          setFormData(prev => ({ ...prev, biz_model_id: publishedModels[0].id.toString() }));
         }
       }
     } catch (error) {
