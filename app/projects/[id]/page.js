@@ -178,12 +178,6 @@ export default function ProjectDetailPage() {
   const handleRecordPayment = async (e) => {
     e.preventDefault();
     try {
-      // Calculate GST amount
-      let gstAmount = 0;
-      if (paymentData.is_gst_applicable && paymentData.gst_percentage) {
-        gstAmount = calculateGST(paymentData.amount, paymentData.gst_percentage);
-      }
-
       // Use direct woodwork and misc amounts entered by user
       const woodworkAmount = parseFloat(paymentData.woodwork_amount || 0);
       const miscAmount = parseFloat(paymentData.misc_amount || 0);
@@ -211,9 +205,6 @@ export default function ProjectDetailPage() {
           reference_number: paymentData.reference_number,
           remarks: paymentData.remarks,
           override_reason: paymentData.override_reason,
-          is_gst_applicable: paymentData.is_gst_applicable,
-          gst_percentage: paymentData.gst_percentage || 0,
-          gst_amount: gstAmount,
           status: 'pending', // Payment starts as pending until receipt is uploaded
           woodwork_amount: woodworkAmount.toFixed(2),
           misc_amount: miscAmount.toFixed(2)
