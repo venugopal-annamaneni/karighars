@@ -232,7 +232,7 @@ Before going to production:
 Your application is using this connection string (from `.env`):
 
 ```
-postgresql://postgres:Karighars$2025!!@database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com:5432/kg_interiors_finance?sslmode=require
+postgresql://postgres:Karighars$2025!!@database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com:5432/kg_interiors_finance?sslmode=require
 ```
 
 ---
