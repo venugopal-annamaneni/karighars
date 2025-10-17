@@ -26,14 +26,21 @@ class GST_RefactorTester:
         })
         self.test_results = []
 
-def log_test(test_name, status, message="", response_data=None):
-    """Log test results with consistent formatting"""
-    status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
-    print(f"{status_symbol} {test_name}: {message}")
-    if response_data and isinstance(response_data, dict):
-        if 'error' in response_data:
-            print(f"   Error: {response_data['error']}")
-    print()
+        
+    def log_result(self, test_name, success, message, details=None):
+        """Log test result"""
+        result = {
+            'test': test_name,
+            'success': success,
+            'message': message,
+            'details': details,
+            'timestamp': datetime.now().isoformat()
+        }
+        self.test_results.append(result)
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status}: {test_name} - {message}")
+        if details:
+            print(f"   Details: {details}")
 
 def make_request(method, endpoint, data=None, expected_status=200):
     """Make HTTP request with error handling"""
