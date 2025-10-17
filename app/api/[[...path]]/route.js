@@ -808,6 +808,52 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ boq: result.rows[0] });
     }
 
+    // Build BizModel (lock and increment version)
+    if (path.startsWith('biz-models/') && path.endsWith('/build')) {
+      if (session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+      }
+
+      const bizModelId = path.split('/')[1];
+
+      // Get current BizModel
+      const currentModel = await query('SELECT * FROM biz_models WHERE id = $1', [bizModelId]);
+      
+      if (currentModel.rows.length === 0) {
+        return NextResponse.json({ error: 'BizModel not found' }, { status: 404 });
+      }
+
+      if (currentModel.rows[0].status === 'built') {
+        return NextResponse.json({ error: 'BizModel is already built' }, { status: 400 });
+      }
+
+      // Increment version (e.g., V1 -> V2, V1.0 -> V1.1, or just increment number)
+      const currentVersion = currentModel.rows[0].version;
+      let newVersion;
+      
+      // Try to parse version as number or increment string
+      const versionMatch = currentVersion.match(/(\d+)$/);
+      if (versionMatch) {
+        const num = parseInt(versionMatch[1]);
+        newVersion = currentVersion.replace(/\d+$/, (num + 1).toString());
+      } else {
+        newVersion = currentVersion + '.1';
+      }
+
+      // Update BizModel status to built and increment version
+      const result = await query(
+        `UPDATE biz_models 
+         SET status = 'built', version = $1, built_at = NOW(), built_by = $2, updated_at = NOW()
+         WHERE id = $3 RETURNING *`,
+        [newVersion, session.user.id, bizModelId]
+      );
+
+      return NextResponse.json({ 
+        bizModel: result.rows[0],
+        message: `BizModel built successfully. Version upgraded from ${currentVersion} to ${newVersion}`
+      });
+    }
+
     // Update Purchase Order
     if (path.startsWith('purchase-orders/')) {
       const orderId = path.split('/')[1];
