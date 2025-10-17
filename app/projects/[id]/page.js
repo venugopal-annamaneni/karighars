@@ -47,7 +47,7 @@ export default function ProjectDetailPage() {
   const [documents, setDocuments] = useState([]);
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showPhaseDialog, setShowPhaseDialog] = useState(false);
+  const [showStageDialog, setShowStageDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showEstimationDialog, setShowEstimationDialog] = useState(false);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
