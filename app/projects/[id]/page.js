@@ -184,6 +184,27 @@ export default function ProjectDetailPage() {
         gstAmount = calculateGST(paymentData.amount, paymentData.gst_percentage);
       }
 
+      // Calculate woodwork and misc breakup
+      let woodworkAmount = 0;
+      let miscAmount = 0;
+
+      if (paymentData.calculation && !paymentData.calculation.is_misc_payment) {
+        const actualAmount = parseFloat(paymentData.amount);
+        const expectedTotal = parseFloat(paymentData.calculation.expected_total);
+        
+        if (expectedTotal > 0) {
+          // Proportionally distribute actual amount based on expected breakup
+          const woodworkRatio = parseFloat(paymentData.calculation.expected_woodwork_amount) / expectedTotal;
+          const miscRatio = parseFloat(paymentData.calculation.expected_misc_amount) / expectedTotal;
+          
+          woodworkAmount = actualAmount * woodworkRatio;
+          miscAmount = actualAmount * miscRatio;
+        }
+      } else {
+        // MISC_PAYMENT or no milestone: allocate all to misc
+        miscAmount = parseFloat(paymentData.amount);
+      }
+
       const res = await fetch('/api/customer-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,7 +222,9 @@ export default function ProjectDetailPage() {
           is_gst_applicable: paymentData.is_gst_applicable,
           gst_percentage: paymentData.gst_percentage || 0,
           gst_amount: gstAmount,
-          status: 'pending' // Payment starts as pending until receipt is uploaded
+          status: 'pending', // Payment starts as pending until receipt is uploaded
+          woodwork_amount: woodworkAmount.toFixed(2),
+          misc_amount: miscAmount.toFixed(2)
         })
       });
 
