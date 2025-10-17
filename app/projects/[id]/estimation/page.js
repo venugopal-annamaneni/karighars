@@ -179,52 +179,80 @@ export default function EstimationPage() {
     try {
       const totals = calculateTotals();
       
-      const res = await fetch('/api/estimations', {
+      // First, check for overpayment before creating
+      const checkRes = await fetch('/api/check-overpayment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: projectId,
-          ...totals,
-          remarks: formData.remarks,
-          status: formData.status,
-          service_charge_percentage: formData.service_charge_percentage,
-          discount_percentage: formData.discount_percentage,
-          gst_percentage: formData.gst_percentage,
-          items: items.filter(item => item.description.trim() !== '')
+          final_value: totals.finalValue,
+          gst_amount: totals.gstAmount
         })
+      });
+      
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        
+        if (checkData.has_overpayment) {
+          // Show modal and wait for user decision
+          setOverpaymentData(checkData);
+          setPendingSubmitData({
+            project_id: projectId,
+            ...totals,
+            remarks: formData.remarks,
+            status: formData.status,
+            service_charge_percentage: formData.service_charge_percentage,
+            discount_percentage: formData.discount_percentage,
+            gst_percentage: formData.gst_percentage,
+            items: items.filter(item => item.description.trim() !== '')
+          });
+          setShowOverpaymentModal(true);
+          setSaving(false);
+          return; // Stop here and wait for user action
+        }
+      }
+      
+      // No overpayment, proceed normally
+      await saveEstimation({
+        project_id: projectId,
+        ...totals,
+        remarks: formData.remarks,
+        status: formData.status,
+        service_charge_percentage: formData.service_charge_percentage,
+        discount_percentage: formData.discount_percentage,
+        gst_percentage: formData.gst_percentage,
+        items: items.filter(item => item.description.trim() !== '')
+      });
+      
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('An error occurred');
+      setSaving(false);
+    }
+  };
+  
+  const saveEstimation = async (data) => {
+    try {
+      const res = await fetch('/api/estimations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const responseData = await res.json();
         
-        // Check if overpayment was detected
-        if (data.warning === 'overpayment_detected' && data.overpayment) {
-          // Show overpayment alert
+        // Check if overpayment was detected (shouldn't happen now, but keep for safety)
+        if (responseData.warning === 'overpayment_detected' && responseData.overpayment) {
           toast.warning(
-            `⚠️ OVERPAYMENT DETECTED: ₹${data.overpayment.amount.toLocaleString('en-IN')}. ` +
-            `Admin approval required. ${data.overpayment.message}`,
-            { duration: 10000 }
+            `⚠️ OVERPAYMENT DETECTED: ₹${responseData.overpayment.amount.toLocaleString('en-IN')}. Admin approval required.`,
+            { duration: 8000 }
           );
-          
-          // Show confirmation dialog
-          if (confirm(
-            `⚠️ OVERPAYMENT ALERT\n\n` +
-            `This estimation revision creates an overpayment of ₹${data.overpayment.amount.toLocaleString('en-IN')}.\n\n` +
-            `Total Collected: ₹${(data.estimation.final_value + data.estimation.gst_amount + data.overpayment.amount).toLocaleString('en-IN')}\n` +
-            `New Estimation: ₹${(data.estimation.final_value + data.estimation.gst_amount).toLocaleString('en-IN')}\n\n` +
-            `Status: ${data.overpayment.status}\n\n` +
-            `Next steps:\n` +
-            `1. Admin must approve the overpayment\n` +
-            `2. Create credit reversal entry\n` +
-            `3. Finance uploads credit note\n\n` +
-            `Go to project page to approve?`
-          )) {
-            router.push(`/projects/${projectId}`);
-          }
         } else {
-          toast.success('Estimation saved successfully');
-          router.push(`/projects/${projectId}`);
+          toast.success('Estimation saved successfully!');
         }
+        
+        router.push(`/projects/${projectId}`);
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to save estimation');
