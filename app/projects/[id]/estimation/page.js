@@ -184,6 +184,7 @@ export default function EstimationPage() {
           status: formData.status,
           service_charge_percentage: formData.service_charge_percentage,
           discount_percentage: formData.discount_percentage,
+          gst_percentage: formData.gst_percentage,
           items: items.filter(item => item.description.trim() !== '')
         })
       });
