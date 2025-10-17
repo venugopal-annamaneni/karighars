@@ -1445,9 +1445,9 @@ export default function ProjectDetailPage() {
                         </div>
                         <div className="text-right ml-6">
                           <p className={`text-xl font-bold ${
-                            entry.entry_type === 'credit' ? 'text-green-600' : 'text-red-600'
+                            entry.amount < 0 ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            {entry.entry_type === 'credit' ? '+' : '-'}{formatCurrency(entry.amount)}
+                            {formatCurrency(entry.amount)}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Balance: {formatCurrency(entry.running_balance)}
