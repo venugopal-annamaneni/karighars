@@ -187,26 +187,9 @@ export default function ProjectDetailPage() {
         gstAmount = calculateGST(paymentData.amount, paymentData.gst_percentage);
       }
 
-      // Calculate woodwork and misc breakup
-      let woodworkAmount = 0;
-      let miscAmount = 0;
-
-      if (paymentData.calculation && !paymentData.calculation.is_misc_payment) {
-        const actualAmount = parseFloat(paymentData.amount);
-        const expectedTotal = parseFloat(paymentData.calculation.expected_total);
-        
-        if (expectedTotal > 0) {
-          // Proportionally distribute actual amount based on expected breakup
-          const woodworkRatio = parseFloat(paymentData.calculation.expected_woodwork_amount) / expectedTotal;
-          const miscRatio = parseFloat(paymentData.calculation.expected_misc_amount) / expectedTotal;
-          
-          woodworkAmount = actualAmount * woodworkRatio;
-          miscAmount = actualAmount * miscRatio;
-        }
-      } else {
-        // MISC_PAYMENT or no milestone: allocate all to misc
-        miscAmount = parseFloat(paymentData.amount);
-      }
+      // Use direct woodwork and misc amounts entered by user
+      const woodworkAmount = parseFloat(paymentData.woodwork_amount || 0);
+      const miscAmount = parseFloat(paymentData.misc_amount || 0);
 
       // Get payment type from milestone or use default
       let paymentType = 'other';
@@ -247,6 +230,8 @@ export default function ProjectDetailPage() {
           milestone_id: '',
           payment_type: 'advance_10',
           amount: '',
+          woodwork_amount: '',
+          misc_amount: '',
           mode: 'bank',
           reference_number: '',
           remarks: '',
