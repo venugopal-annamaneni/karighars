@@ -6,7 +6,7 @@ Direct API testing to understand the authentication flow
 import requests
 import json
 
-BASE_URL = "https://finance-manager-160.preview.emergentagent.com"
+BASE_URL = "https://finance-dashboard-164.preview.emergentagent.com"
 
 def test_api_response(endpoint):
     """Test API endpoint and show actual response"""
