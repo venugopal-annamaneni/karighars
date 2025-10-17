@@ -228,6 +228,32 @@ export default function BizModelsPage() {
     }
   };
 
+  const handleToggleStatus = async (modelId, e) => {
+    e.stopPropagation(); // Prevent card selection
+    try {
+      const res = await fetch(`/api/biz-models/${modelId}/toggle-status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(data.message || 'Status updated successfully');
+        fetchBizModels();
+        if (selectedModel === modelId) {
+          handleModelSelect(modelId); // Refresh details
+        }
+      } else {
+        toast.error(data.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
