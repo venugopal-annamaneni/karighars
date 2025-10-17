@@ -109,7 +109,7 @@ PGPASSWORD='Karighars$2025!!' psql \
 # Then import:
 
 PGPASSWORD='Karighars$2025!!' psql \
-  -h database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
+  -h database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
   -U postgres \
   -p 5432 \
   -d kg_interiors_finance \
