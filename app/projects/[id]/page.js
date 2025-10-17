@@ -794,7 +794,7 @@ export default function ProjectDetailPage() {
                         Record Payment
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>Record Customer Payment</DialogTitle>
                         <DialogDescription>
