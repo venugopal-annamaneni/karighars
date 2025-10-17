@@ -137,15 +137,18 @@ backend:
   
   - task: "Payment API - GST Removal & GST-Inclusive Calculations"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Updated POST /api/customer-payments to remove gst_amount, is_gst_applicable, gst_percentage fields. Updated percentage calculations to use final_value + gst_amount for accurate milestone tracking."
+        - working: true
+          agent: "testing"
+          comment: "Payment API GST removal verified successfully. Created test payment without any GST fields (gst_amount, is_gst_applicable, gst_percentage). Database schema correctly has no GST columns in customer_payments_in table. Payment creation works properly without GST data."
   
   - task: "Calculate Payment API - GST-Inclusive Calculations"
     implemented: true
