@@ -178,9 +178,22 @@ export default function ProjectDetailPage() {
   const handleRecordPayment = async (e) => {
     e.preventDefault();
     try {
+      // Get GST percentage from estimation (default 18% if not available)
+      const gstPercentage = parseFloat(estimation?.gst_percentage || 18);
+      
+      // Back-calculate pre-tax amount and GST amount from total
+      const totalAmount = parseFloat(paymentData.amount || 0);
+      const preTaxAmount = totalAmount / (1 + gstPercentage / 100);
+      const gstAmount = totalAmount - preTaxAmount;
+      
       // Use direct woodwork and misc amounts entered by user
+      // These should also be GST-inclusive amounts
       const woodworkAmount = parseFloat(paymentData.woodwork_amount || 0);
       const miscAmount = parseFloat(paymentData.misc_amount || 0);
+      
+      // Back-calculate pre-tax woodwork and misc
+      const preTaxWoodwork = woodworkAmount / (1 + gstPercentage / 100);
+      const preTaxMisc = miscAmount / (1 + gstPercentage / 100);
 
       // Get payment type from milestone or use default
       let paymentType = 'other';
@@ -200,14 +213,17 @@ export default function ProjectDetailPage() {
           estimation_id: estimation?.id,
           milestone_id: paymentData.milestone_id || null,
           payment_type: paymentType,
-          amount: paymentData.amount,
+          amount: totalAmount.toFixed(2),
+          pre_tax_amount: preTaxAmount.toFixed(2),
+          gst_amount: gstAmount.toFixed(2),
+          gst_percentage: gstPercentage,
           mode: paymentData.mode,
           reference_number: paymentData.reference_number,
           remarks: paymentData.remarks,
           override_reason: paymentData.override_reason,
           status: 'pending', // Payment starts as pending until receipt is uploaded
-          woodwork_amount: woodworkAmount.toFixed(2),
-          misc_amount: miscAmount.toFixed(2)
+          woodwork_amount: preTaxWoodwork.toFixed(2),
+          misc_amount: preTaxMisc.toFixed(2)
         })
       });
 
