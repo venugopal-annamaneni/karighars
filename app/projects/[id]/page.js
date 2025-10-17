@@ -883,11 +883,13 @@ export default function ProjectDetailPage() {
                               <SelectContent>
                                 <SelectItem value="none">No milestone</SelectItem>
                                 <SelectItem value="MISC">🎯 Ad-hoc Payment (MISC)</SelectItem>
-                                {milestones.map((milestone) => (
-                                  <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                                    {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
-                                  </SelectItem>
-                                ))}
+                                {milestones
+                                  .filter(milestone => milestone.stage_code === project.stage)
+                                  .map((milestone) => (
+                                    <SelectItem key={milestone.id} value={milestone.id.toString()}>
+                                      {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             {paymentData.milestone_id === 'MISC' && (
