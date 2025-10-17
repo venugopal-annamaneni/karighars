@@ -223,10 +223,7 @@ export default function ProjectDetailPage() {
           mode: 'bank',
           reference_number: '',
           remarks: '',
-          override_reason: '',
-          is_gst_applicable: false,
-          gst_percentage: '',
-          gst_amount: 0
+          override_reason: ''
         });
         fetchProjectData();
       } else {
