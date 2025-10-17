@@ -151,6 +151,8 @@ export default function EstimationPage() {
     const serviceCharge = (subtotal * (formData.service_charge_percentage || 0)) / 100;
     const discount = (subtotal * (formData.discount_percentage || 0)) / 100;
     const finalTotal = subtotal + serviceCharge - discount;
+    const gstAmount = (finalTotal * (formData.gst_percentage || 0)) / 100;
+    const grandTotal = finalTotal + gstAmount;
     
     return {
       woodwork_value: woodwork,
@@ -159,7 +161,9 @@ export default function EstimationPage() {
       subtotal: subtotal,
       service_charge: serviceCharge,
       discount: discount,
-      total_value: finalTotal
+      total_value: finalTotal,
+      gst_amount: gstAmount,
+      grand_total: grandTotal
     };
   };
 
