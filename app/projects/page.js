@@ -65,7 +65,7 @@ export default function ProjectsPage() {
     }
 
     if (phaseFilter !== 'all') {
-      filtered = filtered.filter((p) => p.phase === phaseFilter);
+      filtered = filtered.filter((p) => p.stage === phaseFilter);
     }
 
     setFilteredProjects(filtered);
