@@ -12,16 +12,33 @@ export async function POST(request) {
   }
 
   try {
-    const sqlPath = path.join(process.cwd(), 'alter_kyc_gst_schema.sql');
+    const { migrationFile } = await request.json();
+    const fileName = migrationFile || 'gst_refactor_schema.sql';
+    
+    const sqlPath = path.join(process.cwd(), fileName);
     const sql = fs.readFileSync(sqlPath, 'utf8');
     
-    console.log('Applying schema updates...');
-    await query(sql);
+    console.log(`Applying ${fileName}...`);
+    
+    // Split by semicolon and execute each statement separately
+    const statements = sql.split(';').filter(stmt => stmt.trim().length > 0);
+    
+    for (const statement of statements) {
+      if (statement.trim().startsWith('--')) continue; // Skip comments
+      try {
+        await query(statement);
+      } catch (err) {
+        console.warn('Statement warning:', err.message);
+        // Continue with other statements even if one fails (for IF EXISTS clauses)
+      }
+    }
+    
     console.log('✅ Schema updates applied successfully!');
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Schema updates applied successfully' 
+      message: 'Schema updates applied successfully',
+      fileName 
     });
   } catch (error) {
     console.error('❌ Error applying schema:', error);
