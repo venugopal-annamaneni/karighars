@@ -968,41 +968,6 @@ export default function ProjectDetailPage() {
                             placeholder="Add any notes..."
                           />
                         </div>
-                        
-                        <div className="border-t pt-4 space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id="gst_applicable"
-                              checked={paymentData.is_gst_applicable}
-                              onChange={(e) => setPaymentData({ ...paymentData, is_gst_applicable: e.target.checked })}
-                              className="h-4 w-4 rounded border-gray-300"
-                            />
-                            <Label htmlFor="gst_applicable" className="font-normal">GST Applicable</Label>
-                          </div>
-                          
-                          {paymentData.is_gst_applicable && (
-                            <div className="space-y-2">
-                              <Label>GST Percentage (%)</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="e.g., 18"
-                                value={paymentData.gst_percentage}
-                                onChange={(e) => {
-                                  const gstPercentage = e.target.value;
-                                  const gstAmount = calculateGST(paymentData.amount, gstPercentage);
-                                  setPaymentData({ ...paymentData, gst_percentage: gstPercentage, gst_amount: gstAmount });
-                                }}
-                              />
-                              {paymentData.gst_percentage && paymentData.amount && (
-                                <p className="text-sm text-muted-foreground">
-                                  GST Amount: ₹{calculateGST(paymentData.amount, paymentData.gst_percentage).toFixed(2)}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
 
                         <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-4">
                           <p className="text-sm text-amber-800">
