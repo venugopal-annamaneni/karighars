@@ -528,6 +528,10 @@ export async function POST(request, { params }) {
       const discountAmount = (totalValue * discountPercentage) / 100;
       const finalValue = totalValue + serviceChargeAmount - discountAmount;
       
+      // Calculate GST (default 18% if not provided)
+      const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
+      const gstAmount = (finalValue * gstPercentage) / 100;
+      
       // Check if discount exceeds limit
       const requiresApproval = discountPercentage > maxDiscountPercentage;
       const approvalStatus = requiresApproval ? 'pending' : 'approved';
@@ -536,12 +540,14 @@ export async function POST(request, { params }) {
         `INSERT INTO project_estimations (
           project_id, version, total_value, woodwork_value, misc_internal_value, misc_external_value, 
           service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
+          gst_percentage, gst_amount,
           requires_approval, approval_status, remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
         [body.project_id, nextVersion, totalValue, body.woodwork_value || 0, 
          body.misc_internal_value || 0, body.misc_external_value || 0, 
          serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
+         gstPercentage, gstAmount,
          requiresApproval, approvalStatus, body.remarks, body.status || 'draft', session.user.id]
       );
 
