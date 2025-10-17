@@ -596,7 +596,7 @@ export default function ProjectDetailPage() {
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button type="button" variant="outline" onClick={() => setShowStageDialog(false)}>Cancel</Button>
-                      <Button type="submit">Update Phase</Button>
+                      <Button type="submit">Update Stage</Button>
                     </div>
                   </form>
                 </DialogContent>
