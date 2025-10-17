@@ -199,9 +199,9 @@ export async function GET(request, { params }) {
       const projectId = path.split('/')[1];
       const milestoneId = path.split('/')[2];
 
-      // Get project estimation
+      // Get project estimation (including GST)
       const estRes = await query(`
-        SELECT woodwork_value, misc_internal_value, misc_external_value
+        SELECT woodwork_value, misc_internal_value, misc_external_value, gst_amount
         FROM project_estimations
         WHERE project_id = $1
         ORDER BY created_at DESC
@@ -215,6 +215,16 @@ export async function GET(request, { params }) {
       const estimation = estRes.rows[0];
       const woodworkValue = parseFloat(estimation.woodwork_value || 0);
       const miscValue = parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0);
+      const gstAmount = parseFloat(estimation.gst_amount || 0);
+      
+      // Calculate GST portions for woodwork and misc
+      const totalBeforeGst = woodworkValue + miscValue;
+      const woodworkGst = totalBeforeGst > 0 ? (woodworkValue / totalBeforeGst) * gstAmount : 0;
+      const miscGst = totalBeforeGst > 0 ? (miscValue / totalBeforeGst) * gstAmount : 0;
+      
+      // Total values INCLUDING GST
+      const woodworkValueWithGst = woodworkValue + woodworkGst;
+      const miscValueWithGst = miscValue + miscGst;
 
       // Get milestone config
       const milestoneRes = await query(`
