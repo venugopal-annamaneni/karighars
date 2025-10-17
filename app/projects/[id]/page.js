@@ -735,28 +735,7 @@ export default function ProjectDetailPage() {
                     )}
                     {(estimation.created_by === session.user.id || session.user.role === 'admin') && (
                       <Button 
-                        onClick={async () => {
-                          if (!confirm(`Are you sure you want to cancel this estimation and revert to version ${estimation.version - 1}?`)) {
-                            return;
-                          }
-                          try {
-                            const res = await fetch(`/api/estimations/${estimation.id}/cancel-overpayment`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({})
-                            });
-                            if (res.ok) {
-                              toast.success('Estimation cancelled and reverted to previous version.');
-                              fetchProjectData();
-                            } else {
-                              const data = await res.json();
-                              toast.error(data.error || 'Failed to cancel estimation');
-                            }
-                          } catch (error) {
-                            console.error('Error:', error);
-                            toast.error('An error occurred');
-                          }
-                        }}
+                        onClick={() => setShowCancelConfirmModal(true)}
                         variant="outline"
                         className="border-orange-500 text-orange-700 hover:bg-orange-50"
                       >
