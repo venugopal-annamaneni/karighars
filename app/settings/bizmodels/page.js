@@ -434,6 +434,44 @@ export default function BizModelsPage() {
                               />
                             </div>
                             <div className="space-y-2">
+                              <Label className="text-xs">Sequence Order</Label>
+                              <Input
+                                type="number"
+                                placeholder="1"
+                                value={milestone.sequence_order}
+                                onChange={(e) => updateMilestone(index, 'sequence_order', parseInt(e.target.value))}
+                                className="h-9"
+                              />
+                            </div>
+                            {milestone.direction === 'inflow' && milestone.milestone_code !== 'MISC_PAYMENT' && (
+                              <>
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Woodwork % 🪵</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={milestone.woodwork_percentage}
+                                    onChange={(e) => updateMilestone(index, 'woodwork_percentage', parseFloat(e.target.value))}
+                                    className="h-9"
+                                  />
+                                  <p className="text-xs text-muted-foreground">% of woodwork value to collect</p>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Misc % 🔧</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={milestone.misc_percentage}
+                                    onChange={(e) => updateMilestone(index, 'misc_percentage', parseFloat(e.target.value))}
+                                    className="h-9"
+                                  />
+                                  <p className="text-xs text-muted-foreground">% of misc (internal + external) to collect</p>
+                                </div>
+                              </>
+                            )}
+                            <div className="space-y-2 md:col-span-2">
                               <Label className="text-xs">Description</Label>
                               <Input
                                 placeholder="Description..."
@@ -443,6 +481,13 @@ export default function BizModelsPage() {
                               />
                             </div>
                           </div>
+                          {milestone.milestone_code === 'MISC_PAYMENT' && (
+                            <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                              <p className="text-xs text-amber-800">
+                                💡 MISC_PAYMENT milestone captures user-entered amount only (no auto-calculation)
+                              </p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
