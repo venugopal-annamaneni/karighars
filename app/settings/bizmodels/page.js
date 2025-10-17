@@ -471,17 +471,6 @@ export default function BizModelsPage() {
                               </Select>
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-xs">Default %</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0"
-                                value={milestone.default_percentage}
-                                onChange={(e) => updateMilestone(index, 'default_percentage', parseFloat(e.target.value))}
-                                className="h-9"
-                              />
-                            </div>
-                            <div className="space-y-2">
                               <Label className="text-xs">Stage Code</Label>
                               <Input
                                 placeholder="e.g., 2D"
