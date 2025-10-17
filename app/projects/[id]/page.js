@@ -613,11 +613,11 @@ export default function ProjectDetailPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Estimated Value</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Estimated Value (with GST)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(estimation?.total_value || 0)}
+                {formatCurrency((parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0)))}
               </div>
             </CardContent>
           </Card>
