@@ -162,13 +162,13 @@ export default function ProjectsPage() {
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="text-lg font-semibold">{project.name}</h3>
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                              project.phase === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-                              project.phase === '2D' ? 'bg-purple-100 text-purple-700' :
-                              project.phase === '3D' ? 'bg-amber-100 text-amber-700' :
-                              project.phase === 'execution' ? 'bg-green-100 text-green-700' :
+                              project.stage === 'onboarding' ? 'bg-blue-100 text-blue-700' :
+                              project.stage === '2D' ? 'bg-purple-100 text-purple-700' :
+                              project.stage === '3D' ? 'bg-amber-100 text-amber-700' :
+                              project.stage === 'execution' ? 'bg-green-100 text-green-700' :
                               'bg-slate-100 text-slate-700'
                             }`}>
-                              {project.phase}
+                              {project.stage}
                             </span>
                           </div>
                           <div className="grid md:grid-cols-3 gap-4 text-sm">
