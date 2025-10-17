@@ -10,12 +10,16 @@
 
 ## Your RDS Details
 
-- **Host:** `database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com`
+- **Cluster Endpoint (Primary):** `database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com`
+- **Instance Endpoint:** `database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com`
 - **Username:** `postgres`
 - **Password:** `Karighars$2025!!`
 - **Port:** `5432`
 - **Database:** `kg_interiors_finance` (to be created)
 - **Region:** `ap-south-1` (Mumbai)
+- **Type:** Aurora PostgreSQL Cluster
+
+💡 **Note:** Using cluster endpoint for automatic failover support
 
 ---
 
