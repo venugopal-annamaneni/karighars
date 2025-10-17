@@ -761,9 +761,9 @@ export async function POST(request, { params }) {
       }
 
       const result = await query(
-        `INSERT INTO biz_models (code, name, version, description, service_charge_percentage, max_discount_percentage, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [body.code, body.name, version, body.description, body.service_charge_percentage, body.max_discount_percentage, body.is_active]
+        `INSERT INTO biz_models (code, name, version, description, service_charge_percentage, max_discount_percentage, is_active, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [body.code, body.name, version, body.description, body.service_charge_percentage, body.max_discount_percentage, body.is_active, body.status || 'draft']
       );
 
       // Add stages if provided
