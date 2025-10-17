@@ -275,11 +275,11 @@ export default function ProjectDetailPage() {
       return;
     }
 
-    // Handle MISC (Ad-hoc) payment - no calculation needed
-    if (milestoneId === 'MISC') {
+    // Handle ADHOC (Ad-hoc) payment - no calculation needed
+    if (milestoneId === 'ADHOC') {
       setPaymentData(prev => ({ 
         ...prev, 
-        milestone_id: 'MISC', 
+        milestone_id: 'ADHOC', 
         amount: '',
         woodwork_amount: '',
         misc_amount: '',
