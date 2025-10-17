@@ -138,12 +138,13 @@ export default function ProjectDetailPage() {
         setDocuments(data.documents);
       }
 
-      // Fetch milestones if project has biz_model_id
+      // Fetch milestones and stages if project has biz_model_id
       if (projectData && projectData.biz_model_id) {
-        const milestonesRes = await fetch(`/api/biz-models/${projectData.biz_model_id}`);
-        if (milestonesRes.ok) {
-          const bizData = await milestonesRes.json();
+        const bizModelRes = await fetch(`/api/biz-models/${projectData.biz_model_id}`);
+        if (bizModelRes.ok) {
+          const bizData = await bizModelRes.json();
           setMilestones(bizData.milestones.filter(m => m.direction === 'inflow'));
+          setStages(bizData.stages || []);
         }
       }
     } catch (error) {
