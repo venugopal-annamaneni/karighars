@@ -471,34 +471,51 @@ export default function BizModelsPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               {bizModels.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => handleModelSelect(model.id)}
-                  className={`text-left p-4 rounded-lg border-2 transition-all ${
-                    selectedModel === model.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Briefcase className="h-5 w-5 text-primary" />
-                    <Badge variant={model.is_active ? 'default' : 'secondary'}>
-                      {model.version}
-                    </Badge>
-                  </div>
-                  <h3 className="font-semibold mb-1">{model.name}</h3>
-                  <p className="text-sm text-muted-foreground">{model.description}</p>
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                    <div>
-                      <p className="text-muted-foreground">Service Charge</p>
-                      <p className="font-medium">{model.service_charge_percentage}%</p>
+                <div key={model.id} className="relative">
+                  <button
+                    onClick={() => handleModelSelect(model.id)}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      selectedModel === model.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Briefcase className="h-5 w-5 text-primary" />
+                      <Badge variant={model.is_active ? 'default' : 'secondary'}>
+                        {model.version}
+                      </Badge>
+                      <Badge variant={model.status === 'built' ? 'outline' : 'secondary'} 
+                             className={model.status === 'built' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
+                        {model.status === 'built' ? '✓ Built' : 'Draft'}
+                      </Badge>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Max Discount</p>
-                      <p className="font-medium">{model.max_discount_percentage}%</p>
+                    <h3 className="font-semibold mb-1">{model.name}</h3>
+                    <p className="text-sm text-muted-foreground">{model.description}</p>
+                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Service Charge</p>
+                        <p className="font-medium">{model.service_charge_percentage}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Max Discount</p>
+                        <p className="font-medium">{model.max_discount_percentage}%</p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                  {model.status === 'draft' && session.user.role === 'admin' && (
+                    <Button 
+                      size="sm" 
+                      className="absolute top-2 right-2 gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBuildModel(model.id);
+                      }}
+                    >
+                      Build
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           </CardContent>
