@@ -570,7 +570,7 @@ export default function ProjectDetailPage() {
                       Move the project to the next phase
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handlePhaseUpdate} className="space-y-4">
+                  <form onSubmit={handleStageUpdate} className="space-y-4">
                     <div className="space-y-2">
                       <Label>New Phase</Label>
                       <Select value={phaseUpdate.phase} onValueChange={(value) => setPhaseUpdate({ ...phaseUpdate, phase: value })}>
