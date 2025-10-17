@@ -107,15 +107,18 @@ user_problem_statement: "GST Refactoring: Move GST from payment collection to th
 backend:
   - task: "GST Schema Migration - Add to Estimations, Remove from Payments"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/gst_refactor_schema.sql"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Created GST refactor schema: Added gst_percentage (default 18%) and gst_amount to project_estimations. Removed gst_amount, is_gst_applicable, gst_percentage from customer_payments_in. Truncated all project-related data for fresh start."
+        - working: true
+          agent: "testing"
+          comment: "Schema migration verified successfully. Added gst_percentage (18% default) and gst_amount columns to project_estimations table. No GST columns found in customer_payments_in (correctly removed). Data truncation working correctly. Database schema is ready for GST refactoring."
   
   - task: "Estimation API - GST Fields"
     implemented: true
