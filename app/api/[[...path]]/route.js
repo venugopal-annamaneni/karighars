@@ -187,11 +187,16 @@ export async function GET(request, { params }) {
     if (path === 'customer-payments') {
       const projectId = searchParams.get('project_id');
       let queryText = `
-        SELECT cp.*, p.name as project_name, c.name as customer_name, u.name as created_by_name
+        SELECT cp.*, 
+               p.name as project_name, 
+               c.name as customer_name, 
+               u.name as created_by_name,
+               approver.name as approved_by_name
         FROM customer_payments_in cp
         LEFT JOIN projects p ON cp.project_id = p.id
         LEFT JOIN customers c ON cp.customer_id = c.id
         LEFT JOIN users u ON cp.created_by = u.id
+        LEFT JOIN users approver ON cp.approved_by = approver.id
       `;
       const params = [];
       
