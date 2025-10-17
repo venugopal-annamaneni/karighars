@@ -620,17 +620,21 @@ export async function POST(request, { params }) {
       
       if (body.milestone_id) {
         const milestoneRes = await query(
-          'SELECT default_percentage FROM biz_model_milestones WHERE id = $1',
+          'SELECT default_percentage, woodwork_percentage, misc_percentage FROM biz_model_milestones WHERE id = $1',
           [body.milestone_id]
         );
         if (milestoneRes.rows.length > 0) {
           expectedPercentage = milestoneRes.rows[0].default_percentage;
           
           // Calculate actual percentage if estimation exists
+          // IMPORTANT: Use final_value + gst_amount for percentage calculations
           if (body.estimation_id) {
-            const estRes = await query('SELECT final_value FROM project_estimations WHERE id = $1', [body.estimation_id]);
-            if (estRes.rows.length > 0 && estRes.rows[0].final_value > 0) {
-              actualPercentage = (parseFloat(body.amount) / parseFloat(estRes.rows[0].final_value)) * 100;
+            const estRes = await query('SELECT final_value, gst_amount FROM project_estimations WHERE id = $1', [body.estimation_id]);
+            if (estRes.rows.length > 0) {
+              const totalWithGst = parseFloat(estRes.rows[0].final_value) + parseFloat(estRes.rows[0].gst_amount || 0);
+              if (totalWithGst > 0) {
+                actualPercentage = (parseFloat(body.amount) / totalWithGst) * 100;
+              }
             }
           }
         }
@@ -641,14 +645,14 @@ export async function POST(request, { params }) {
           project_id, estimation_id, customer_id, payment_type, milestone_id, 
           expected_percentage, actual_percentage, override_reason,
           amount, payment_date, mode, reference_number, remarks, created_by,
-          gst_amount, is_gst_applicable, gst_percentage, receipt_url, status,
+          receipt_url, status,
           woodwork_amount, misc_amount
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
         [body.project_id, body.estimation_id, body.customer_id, body.payment_type, body.milestone_id || null,
          expectedPercentage, actualPercentage, body.override_reason || null,
          body.amount, body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id,
-         body.gst_amount || 0, body.is_gst_applicable || false, body.gst_percentage || 0, body.receipt_url || null, body.status || 'pending',
+         body.receipt_url || null, body.status || 'pending',
          body.woodwork_amount || 0, body.misc_amount || 0]
       );
 
