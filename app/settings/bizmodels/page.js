@@ -155,7 +155,7 @@ export default function BizModelsPage() {
           is_active: true,
         });
         setStages([{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
-        setMilestones([{ milestone_code: '', milestone_name: '', direction: 'inflow', default_percentage: 0, stage_code: '', description: '', sequence_order: 1 }]);
+        setMilestones([{ milestone_code: '', milestone_name: '', direction: 'inflow', default_percentage: 0, stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to create business model');
