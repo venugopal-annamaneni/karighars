@@ -295,11 +295,6 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const calculateGST = (amount, percentage) => {
-    if (!amount || !percentage) return 0;
-    return (parseFloat(amount) * parseFloat(percentage)) / 100;
-  };
-
   const handleInvoiceUpload = async (file) => {
     if (!file) return;
     
