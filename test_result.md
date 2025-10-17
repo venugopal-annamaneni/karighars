@@ -105,17 +105,115 @@
 user_problem_statement: "GST Refactoring: Move GST from payment collection to the estimator level. GST is now always applicable and calculated at the estimation stage. Payment milestone calculations now use estimation values WITH GST. GST fields removed from payment collection form. All projects data truncated for fresh start."
 
 backend:
-  - task: "Database Schema - KYC, GST, and Documents"
+  - task: "GST Schema Migration - Add to Estimations, Remove from Payments"
     implemented: true
     working: "NA"
-    file: "/app/alter_kyc_gst_schema.sql"
+    file: "/app/gst_refactor_schema.sql"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Created schema update file with: customers table updates (kyc_type, business_type, bank_details), customer_payments_in updates (gst_amount, is_gst_applicable, gst_percentage, receipt_url, milestone fields), projects updates (invoice_url, revenue_realized, invoice_uploaded_at), and new documents table for centralized document storage. Schema needs to be applied to database."
+          comment: "Created GST refactor schema: Added gst_percentage (default 18%) and gst_amount to project_estimations. Removed gst_amount, is_gst_applicable, gst_percentage from customer_payments_in. Truncated all project-related data for fresh start."
+  
+  - task: "Estimation API - GST Fields"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated POST /api/estimations endpoint to calculate and store GST: gst_percentage (default 18%), gst_amount calculated from final_value. GST is now part of every estimation."
+  
+  - task: "Payment API - GST Removal & GST-Inclusive Calculations"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated POST /api/customer-payments to remove gst_amount, is_gst_applicable, gst_percentage fields. Updated percentage calculations to use final_value + gst_amount for accurate milestone tracking."
+  
+  - task: "Calculate Payment API - GST-Inclusive Calculations"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated /api/calculate-payment endpoint to include GST in all calculations. Fetches gst_amount from estimations, proportionally distributes GST between woodwork and misc, calculates all percentages and amounts based on GST-inclusive values."
+  
+  - task: "Migration Endpoint - GST Schema Application"
+    implemented: true
+    working: "NA"
+    file: "/app/app/api/admin/migrate/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Enhanced POST /api/admin/migrate to accept migrationFile parameter. Can execute gst_refactor_schema.sql to apply schema changes. Splits SQL by semicolons for statement-by-statement execution."
+
+frontend:
+  - task: "Estimation Form - GST Input & Display"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/estimation/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added GST fields to estimation form: gst_percentage input (default 18%), auto-calculates gst_amount from final_value. Added GST card to totals summary showing GST percentage and amount. Added Grand Total card showing final_value + gst_amount. Form submits gst_percentage to API."
+  
+  - task: "Payment Dialog - GST Removal"
+    implemented: true
+    working: "NA"
+    file: "/app/app/projects/[id]/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Removed all GST fields from payment recording dialog: Removed is_gst_applicable checkbox, gst_percentage input, gst_amount calculation. Removed calculateGST function. Cleaned up paymentData state to exclude GST fields. Payment submission no longer sends GST data."
+
+metadata:
+  created_by: "main_agent"
+  version: "4.0"
+  test_sequence: 4
+  run_ui: false
+  gst_refactoring: true
+  last_updated: "2025-06-17"
+
+test_plan:
+  current_focus:
+    - "GST Schema Migration - Add to Estimations, Remove from Payments"
+    - "Estimation API - GST Fields"
+    - "Payment API - GST Removal & GST-Inclusive Calculations"
+    - "Calculate Payment API - GST-Inclusive Calculations"
+    - "Migration Endpoint - GST Schema Application"
+    - "Estimation Form - GST Input & Display"
+    - "Payment Dialog - GST Removal"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "GST refactoring complete! Major changes: 1) Created gst_refactor_schema.sql with schema updates and data truncation 2) Updated estimation API to store gst_percentage and gst_amount 3) Removed GST fields from payment API and updated to use GST-inclusive calculations 4) Updated calculate-payment endpoint to include GST in all milestone calculations 5) Enhanced migration endpoint 6) Added GST input to estimation form UI with live calculation 7) Removed all GST fields from payment dialog. IMPORTANT: Schema migration must be run via POST /api/admin/migrate with {migrationFile: 'gst_refactor_schema.sql'} to apply database changes. Ready for backend testing."
 
   - task: "File Upload API"
     implemented: true
