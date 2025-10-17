@@ -290,14 +290,6 @@ export default function BizModelsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Version *</Label>
-                        <Input
-                          placeholder="e.g., V2"
-                          value={newModel.version}
-                          onChange={(e) => setNewModel({ ...newModel, version: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
                         <Label>Name *</Label>
                         <Input
                           placeholder="e.g., Premium Project Model"
