@@ -382,7 +382,7 @@ export default function BizModelsPage() {
                             <div className="space-y-2">
                               <Label className="text-xs">Stage Code</Label>
                               <Input
-                                placeholder="e.g., onboarding"
+                                placeholder="e.g., 2D"
                                 value={stage.stage_code}
                                 onChange={(e) => updateStage(index, 'stage_code', e.target.value)}
                                 className="h-9"
@@ -391,7 +391,7 @@ export default function BizModelsPage() {
                             <div className="space-y-2">
                               <Label className="text-xs">Stage Name</Label>
                               <Input
-                                placeholder="e.g., Onboarding"
+                                placeholder="e.g., 2D Design"
                                 value={stage.stage_name}
                                 onChange={(e) => updateStage(index, 'stage_name', e.target.value)}
                                 className="h-9"
