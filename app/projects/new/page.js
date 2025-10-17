@@ -28,7 +28,6 @@ export default function NewProjectPage() {
     name: '',
     customer_id: '',
     location: '',
-    phase: 'onboarding',
     biz_model_id: '',
   });
 
