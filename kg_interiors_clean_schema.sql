@@ -291,7 +291,6 @@ CREATE TABLE financial_event_definitions (
     name TEXT NOT NULL,
     description TEXT,
     direction TEXT NOT NULL CHECK (direction IN ('inflow', 'outflow')),
-    default_percentage NUMERIC(9,4),
     default_trigger_phase TEXT,
     applicable_to TEXT DEFAULT 'project' CHECK (applicable_to IN ('customer', 'vendor', 'project')),
     is_active BOOLEAN DEFAULT true,
