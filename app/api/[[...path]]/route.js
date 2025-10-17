@@ -653,7 +653,6 @@ export async function POST(request, { params }) {
       // Check for overpayment (only for revision, not first estimation)
       let hasOverpayment = false;
       let overpaymentAmount = 0;
-      let overpaymentStatus = null;
       
       if (nextVersion > 1) {
         // Get total approved payments
@@ -668,18 +667,6 @@ export async function POST(request, { params }) {
         if (totalCollected > grandTotal) {
           hasOverpayment = true;
           overpaymentAmount = totalCollected - grandTotal;
-          overpaymentStatus = 'pending_approval';
-          
-          // If not admin, reject revision with overpayment
-          if (session.user.role !== 'admin') {
-            return NextResponse.json({
-              error: 'Estimation revision creates overpayment',
-              overpayment: overpaymentAmount,
-              total_collected: totalCollected,
-              new_estimation: grandTotal,
-              message: 'Admin approval required for estimation revisions that create overpayment'
-            }, { status: 403 });
-          }
         }
       }
       
@@ -693,16 +680,16 @@ export async function POST(request, { params }) {
           service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
           gst_percentage, gst_amount,
           requires_approval, approval_status, 
-          has_overpayment, overpayment_amount, overpayment_status,
+          has_overpayment, overpayment_amount,
           remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
         [body.project_id, nextVersion, subtotal, body.woodwork_value || 0, 
          body.misc_internal_value || 0, body.misc_external_value || 0, 
          serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
          gstPercentage, gstAmount,
          requiresApproval, approvalStatus,
-         hasOverpayment, overpaymentAmount, overpaymentStatus,
+         hasOverpayment, overpaymentAmount,
          body.remarks, body.status || 'draft', session.user.id]
       );
 
@@ -718,15 +705,39 @@ export async function POST(request, { params }) {
         }
       }
       
-      // If overpayment detected, return warning
+      // If overpayment detected, create credit note in customer_payments_in (status='pending')
       if (hasOverpayment) {
+        console.log('🔴 Creating credit note for overpayment:', overpaymentAmount);
+        
+        // Get project details for customer_id
+        const projectRes = await query('SELECT customer_id FROM projects WHERE id = $1', [body.project_id]);
+        const customerId = projectRes.rows[0]?.customer_id;
+        
+        await query(`
+          INSERT INTO customer_payments_in (
+            project_id, estimation_id, related_estimation_id, customer_id,
+            payment_type, amount, 
+            status, remarks, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `, [
+          body.project_id, 
+          result.rows[0].id, 
+          result.rows[0].id, 
+          customerId,
+          'credit_note_reversal', 
+          -Math.abs(overpaymentAmount), // Ensure negative
+          'pending',
+          `Credit note for estimation v${nextVersion} - Overpayment reversal`,
+          session.user.id
+        ]);
+        
         return NextResponse.json({ 
           estimation: result.rows[0],
           warning: 'overpayment_detected',
           overpayment: {
             amount: overpaymentAmount,
-            status: 'pending_approval',
-            message: 'Admin must approve this estimation and create credit reversal entry'
+            status: 'credit_note_created_pending',
+            message: 'Credit note created in pending state. Finance team must upload credit note document to approve.'
           }
         });
       }
