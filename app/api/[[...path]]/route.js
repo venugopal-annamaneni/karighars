@@ -567,6 +567,8 @@ export async function POST(request, { params }) {
     if (path === 'check-overpayment') {
       const { project_id, final_value, gst_amount } = body;
       
+      console.log('🔍 CHECK OVERPAYMENT - Project:', project_id, 'Final Value:', final_value, 'GST:', gst_amount);
+      
       // Get next version number
       const versionRes = await query(
         'SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM project_estimations WHERE project_id = $1',
@@ -574,8 +576,11 @@ export async function POST(request, { params }) {
       );
       const nextVersion = versionRes.rows[0].next_version;
       
+      console.log('🔍 Next version will be:', nextVersion);
+      
       // Only check if this is a revision (version > 1)
       if (nextVersion <= 1) {
+        console.log('🟢 First estimation - No overpayment check needed');
         return NextResponse.json({ has_overpayment: false });
       }
       
@@ -589,16 +594,21 @@ export async function POST(request, { params }) {
       const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
       const grandTotal = parseFloat(final_value) + parseFloat(gst_amount);
       
+      console.log('🔍 Total Collected:', totalCollected, 'Grand Total:', grandTotal);
+      
       if (totalCollected > grandTotal) {
+        const overpaymentAmount = totalCollected - grandTotal;
+        console.log('🔴 OVERPAYMENT DETECTED:', overpaymentAmount);
         return NextResponse.json({
           has_overpayment: true,
-          overpayment_amount: totalCollected - grandTotal,
+          overpayment_amount: overpaymentAmount,
           total_collected: totalCollected,
           new_estimation_total: grandTotal,
           next_version: nextVersion
         });
       }
       
+      console.log('🟢 No overpayment detected');
       return NextResponse.json({ has_overpayment: false });
     }
 
