@@ -211,9 +211,16 @@ export async function GET(request, { params }) {
       const projectId = path.split('/')[1];
       const milestoneId = path.split('/')[2];
 
-      // Get project estimation (including GST)
+      // Get project estimation (including GST and adjustments)
       const estRes = await query(`
-        SELECT woodwork_value, misc_internal_value, misc_external_value, gst_amount
+        SELECT 
+          woodwork_value, 
+          misc_internal_value, 
+          misc_external_value,
+          service_charge_amount,
+          discount_amount,
+          final_value,
+          gst_amount
         FROM project_estimations
         WHERE project_id = $1
         ORDER BY created_at DESC
@@ -227,16 +234,29 @@ export async function GET(request, { params }) {
       const estimation = estRes.rows[0];
       const woodworkValue = parseFloat(estimation.woodwork_value || 0);
       const miscValue = parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0);
+      const serviceCharge = parseFloat(estimation.service_charge_amount || 0);
+      const discount = parseFloat(estimation.discount_amount || 0);
+      const finalValue = parseFloat(estimation.final_value || 0);
       const gstAmount = parseFloat(estimation.gst_amount || 0);
       
-      // Calculate GST portions for woodwork and misc
-      const totalBeforeGst = woodworkValue + miscValue;
-      const woodworkGst = totalBeforeGst > 0 ? (woodworkValue / totalBeforeGst) * gstAmount : 0;
-      const miscGst = totalBeforeGst > 0 ? (miscValue / totalBeforeGst) * gstAmount : 0;
+      // Calculate how service charge and discount are distributed across categories
+      const subtotal = woodworkValue + miscValue;
       
-      // Total values INCLUDING GST
-      const woodworkValueWithGst = woodworkValue + woodworkGst;
-      const miscValueWithGst = miscValue + miscGst;
+      // Apply service charge and discount proportionally to woodwork and misc
+      const woodworkAfterAdjustments = subtotal > 0 
+        ? woodworkValue + (woodworkValue / subtotal) * serviceCharge - (woodworkValue / subtotal) * discount
+        : 0;
+      const miscAfterAdjustments = subtotal > 0
+        ? miscValue + (miscValue / subtotal) * serviceCharge - (miscValue / subtotal) * discount
+        : 0;
+      
+      // Calculate GST portions for woodwork and misc (based on their share of final_value)
+      const woodworkGst = finalValue > 0 ? (woodworkAfterAdjustments / finalValue) * gstAmount : 0;
+      const miscGst = finalValue > 0 ? (miscAfterAdjustments / finalValue) * gstAmount : 0;
+      
+      // Total values INCLUDING GST (this is what customer pays)
+      const woodworkValueWithGst = woodworkAfterAdjustments + woodworkGst;
+      const miscValueWithGst = miscAfterAdjustments + miscGst;
 
       // Get milestone config
       const milestoneRes = await query(`
