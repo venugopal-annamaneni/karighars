@@ -190,6 +190,11 @@ export default function EstimationPage() {
         })
       });
       
+      console.log('✅ Check overpayment request sent:', {
+        project_id: projectId,
+        final_value: totals.finalValue,
+        gst_amount: totals.gstAmount
+      });
       console.log('✅ Check overpayment response status:', checkRes.status);
       
       if (checkRes.ok) {
