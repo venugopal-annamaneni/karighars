@@ -1443,6 +1443,9 @@ export default function ProjectDetailPage() {
                                 return null;
                               }
                             })()}
+                            {entry.transaction_details?.approved_by_name && (
+                              <span className="text-green-600"> • Approved by {entry.transaction_details.approved_by_name}</span>
+                            )}
                           </p>
                           {entry.remarks && (
                             <p className="text-sm text-muted-foreground mt-1">{entry.remarks}</p>
