@@ -634,15 +634,32 @@ export async function POST(request, { params }) {
           project_id, version, total_value, woodwork_value, misc_internal_value, misc_external_value, 
           service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
           gst_percentage, gst_amount,
-          requires_approval, approval_status, remarks, status, created_by
+          requires_approval, approval_status, 
+          has_overpayment, overpayment_amount, overpayment_status,
+          remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
         [body.project_id, nextVersion, subtotal, body.woodwork_value || 0, 
          body.misc_internal_value || 0, body.misc_external_value || 0, 
          serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
          gstPercentage, gstAmount,
-         requiresApproval, approvalStatus, body.remarks, body.status || 'draft', session.user.id]
+         requiresApproval, approvalStatus,
+         hasOverpayment, overpaymentAmount, overpaymentStatus,
+         body.remarks, body.status || 'draft', session.user.id]
       );
+      
+      // If overpayment detected, return warning
+      if (hasOverpayment) {
+        return NextResponse.json({ 
+          estimation: result.rows[0],
+          warning: 'overpayment_detected',
+          overpayment: {
+            amount: overpaymentAmount,
+            status: 'pending_approval',
+            message: 'Admin must approve this estimation and create credit reversal entry'
+          }
+        });
+      }
 
       // Add estimation items if provided
       if (body.items && body.items.length > 0) {
