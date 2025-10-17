@@ -530,8 +530,8 @@ export default function ProjectDetailPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-                <Badge className={getPhaseColor(project.phase)}>
-                  {project.phase}
+                <Badge className={getStageColor(project.stage)}>
+                  {project.stage}
                 </Badge>
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
