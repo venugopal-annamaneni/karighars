@@ -789,22 +789,6 @@ export default function ProjectDetailPage() {
                             ⚠️ No milestones configured for this project's BizModel. Please select a BizModel with milestones.
                           </div>
                         )}
-                        <div className="space-y-2">
-                          <Label>Payment Type</Label>
-                          <Select value={paymentData.payment_type} onValueChange={(value) => setPaymentData({ ...paymentData, payment_type: value })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="advance_10">Advance 10%</SelectItem>
-                              <SelectItem value="3D_50">3D Design 50%</SelectItem>
-                              <SelectItem value="misc_100">Misc Items 100%</SelectItem>
-                              <SelectItem value="final">Final Payment</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
                         {/* Show Expected Amount Calculation with Cumulative Info */}
                         {paymentData.calculation && !paymentData.calculation.is_misc_payment && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
