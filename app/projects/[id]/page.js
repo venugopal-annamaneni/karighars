@@ -1239,6 +1239,11 @@ export default function ProjectDetailPage() {
                           <p className="text-sm text-muted-foreground">
                             {formatDate(payment.payment_date)} • {payment.mode} • {payment.reference_number}
                           </p>
+                          {payment.status === 'approved' && payment.approved_by_name && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Approved by {payment.approved_by_name}
+                            </p>
+                          )}
                           {payment.gst_amount > 0 && (
                             <p className="text-xs text-muted-foreground mt-1">
                               GST: ₹{payment.gst_amount?.toLocaleString('en-IN')} ({payment.gst_percentage}%)
