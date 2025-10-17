@@ -1018,6 +1018,38 @@ export async function PUT(request, { params }) {
       });
     }
 
+    // Toggle BizModel Status (draft <-> published)
+    if (path.startsWith('biz-models/') && path.endsWith('/toggle-status')) {
+      if (session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+      }
+
+      const bizModelId = path.split('/')[1];
+
+      // Get current BizModel
+      const currentModel = await query('SELECT * FROM biz_models WHERE id = $1', [bizModelId]);
+      
+      if (currentModel.rows.length === 0) {
+        return NextResponse.json({ error: 'BizModel not found' }, { status: 404 });
+      }
+
+      const currentStatus = currentModel.rows[0].status;
+      const newStatus = currentStatus === 'draft' ? 'published' : 'draft';
+
+      // Update status
+      const result = await query(
+        `UPDATE biz_models 
+         SET status = $1, updated_at = NOW()
+         WHERE id = $2 RETURNING *`,
+        [newStatus, bizModelId]
+      );
+
+      return NextResponse.json({ 
+        bizModel: result.rows[0],
+        message: `BizModel status changed from ${currentStatus} to ${newStatus}`
+      });
+    }
+
     // Update Purchase Order
     if (path.startsWith('purchase-orders/')) {
       const orderId = path.split('/')[1];
