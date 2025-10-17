@@ -1150,7 +1150,7 @@ export async function PUT(request, { params }) {
           'credit_note_reversal',
           -Math.abs(estimation.overpayment_amount), // Negative amount
           new Date(),
-          'adjustment',
+          'other', // Changed from 'adjustment' to 'other' (valid enum value)
           `CREDIT-NOTE-${estimationId}`,
           `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
           'pending', // Pending until finance uploads document
