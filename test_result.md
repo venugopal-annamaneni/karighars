@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Implement Customer KYC, GST on payments, and Document Management features for KG Interiors ERP. Features include: 1) Customer KYC UI (Aadhar, PAN, Blank Cheque, B2B/B2C, Optional Bank details), 2) GST amount field and calculations for payments, 3) UI for Finance team to upload Payment Receipts, 4) UI for Finance team to upload Project Invoices for revenue realization, 5) Display all uploaded documents within project tab"
+user_problem_statement: "GST Refactoring: Move GST from payment collection to the estimator level. GST is now always applicable and calculated at the estimation stage. Payment milestone calculations now use estimation values WITH GST. GST fields removed from payment collection form. All projects data truncated for fresh start."
 
 backend:
   - task: "Database Schema - KYC, GST, and Documents"
