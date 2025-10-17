@@ -615,19 +615,6 @@ export async function POST(request, { params }) {
       // Check if discount exceeds limit
       const requiresApproval = discountPercentage > maxDiscountPercentage;
       const approvalStatus = requiresApproval ? 'pending' : 'approved';
-      const subtotal = parseFloat(body.total_value) || 0;
-      const discountPercentage = parseFloat(body.discount_percentage) || 0;
-      const serviceChargeAmount = (subtotal * serviceChargePercentage) / 100;
-      const discountAmount = (subtotal * discountPercentage) / 100;
-      const finalValue = subtotal + serviceChargeAmount - discountAmount;
-      
-      // Calculate GST (default 18% if not provided)
-      const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
-      const gstAmount = (finalValue * gstPercentage) / 100;
-      
-      // Check if discount exceeds limit
-      const requiresApproval = discountPercentage > maxDiscountPercentage;
-      const approvalStatus = requiresApproval ? 'pending' : 'approved';
 
       const result = await query(
         `INSERT INTO project_estimations (
