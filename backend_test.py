@@ -1,31 +1,30 @@
 #!/usr/bin/env python3
 """
-KG Interiors ERP Backend API Testing Suite
-Tests all major backend endpoints for functionality and data persistence.
+Backend API Testing for KG Interiors ERP - GST Refactoring
+Tests the GST refactoring implementation where GST has been moved from payment collection to estimation level.
 """
 
 import requests
 import json
 import sys
-from datetime import datetime, date
-import uuid
+from datetime import datetime
 
 # Configuration
 BASE_URL = "https://kgint-finance.preview.emergentagent.com/api"
-HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
+TEST_USER = {
+    "name": "Venugopal A",
+    "email": "venugopal@example.com",
+    "role": "admin"
 }
 
-# Test data storage
-test_data = {
-    'customer_id': None,
-    'vendor_id': None,
-    'project_id': None,
-    'estimation_id': None,
-    'payment_id': None,
-    'boq_id': None
-}
+class GST_RefactorTester:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'User-Agent': 'KG-ERP-Backend-Tester/1.0'
+        })
+        self.test_results = []
 
 def log_test(test_name, status, message="", response_data=None):
     """Log test results with consistent formatting"""
