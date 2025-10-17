@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
-import { Settings, Briefcase, TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
+import { Settings, Briefcase, TrendingUp, TrendingDown, Plus, Trash2, Edit } from 'lucide-react';
 
 export default function BizModelsPage() {
   const { data: session, status } = useSession();
