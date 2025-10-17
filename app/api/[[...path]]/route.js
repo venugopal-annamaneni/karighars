@@ -194,6 +194,104 @@ export async function GET(request, { params }) {
       return NextResponse.json({ payments: result.rows });
     }
 
+    // Calculate Payment Expected Amount (Cumulative)
+    if (path.startsWith('calculate-payment/') && path.split('/').length === 3) {
+      const projectId = path.split('/')[1];
+      const milestoneId = path.split('/')[2];
+
+      // Get project estimation
+      const estRes = await query(`
+        SELECT woodwork_value, misc_internal_value, misc_external_value
+        FROM project_estimations
+        WHERE project_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [projectId]);
+
+      if (estRes.rows.length === 0) {
+        return NextResponse.json({ error: 'No estimation found' }, { status: 404 });
+      }
+
+      const estimation = estRes.rows[0];
+      const woodworkValue = parseFloat(estimation.woodwork_value || 0);
+      const miscValue = parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0);
+
+      // Get milestone config
+      const milestoneRes = await query(`
+        SELECT milestone_code, woodwork_percentage, misc_percentage
+        FROM biz_model_milestones
+        WHERE id = $1
+      `, [milestoneId]);
+
+      if (milestoneRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Milestone not found' }, { status: 404 });
+      }
+
+      const milestone = milestoneRes.rows[0];
+
+      // Handle MISC_PAYMENT - no calculation
+      if (milestone.milestone_code === 'MISC_PAYMENT') {
+        return NextResponse.json({
+          is_misc_payment: true,
+          woodwork_value: woodworkValue,
+          misc_value: miscValue,
+          expected_woodwork_amount: 0,
+          expected_misc_amount: 0,
+          expected_total: 0,
+          collected_woodwork_amount: 0,
+          collected_misc_amount: 0,
+          collected_woodwork_percentage: 0,
+          collected_misc_percentage: 0,
+          remaining_woodwork_percentage: 0,
+          remaining_misc_percentage: 0
+        });
+      }
+
+      // Get all APPROVED payments for this project (cumulative)
+      const paymentsRes = await query(`
+        SELECT COALESCE(SUM(woodwork_amount), 0) as total_woodwork,
+               COALESCE(SUM(misc_amount), 0) as total_misc
+        FROM customer_payments_in
+        WHERE project_id = $1 AND status = 'approved'
+      `, [projectId]);
+
+      const collectedWoodwork = parseFloat(paymentsRes.rows[0].total_woodwork || 0);
+      const collectedMisc = parseFloat(paymentsRes.rows[0].total_misc || 0);
+
+      // Calculate collected percentages
+      const collectedWoodworkPercentage = woodworkValue > 0 ? (collectedWoodwork / woodworkValue) * 100 : 0;
+      const collectedMiscPercentage = miscValue > 0 ? (collectedMisc / miscValue) * 100 : 0;
+
+      // Calculate remaining to collect
+      const targetWoodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
+      const targetMiscPercentage = parseFloat(milestone.misc_percentage || 0);
+
+      const remainingWoodworkPercentage = Math.max(0, targetWoodworkPercentage - collectedWoodworkPercentage);
+      const remainingMiscPercentage = Math.max(0, targetMiscPercentage - collectedMiscPercentage);
+
+      // Calculate expected amounts
+      const expectedWoodworkAmount = (woodworkValue * remainingWoodworkPercentage) / 100;
+      const expectedMiscAmount = (miscValue * remainingMiscPercentage) / 100;
+      const expectedTotal = expectedWoodworkAmount + expectedMiscAmount;
+
+      return NextResponse.json({
+        is_misc_payment: false,
+        woodwork_value: woodworkValue,
+        misc_value: miscValue,
+        target_woodwork_percentage: targetWoodworkPercentage,
+        target_misc_percentage: targetMiscPercentage,
+        collected_woodwork_amount: collectedWoodwork,
+        collected_misc_amount: collectedMisc,
+        collected_woodwork_percentage: collectedWoodworkPercentage,
+        collected_misc_percentage: collectedMiscPercentage,
+        remaining_woodwork_percentage: remainingWoodworkPercentage,
+        remaining_misc_percentage: remainingMiscPercentage,
+        expected_woodwork_amount: expectedWoodworkAmount,
+        expected_misc_amount: expectedMiscAmount,
+        expected_total: expectedTotal
+      });
+    }
+
     // Vendor Payments
     if (path === 'vendor-payments') {
       const projectId = searchParams.get('project_id');
