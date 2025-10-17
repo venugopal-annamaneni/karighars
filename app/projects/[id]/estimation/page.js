@@ -25,6 +25,9 @@ export default function EstimationPage() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showOverpaymentModal, setShowOverpaymentModal] = useState(false);
+  const [overpaymentData, setOverpaymentData] = useState(null);
+  const [pendingSubmitData, setPendingSubmitData] = useState(null);
   
   const [formData, setFormData] = useState({
     remarks: '',
