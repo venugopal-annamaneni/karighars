@@ -656,6 +656,18 @@ export async function POST(request, { params }) {
          hasOverpayment, overpaymentAmount, overpaymentStatus,
          body.remarks, body.status || 'draft', session.user.id]
       );
+
+      // Add estimation items if provided
+      if (body.items && body.items.length > 0) {
+        for (const item of body.items) {
+          await query(
+            `INSERT INTO estimation_items (estimation_id, category, description, quantity, unit, unit_price, vendor_type, estimated_cost, estimated_margin)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [result.rows[0].id, item.category, item.description, item.quantity, item.unit, 
+             item.unit_price, item.vendor_type, item.estimated_cost, item.estimated_margin]
+          );
+        }
+      }
       
       // If overpayment detected, return warning
       if (hasOverpayment) {
@@ -668,18 +680,6 @@ export async function POST(request, { params }) {
             message: 'Admin must approve this estimation and create credit reversal entry'
           }
         });
-      }
-
-      // Add estimation items if provided
-      if (body.items && body.items.length > 0) {
-        for (const item of body.items) {
-          await query(
-            `INSERT INTO estimation_items (estimation_id, category, description, quantity, unit, unit_price, vendor_type, estimated_cost, estimated_margin)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [result.rows[0].id, item.category, item.description, item.quantity, item.unit, 
-             item.unit_price, item.vendor_type, item.estimated_cost, item.estimated_margin]
-          );
-        }
       }
 
       return NextResponse.json({ estimation: result.rows[0] });
