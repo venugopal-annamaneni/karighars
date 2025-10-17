@@ -779,13 +779,14 @@ export default function ProjectDetailPage() {
                       <form onSubmit={handleRecordPayment} className="space-y-4">
                         {milestones.length > 0 ? (
                           <div className="space-y-2">
-                            <Label>Milestone (Optional)</Label>
+                            <Label>Payment Type</Label>
                             <Select value={paymentData.milestone_id} onValueChange={handleMilestoneChange}>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select milestone" />
+                                <SelectValue placeholder="Select payment type" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No milestone</SelectItem>
+                                <SelectItem value="MISC">🎯 Ad-hoc Payment (MISC)</SelectItem>
                                 {milestones.map((milestone) => (
                                   <SelectItem key={milestone.id} value={milestone.id.toString()}>
                                     {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
@@ -793,10 +794,18 @@ export default function ProjectDetailPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {paymentData.milestone_id === 'MISC' && (
+                              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
+                                <p className="font-semibold mb-1">💡 Ad-hoc Payment Mode</p>
+                                <p>• Collect any amount up to 100% of Woodwork and 100% of Misc</p>
+                                <p>• Not tied to project stages or milestones</p>
+                                <p>• System will track cumulative collection automatically</p>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
-                            ⚠️ No milestones configured for this project's BizModel. Please select a BizModel with milestones.
+                            ⚠️ No milestones configured for this project's BizModel. You can still collect ad-hoc payments by selecting "Ad-hoc Payment (MISC)".
                           </div>
                         )}
                         {/* Show Expected Amount Calculation with Cumulative Info */}
