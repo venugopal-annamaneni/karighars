@@ -67,7 +67,8 @@ export default function EstimationPage() {
             remarks: data.estimation.remarks || '',
             status: data.estimation.status,
             service_charge_percentage: data.estimation.service_charge_percentage || 0,
-            discount_percentage: data.estimation.discount_percentage || 0
+            discount_percentage: data.estimation.discount_percentage || 0,
+            gst_percentage: data.estimation.gst_percentage || 18
           });
           
           const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
