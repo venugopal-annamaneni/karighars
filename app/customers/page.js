@@ -233,14 +233,15 @@ export default function CustomersPage() {
             </Card>
           ) : (
             filteredCustomers.map((customer) => (
-              <Card key={customer.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">{customer.name}</CardTitle>
-                  {customer.contact_person && (
-                    <CardDescription>{customer.contact_person}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
+              <Link key={customer.id} href={`/customers/${customer.id}`}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{customer.name}</CardTitle>
+                    {customer.contact_person && (
+                      <CardDescription>{customer.contact_person}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
                   {customer.phone && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Phone className="h-4 w-4" />
