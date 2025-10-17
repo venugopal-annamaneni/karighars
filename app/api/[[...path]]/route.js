@@ -79,6 +79,20 @@ export async function GET(request, { params }) {
       return NextResponse.json({ customers: result.rows });
     }
 
+    // Single Customer
+    if (path.startsWith('customers/') && path.split('/').length === 2) {
+      const customerId = path.split('/')[1];
+      const result = await query(`
+        SELECT * FROM customers WHERE id = $1
+      `, [customerId]);
+      
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ customer: result.rows[0] });
+    }
+
     // Vendors
     if (path === 'vendors') {
       const result = await query(`
