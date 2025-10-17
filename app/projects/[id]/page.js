@@ -764,7 +764,7 @@ export default function ProjectDetailPage() {
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleRecordPayment} className="space-y-4">
-                        {milestones.length > 0 && (
+                        {milestones.length > 0 ? (
                           <div className="space-y-2">
                             <Label>Milestone (Optional)</Label>
                             <Select value={paymentData.milestone_id} onValueChange={handleMilestoneChange}>
@@ -780,6 +780,10 @@ export default function ProjectDetailPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
+                            ⚠️ No milestones configured for this project's BizModel. Please select a BizModel with milestones.
                           </div>
                         )}
                         <div className="space-y-2">
