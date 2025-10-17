@@ -122,15 +122,18 @@ backend:
   
   - task: "Estimation API - GST Fields"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Updated POST /api/estimations endpoint to calculate and store GST: gst_percentage (default 18%), gst_amount calculated from final_value. GST is now part of every estimation."
+        - working: true
+          agent: "testing"
+          comment: "Estimation API with GST verified successfully. Created test estimation with gst_percentage=18% and verified gst_amount calculation (₹19,440 on ₹108,000 final_value). GST fields are properly stored and calculated in database. API correctly handles GST as part of estimation process."
   
   - task: "Payment API - GST Removal & GST-Inclusive Calculations"
     implemented: true
