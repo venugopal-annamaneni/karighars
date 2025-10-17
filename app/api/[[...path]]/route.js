@@ -1028,6 +1028,145 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ project: result.rows[0] });
     }
 
+    // Cancel Overpayment - Revert to Previous Version (Creator only, before admin approval)
+    if (path.startsWith('estimations/') && path.endsWith('/cancel-overpayment')) {
+      const estimationId = parseInt(path.split('/')[1]);
+      
+      // Get estimation details
+      const estRes = await query(`
+        SELECT * FROM project_estimations WHERE id = $1
+      `, [estimationId]);
+      
+      if (estRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Estimation not found' }, { status: 404 });
+      }
+      
+      const estimation = estRes.rows[0];
+      
+      // Check if user is the creator
+      if (estimation.created_by !== session.user.id && session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Only the creator or admin can cancel this estimation' }, { status: 403 });
+      }
+      
+      // Check if overpayment is still pending
+      if (estimation.overpayment_status !== 'pending_approval') {
+        return NextResponse.json({ error: 'Can only cancel pending overpayment estimations' }, { status: 400 });
+      }
+      
+      // Delete the estimation with overpayment
+      await query('DELETE FROM estimation_items WHERE estimation_id = $1', [estimationId]);
+      await query('DELETE FROM project_estimations WHERE id = $1', [estimationId]);
+      
+      // Get the previous version and mark it as active
+      const prevVersionRes = await query(`
+        SELECT * FROM project_estimations 
+        WHERE project_id = $1 AND version = $2
+        ORDER BY id DESC LIMIT 1
+      `, [estimation.project_id, estimation.version - 1]);
+      
+      if (prevVersionRes.rows.length > 0) {
+        await query(`
+          UPDATE project_estimations 
+          SET status = 'finalized', updated_at = NOW()
+          WHERE id = $1
+        `, [prevVersionRes.rows[0].id]);
+      }
+      
+      // Log activity
+      await query(
+        `INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [estimation.project_id, 'project_estimations', estimationId, session.user.id, 'overpayment_cancelled', 
+         `Estimation v${estimation.version} cancelled, reverted to v${estimation.version - 1}`]
+      );
+      
+      return NextResponse.json({ 
+        success: true,
+        message: 'Estimation cancelled and reverted to previous version',
+        previous_version: prevVersionRes.rows[0]
+      });
+    }
+
+    // Approve Overpayment and Create Credit Note in customer_payments_in (Admin/Finance only)
+    if (path.startsWith('estimations/') && path.endsWith('/approve-overpayment')) {
+      console.log('🔴 APPROVE OVERPAYMENT ENDPOINT REACHED');
+      
+      if (session.user.role !== 'admin' && session.user.role !== 'finance') {
+        return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
+      }
+
+      const estimationId = parseInt(path.split('/')[1]);
+      
+      // Get estimation details
+      const estRes = await query(`
+        SELECT e.*, p.customer_id, p.id as project_id
+        FROM project_estimations e
+        JOIN projects p ON e.project_id = p.id
+        WHERE e.id = $1
+      `, [estimationId]);
+      
+      if (estRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Estimation not found' }, { status: 404 });
+      }
+      
+      const estimation = estRes.rows[0];
+      
+      if (!estimation.has_overpayment) {
+        return NextResponse.json({ error: 'No overpayment detected for this estimation' }, { status: 400 });
+      }
+      
+      // Update estimation status to approved
+      await query(`
+        UPDATE project_estimations 
+        SET overpayment_status = 'approved',
+            overpayment_approved_by = $1,
+            overpayment_approved_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $2
+      `, [session.user.id, estimationId]);
+      
+      // Create credit note in customer_payments_in (status='pending' until document upload)
+      const creditNoteResult = await query(`
+        INSERT INTO customer_payments_in (
+          project_id, 
+          estimation_id, 
+          related_estimation_id,
+          customer_id, 
+          payment_type, 
+          amount, 
+          payment_date, 
+          mode, 
+          reference_number, 
+          remarks, 
+          status,
+          created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        [
+          estimation.project_id,
+          estimationId,
+          estimationId,
+          estimation.customer_id,
+          'credit_note_reversal',
+          -Math.abs(estimation.overpayment_amount), // Negative amount
+          new Date(),
+          'adjustment',
+          `CREDIT-NOTE-${estimationId}`,
+          `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
+          'pending', // Pending until finance uploads document
+          session.user.id
+        ]
+      );
+      
+      console.log('✅ Overpayment approval completed. Credit note created with status=pending');
+      
+      return NextResponse.json({
+        message: 'Overpayment approved. Credit note created in pending state. Finance must upload document.',
+        credit_note: creditNoteResult.rows[0],
+        overpayment_amount: estimation.overpayment_amount
+      });
+    }
+
     // Update Estimation (general handler)
     if (path.startsWith('estimations/')) {
       const estimationId = path.split('/')[1];
