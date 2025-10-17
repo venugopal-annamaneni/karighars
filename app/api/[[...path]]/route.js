@@ -894,7 +894,18 @@ export async function PUT(request, { params }) {
   }
 
   const path = params.path ? params.path.join('/') : '';
-  const body = await request.json();
+  
+  // Parse body only if request has content
+  let body = {};
+  try {
+    const contentType = request.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      body = await request.json();
+    }
+  } catch (error) {
+    // No body or invalid JSON, use empty object
+    body = {};
+  }
 
   try {
     // Update Customer
