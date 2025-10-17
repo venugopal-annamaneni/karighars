@@ -11,7 +11,7 @@ from datetime import datetime, date
 import uuid
 
 # Configuration
-BASE_URL = "https://finance-workflow-5.preview.emergentagent.com/api"
+BASE_URL = "https://kgint-finance.preview.emergentagent.com/api"
 HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
