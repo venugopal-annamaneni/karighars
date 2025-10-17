@@ -957,7 +957,7 @@ export default function ProjectDetailPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No milestone</SelectItem>
-                                <SelectItem value="MISC">🎯 Ad-hoc Payment (MISC)</SelectItem>
+                                <SelectItem value="ADHOC">🎯 Ad-hoc Payment (ADHOC)</SelectItem>
                                 {milestones
                                   .filter(milestone => milestone.stage_code === project.stage)
                                   .map((milestone) => (
@@ -967,7 +967,7 @@ export default function ProjectDetailPage() {
                                   ))}
                               </SelectContent>
                             </Select>
-                            {paymentData.milestone_id === 'MISC' && (
+                            {paymentData.milestone_id === 'ADHOC' && (
                               <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
                                 <p className="font-semibold mb-1">💡 Ad-hoc Payment Mode</p>
                                 <p>• Collect any amount up to 100% of Woodwork and 100% of Misc</p>
