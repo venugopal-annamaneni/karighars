@@ -449,15 +449,27 @@ export async function GET(request, { params }) {
                END as transaction_type,
                CASE
                  WHEN pl.source_table = 'customer_payments_in' THEN (
-                   SELECT json_build_object('customer_name', c.name, 'payment_type', cp.payment_type, 'reference', cp.reference_number)
+                   SELECT json_build_object(
+                     'customer_name', c.name, 
+                     'payment_type', cp.payment_type, 
+                     'reference', cp.reference_number,
+                     'approved_by_name', u.name
+                   )
                    FROM customer_payments_in cp
                    LEFT JOIN customers c ON cp.customer_id = c.id
+                   LEFT JOIN users u ON cp.approved_by = u.id
                    WHERE cp.id = pl.source_id
                  )
                  WHEN pl.source_table = 'payments_out' THEN (
-                   SELECT json_build_object('vendor_name', v.name, 'payment_stage', po.payment_stage, 'reference', po.reference_number)
+                   SELECT json_build_object(
+                     'vendor_name', v.name, 
+                     'payment_stage', po.payment_stage, 
+                     'reference', po.reference_number,
+                     'approved_by_name', u.name
+                   )
                    FROM payments_out po
                    LEFT JOIN vendors v ON po.vendor_id = v.id
+                   LEFT JOIN users u ON po.created_by = u.id
                    WHERE po.id = pl.source_id
                  )
                END as transaction_details
