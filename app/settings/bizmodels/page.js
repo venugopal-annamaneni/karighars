@@ -725,7 +725,6 @@ export default function BizModelsPage() {
                           >
                             <div className="flex items-start justify-between mb-1">
                               <h4 className="font-medium text-sm">{milestone.milestone_name}</h4>
-                              <Badge className="bg-red-600">{milestone.default_percentage}%</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mb-2">
                               {milestone.description}
