@@ -252,7 +252,15 @@ export default function ProjectDetailPage() {
 
   const handleMilestoneChange = async (milestoneId) => {
     if (!milestoneId || milestoneId === 'none' || !estimation) {
-      setPaymentData(prev => ({ ...prev, milestone_id: '', amount: '', calculation: null, expected_amount: null }));
+      setPaymentData(prev => ({ 
+        ...prev, 
+        milestone_id: '', 
+        amount: '', 
+        woodwork_amount: '',
+        misc_amount: '',
+        calculation: null, 
+        expected_amount: null 
+      }));
       return;
     }
 
@@ -272,16 +280,24 @@ export default function ProjectDetailPage() {
           ...prev, 
           milestone_id: milestoneId, 
           amount: '',
+          woodwork_amount: '',
+          misc_amount: '',
           expected_amount: null,
           calculation: null
         }));
       } else {
-        // Set calculated amounts
+        // Pre-fill with expected amounts
+        const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
+        const miscAmt = data.expected_misc_amount.toFixed(2);
+        const totalAmt = data.expected_total.toFixed(2);
+        
         setPaymentData(prev => ({ 
           ...prev, 
           milestone_id: milestoneId, 
-          amount: data.expected_total.toFixed(2),
-          expected_amount: data.expected_total.toFixed(2),
+          woodwork_amount: woodworkAmt,
+          misc_amount: miscAmt,
+          amount: totalAmt,
+          expected_amount: totalAmt,
           calculation: data
         }));
       }
