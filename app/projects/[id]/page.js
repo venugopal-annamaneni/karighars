@@ -266,8 +266,8 @@ export default function ProjectDetailPage() {
   };
 
   const handleMilestoneChange = async (milestoneId) => {
-    if (!milestoneId || !estimation) {
-      setPaymentData(prev => ({ ...prev, milestone_id: milestoneId, amount: '' }));
+    if (!milestoneId || milestoneId === 'none' || !estimation) {
+      setPaymentData(prev => ({ ...prev, milestone_id: '', amount: '', calculation: null, expected_amount: null }));
       return;
     }
 
