@@ -537,13 +537,15 @@ export async function POST(request, { params }) {
           project_id, estimation_id, customer_id, payment_type, milestone_id, 
           expected_percentage, actual_percentage, override_reason,
           amount, payment_date, mode, reference_number, remarks, created_by,
-          gst_amount, is_gst_applicable, gst_percentage, receipt_url, status
+          gst_amount, is_gst_applicable, gst_percentage, receipt_url, status,
+          woodwork_amount, misc_amount
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
         [body.project_id, body.estimation_id, body.customer_id, body.payment_type, body.milestone_id || null,
          expectedPercentage, actualPercentage, body.override_reason || null,
          body.amount, body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id,
-         body.gst_amount || 0, body.is_gst_applicable || false, body.gst_percentage || 0, body.receipt_url || null, body.status || 'pending']
+         body.gst_amount || 0, body.is_gst_applicable || false, body.gst_percentage || 0, body.receipt_url || null, body.status || 'pending',
+         body.woodwork_amount || 0, body.misc_amount || 0]
       );
 
       // DO NOT create ledger entry yet - only when payment is approved by Finance
