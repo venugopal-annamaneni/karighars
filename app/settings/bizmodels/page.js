@@ -585,18 +585,32 @@ export default function BizModelsPage() {
                       </div>
                     </div>
                   </button>
-                  {model.status === 'draft' && session.user.role === 'admin' && (
+                  <div className="absolute top-2 right-2 flex gap-1">
                     <Button 
                       size="sm" 
-                      className="absolute top-2 right-2 gap-1"
+                      variant="outline"
+                      className="gap-1 h-7 px-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleBuildModel(model.id);
+                        handleEditModel(model.id);
                       }}
                     >
-                      Build
+                      <Edit className="h-3 w-3" />
+                      Edit
                     </Button>
-                  )}
+                    {model.status === 'draft' && session.user.role === 'admin' && (
+                      <Button 
+                        size="sm" 
+                        className="gap-1 h-7 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuildModel(model.id);
+                        }}
+                      >
+                        Build
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
