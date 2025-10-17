@@ -131,19 +131,26 @@ export default function BizModelsPage() {
 
   const handleCreateModel = async () => {
     try {
+      // If editing, we're creating a new version
+      const isEditing = editingModelId !== null;
+      
       const res = await fetch('/api/biz-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newModel,
+          is_editing: isEditing,
+          base_model_id: editingModelId,
           stages: stages.filter(s => s.stage_code && s.stage_name),
           milestones: milestones.filter(m => m.milestone_code && m.milestone_name)
         })
       });
 
       if (res.ok) {
-        toast.success('Business Model created successfully');
+        const data = await res.json();
+        toast.success(isEditing ? `New version created: ${data.bizModel.version}` : 'Business Model created successfully');
         setShowCreateDialog(false);
+        setEditingModelId(null);
         fetchBizModels();
         // Reset form
         setNewModel({
@@ -164,6 +171,35 @@ export default function BizModelsPage() {
     } catch (error) {
       console.error('Error creating model:', error);
       toast.error('An error occurred');
+    }
+  };
+
+  const handleEditModel = async (modelId) => {
+    try {
+      const res = await fetch(`/api/biz-models/${modelId}`);
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Populate form with existing data
+        setNewModel({
+          code: data.model.code,
+          name: data.model.name,
+          version: '', // Will be auto-generated
+          description: data.model.description,
+          service_charge_percentage: data.model.service_charge_percentage,
+          max_discount_percentage: data.model.max_discount_percentage,
+          is_active: data.model.is_active,
+        });
+        
+        setStages(data.stages.length > 0 ? data.stages : [{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
+        setMilestones(data.milestones.length > 0 ? data.milestones : [{ milestone_code: '', milestone_name: '', direction: 'inflow', default_percentage: 0, stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
+        
+        setEditingModelId(modelId);
+        setShowCreateDialog(true);
+      }
+    } catch (error) {
+      console.error('Error loading model:', error);
+      toast.error('Failed to load model for editing');
     }
   };
 
