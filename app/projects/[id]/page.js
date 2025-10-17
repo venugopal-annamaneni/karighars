@@ -61,7 +61,7 @@ export default function ProjectDetailPage() {
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   
-  const [phaseUpdate, setPhaseUpdate] = useState({ phase: '', remarks: '' });
+  const [stageUpdate, setStageUpdate] = useState({ phase: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
     milestone_id: '',
     payment_type: 'advance_10',
