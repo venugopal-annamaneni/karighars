@@ -247,6 +247,9 @@ CREATE TABLE project_estimations (
     approved_at TIMESTAMPTZ,
     has_overpayment BOOLEAN DEFAULT false,
     overpayment_amount NUMERIC(20,2) DEFAULT 0.00,
+    overpayment_status TEXT CHECK (overpayment_status IN ('pending_approval', 'approved', 'rejected') OR overpayment_status IS NULL),
+    overpayment_approved_by INTEGER REFERENCES users(id),
+    overpayment_approved_at TIMESTAMPTZ,
     remarks TEXT,
     ai_metadata JSONB DEFAULT '{}',
     created_by INTEGER REFERENCES users(id),
@@ -258,6 +261,9 @@ COMMENT ON COLUMN project_estimations.gst_percentage IS 'GST percentage for this
 COMMENT ON COLUMN project_estimations.gst_amount IS 'Calculated GST amount based on final_value';
 COMMENT ON COLUMN project_estimations.has_overpayment IS 'True if this revision creates overpayment situation';
 COMMENT ON COLUMN project_estimations.overpayment_amount IS 'Amount of overpayment if estimation < collected';
+COMMENT ON COLUMN project_estimations.overpayment_status IS 'Approval status for overpayment: pending_approval, approved, rejected';
+COMMENT ON COLUMN project_estimations.overpayment_approved_by IS 'Admin who approved the overpayment';
+COMMENT ON COLUMN project_estimations.overpayment_approved_at IS 'Timestamp of overpayment approval';
 
 CREATE TABLE estimation_items (
     id SERIAL PRIMARY KEY,
