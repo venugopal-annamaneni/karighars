@@ -616,16 +616,14 @@ export default function BizModelsPage() {
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
-                    {model.status === 'draft' && session.user.role === 'admin' && (
+                    {session.user.role === 'admin' && (
                       <Button 
                         size="sm" 
+                        variant={model.status === 'published' ? 'secondary' : 'default'}
                         className="gap-1 h-7 px-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBuildModel(model.id);
-                        }}
+                        onClick={(e) => handleToggleStatus(model.id, e)}
                       >
-                        Build
+                        {model.status === 'published' ? 'Unpublish' : 'Publish'}
                       </Button>
                     )}
                   </div>
