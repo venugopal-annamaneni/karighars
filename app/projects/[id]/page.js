@@ -757,7 +757,7 @@ export default function ProjectDetailPage() {
                                 <SelectItem value="">No milestone</SelectItem>
                                 {milestones.map((milestone) => (
                                   <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                                    {milestone.name} ({milestone.default_percentage}%)
+                                    {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -779,30 +779,48 @@ export default function ProjectDetailPage() {
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* Show Expected Amount Calculation */}
+                        {paymentData.expected_amount && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-sm font-medium text-blue-900">💰 Expected Receivable</p>
+                            <p className="text-2xl font-bold text-blue-700">₹{parseFloat(paymentData.expected_amount).toLocaleString('en-IN')}</p>
+                            <div className="text-xs text-blue-600 mt-1 space-y-1">
+                              {(() => {
+                                const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
+                                if (milestone && estimation) {
+                                  return (
+                                    <>
+                                      {milestone.woodwork_percentage > 0 && (
+                                        <div>🪵 Woodwork: {milestone.woodwork_percentage}% of ₹{parseFloat(estimation.woodwork_value || 0).toLocaleString('en-IN')} = ₹{((parseFloat(estimation.woodwork_value || 0) * milestone.woodwork_percentage) / 100).toLocaleString('en-IN')}</div>
+                                      )}
+                                      {milestone.misc_percentage > 0 && (
+                                        <div>🔧 Misc: {milestone.misc_percentage}% of ₹{(parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)).toLocaleString('en-IN')} = ₹{(((parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)) * milestone.misc_percentage) / 100).toLocaleString('en-IN')}</div>
+                                      )}
+                                    </>
+                                  );
+                                }
+                              })()}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
-                          <Label>Amount</Label>
+                          <Label>Actual Amount Collected *</Label>
                           <Input
                             type="number"
-                            placeholder="0"
+                            placeholder="Enter actual amount collected"
                             value={paymentData.amount}
                             onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
                             required
                           />
-                          {paymentData.milestone_id && milestones.length > 0 && (() => {
-                            const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
-                            if (milestone && estimation) {
-                              const suggestedAmount = (parseFloat(estimation.final_value || estimation.total_value || 0) * milestone.default_percentage) / 100;
-                              const enteredAmount = parseFloat(paymentData.amount || 0);
-                              if (Math.abs(enteredAmount - suggestedAmount) > 0.01) {
-                                return (
-                                  <p className="text-sm text-amber-600">
-                                    ⚠️ Amount differs from suggested {milestone.default_percentage}% ({suggestedAmount.toFixed(2)})
-                                  </p>
-                                );
-                              }
-                            }
-                            return null;
-                          })()}
+                          {paymentData.expected_amount && paymentData.amount && (
+                            <p className={`text-sm ${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 ? 'text-amber-600' : 'text-green-600'}`}>
+                              {Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 
+                                ? `⚠️ Difference: ₹${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)).toFixed(2)}`
+                                : '✓ Matches expected amount'}
+                            </p>
+                          )}
                         </div>
                         {paymentData.milestone_id && milestones.length > 0 && (() => {
                           const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
