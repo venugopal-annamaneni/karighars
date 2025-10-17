@@ -696,11 +696,49 @@ export async function POST(request, { params }) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       
+      // Auto-generate version
+      let version = body.version;
+      
+      if (body.is_editing && body.base_model_id) {
+        // Editing: Get the base model's version and increment
+        const baseModel = await query('SELECT version FROM biz_models WHERE id = $1', [body.base_model_id]);
+        if (baseModel.rows.length > 0) {
+          const currentVersion = baseModel.rows[0].version;
+          
+          // Extract version number and increment
+          const versionMatch = currentVersion.match(/V?(\d+)$/i);
+          if (versionMatch) {
+            const num = parseInt(versionMatch[1]);
+            version = `V${num + 1}`;
+          } else {
+            version = 'V2'; // Default if can't parse
+          }
+        }
+      } else if (!version) {
+        // New model: Check if code already exists, get max version
+        const existing = await query(
+          `SELECT version FROM biz_models WHERE code = $1 ORDER BY created_at DESC LIMIT 1`,
+          [body.code]
+        );
+        
+        if (existing.rows.length > 0) {
+          const currentVersion = existing.rows[0].version;
+          const versionMatch = currentVersion.match(/V?(\d+)$/i);
+          if (versionMatch) {
+            const num = parseInt(versionMatch[1]);
+            version = `V${num + 1}`;
+          } else {
+            version = 'V2';
+          }
+        } else {
+          version = 'V1'; // First version
+        }
+      }
+
       const result = await query(
         `INSERT INTO biz_models (code, name, version, description, service_charge_percentage, max_discount_percentage, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [body.code, body.name, body.version, body.description, body.service_charge_percentage, 
-         body.max_discount_percentage, body.is_active !== false]
+        [body.code, body.name, version, body.description, body.service_charge_percentage, body.max_discount_percentage, body.is_active]
       );
 
       // Add stages if provided
