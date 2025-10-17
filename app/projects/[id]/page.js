@@ -702,34 +702,67 @@ export default function ProjectDetailPage() {
                       <li>System will create credit reversal entry</li>
                       <li>Finance team uploads credit note document</li>
                       <li>Ledger will reflect the adjustment</li>
+                      <li>Or creator can cancel and revert to previous version</li>
                     </ol>
                   </div>
-                  {session.user.role === 'admin' && (
-                    <Button 
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/estimations/${estimation.id}/approve-overpayment`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({})
-                          });
-                          if (res.ok) {
-                            toast.success('Overpayment approved! Credit reversal entry created.');
-                            fetchProjectData();
-                          } else {
-                            const data = await res.json();
-                            toast.error(data.error || 'Failed to approve overpayment');
+                  <div className="flex gap-3">
+                    {session.user.role === 'admin' && (
+                      <Button 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/estimations/${estimation.id}/approve-overpayment`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({})
+                            });
+                            if (res.ok) {
+                              toast.success('Overpayment approved! Credit reversal entry created.');
+                              fetchProjectData();
+                            } else {
+                              const data = await res.json();
+                              toast.error(data.error || 'Failed to approve overpayment');
+                            }
+                          } catch (error) {
+                            console.error('Error:', error);
+                            toast.error('An error occurred');
                           }
-                        } catch (error) {
-                          console.error('Error:', error);
-                          toast.error('An error occurred');
-                        }
-                      }}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Approve Overpayment & Create Credit Reversal
-                    </Button>
-                  )}
+                        }}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Approve Overpayment & Create Credit Reversal
+                      </Button>
+                    )}
+                    {(estimation.created_by === session.user.id || session.user.role === 'admin') && (
+                      <Button 
+                        onClick={async () => {
+                          if (!confirm(`Are you sure you want to cancel this estimation and revert to version ${estimation.version - 1}?`)) {
+                            return;
+                          }
+                          try {
+                            const res = await fetch(`/api/estimations/${estimation.id}/cancel-overpayment`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({})
+                            });
+                            if (res.ok) {
+                              toast.success('Estimation cancelled and reverted to previous version.');
+                              fetchProjectData();
+                            } else {
+                              const data = await res.json();
+                              toast.error(data.error || 'Failed to cancel estimation');
+                            }
+                          } catch (error) {
+                            console.error('Error:', error);
+                            toast.error('An error occurred');
+                          }
+                        }}
+                        variant="outline"
+                        className="border-orange-500 text-orange-700 hover:bg-orange-50"
+                      >
+                        Cancel & Revert to v{estimation.version - 1}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
