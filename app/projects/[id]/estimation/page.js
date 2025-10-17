@@ -185,15 +185,15 @@ export default function EstimationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: projectId,
-          final_value: totals.finalValue,
-          gst_amount: totals.gstAmount
+          final_value: totals.final_value,
+          gst_amount: totals.gst_amount
         })
       });
       
       console.log('✅ Check overpayment request sent:', {
         project_id: projectId,
-        final_value: totals.finalValue,
-        gst_amount: totals.gstAmount
+        final_value: totals.final_value,
+        gst_amount: totals.gst_amount
       });
       console.log('✅ Check overpayment response status:', checkRes.status);
       
