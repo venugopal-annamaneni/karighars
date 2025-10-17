@@ -190,10 +190,14 @@ export default function EstimationPage() {
         })
       });
       
+      console.log('✅ Check overpayment response status:', checkRes.status);
+      
       if (checkRes.ok) {
         const checkData = await checkRes.json();
+        console.log('📊 Check overpayment data:', checkData);
         
         if (checkData.has_overpayment) {
+          console.log('🔴 Overpayment detected! Showing modal...');
           // Show modal and wait for user decision
           setOverpaymentData(checkData);
           setPendingSubmitData({
@@ -209,6 +213,8 @@ export default function EstimationPage() {
           setShowOverpaymentModal(true);
           setSaving(false);
           return; // Stop here and wait for user action
+        } else {
+          console.log('🟢 No overpayment - proceeding with save');
         }
       }
       
