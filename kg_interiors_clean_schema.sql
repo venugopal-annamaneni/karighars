@@ -333,6 +333,7 @@ CREATE TABLE customer_payments_in (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     estimation_id INTEGER REFERENCES project_estimations(id),
+    related_estimation_id INTEGER REFERENCES project_estimations(id),
     project_financial_event_id INTEGER REFERENCES project_financial_events(id),
     customer_id INTEGER REFERENCES customers(id),
     milestone_id INTEGER REFERENCES biz_model_milestones(id),
