@@ -982,7 +982,115 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ project: result.rows[0] });
     }
 
-    // Update Estimation
+    // Approve Overpayment and Create Credit Reversal (MUST be before general estimations/ handler)
+    if (path.startsWith('estimations/') && path.endsWith('/approve-overpayment')) {
+      console.log('🔴 APPROVE OVERPAYMENT ENDPOINT REACHED');
+      console.log('Path:', path);
+      console.log('User role:', session.user.role);
+      
+      if (session.user.role !== 'admin' && session.user.role !== 'finance') {
+        return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
+      }
+
+      const estimationId = path.split('/')[1];
+      console.log('Estimation ID:', estimationId);
+      
+      // Get estimation details
+      const estRes = await query(`
+        SELECT e.*, p.customer_id, p.id as project_id
+        FROM project_estimations e
+        JOIN projects p ON e.project_id = p.id
+        WHERE e.id = $1
+      `, [estimationId]);
+      
+      if (estRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Estimation not found' }, { status: 404 });
+      }
+      
+      const estimation = estRes.rows[0];
+      
+      if (!estimation.has_overpayment) {
+        return NextResponse.json({ error: 'No overpayment detected for this estimation' }, { status: 400 });
+      }
+      
+      // Update estimation status to approved
+      await query(`
+        UPDATE project_estimations 
+        SET overpayment_status = 'approved', updated_at = NOW()
+        WHERE id = $1
+      `, [estimationId]);
+      
+      // Create reversal entry in customer_payments_in (negative amount)
+      const reversalResult = await query(`
+        INSERT INTO customer_payments_in (
+          project_id, 
+          estimation_id, 
+          customer_id, 
+          payment_type, 
+          amount, 
+          pre_tax_amount,
+          gst_amount,
+          gst_percentage,
+          payment_date, 
+          mode, 
+          reference_number, 
+          remarks, 
+          status,
+          created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+        [
+          estimation.project_id,
+          estimationId,
+          estimation.customer_id,
+          'credit_reversal',
+          -Math.abs(estimation.overpayment_amount), // Negative amount
+          -Math.abs(estimation.overpayment_amount / 1.18), // Assuming 18% GST
+          -Math.abs(estimation.overpayment_amount - (estimation.overpayment_amount / 1.18)),
+          18,
+          new Date(),
+          'adjustment',
+          `CREDIT-REV-${estimationId}`,
+          `Credit reversal due to estimation revision. Overpayment: ₹${estimation.overpayment_amount}`,
+          'pending', // Pending until finance uploads credit note
+          session.user.id
+        ]
+      );
+      
+      // Update project credit balance
+      await query(`
+        UPDATE projects 
+        SET customer_credit = customer_credit + $1
+        WHERE id = $2
+      `, [estimation.overpayment_amount, estimation.project_id]);
+      
+      // Create ledger entry
+      await query(`
+        INSERT INTO project_ledger (
+          project_id, entry_type, source_table, source_id, 
+          debit, credit, description
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        estimation.project_id,
+        'credit_reversal',
+        'customer_payments_in',
+        reversalResult.rows[0].id,
+        estimation.overpayment_amount, // Debit (reducing customer payment)
+        0,
+        `Credit reversal: Estimation revised. Overpayment of ₹${estimation.overpayment_amount}`
+      ]);
+      
+      console.log('✅ Overpayment approval completed successfully');
+      
+      return NextResponse.json({
+        message: 'Overpayment approved. Credit reversal entry created.',
+        reversal: reversalResult.rows[0],
+        overpayment_amount: estimation.overpayment_amount
+      });
+    }
+
+    // Update Estimation (general handler - must be AFTER approve-overpayment)
     if (path.startsWith('estimations/')) {
       const estimationId = path.split('/')[1];
       const result = await query(
