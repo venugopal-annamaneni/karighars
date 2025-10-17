@@ -231,15 +231,49 @@ export default function ProjectDetailPage() {
   };
 
   const handleMilestoneChange = (milestoneId) => {
-    setPaymentData({ ...paymentData, milestone_id: milestoneId });
-    
-    if (milestoneId && estimation) {
-      const milestone = milestones.find(m => m.id === parseInt(milestoneId));
-      if (milestone && milestone.default_percentage) {
-        const suggestedAmount = (parseFloat(estimation.final_value || estimation.total_value || 0) * milestone.default_percentage) / 100;
-        setPaymentData(prev => ({ ...prev, milestone_id: milestoneId, amount: suggestedAmount.toFixed(2) }));
-      }
+    if (!milestoneId || !estimation) {
+      setPaymentData(prev => ({ ...prev, milestone_id: milestoneId, amount: '' }));
+      return;
     }
+
+    const milestone = milestones.find(m => m.id === parseInt(milestoneId));
+    if (!milestone) {
+      setPaymentData(prev => ({ ...prev, milestone_id: milestoneId, amount: '' }));
+      return;
+    }
+
+    // Calculate expected receivable based on milestone percentages
+    let calculatedAmount = 0;
+
+    if (milestone.milestone_code === 'MISC_PAYMENT') {
+      // MISC_PAYMENT: No auto-calculation, user enters amount
+      setPaymentData(prev => ({ 
+        ...prev, 
+        milestone_id: milestoneId, 
+        amount: '',
+        expected_amount: null 
+      }));
+      return;
+    }
+
+    // Calculate from woodwork and misc percentages
+    const woodworkValue = parseFloat(estimation.woodwork_value || 0);
+    const miscValue = parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0);
+
+    if (milestone.woodwork_percentage) {
+      calculatedAmount += (woodworkValue * milestone.woodwork_percentage) / 100;
+    }
+
+    if (milestone.misc_percentage) {
+      calculatedAmount += (miscValue * milestone.misc_percentage) / 100;
+    }
+
+    setPaymentData(prev => ({ 
+      ...prev, 
+      milestone_id: milestoneId, 
+      amount: calculatedAmount.toFixed(2),
+      expected_amount: calculatedAmount.toFixed(2)
+    }));
   };
 
   const calculateGST = (amount, percentage) => {
