@@ -605,7 +605,7 @@ export default function EstimationPage() {
         
         {/* Overpayment Warning Modal */}
         <Dialog open={showOverpaymentModal} onOpenChange={setShowOverpaymentModal}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-red-100 p-3 rounded-full">
@@ -620,54 +620,56 @@ export default function EstimationPage() {
               </DialogDescription>
             </DialogHeader>
             
-            {overpaymentData && (
-              <div className="space-y-4 py-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                    <p className="text-sm text-red-700 font-medium mb-1">Total Collected (Approved)</p>
-                    <p className="text-2xl font-bold text-red-900">
-                      ₹{overpaymentData.total_collected?.toLocaleString('en-IN')}
+            <div className="overflow-y-auto flex-1 py-4">
+              {overpaymentData && (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                      <p className="text-sm text-red-700 font-medium mb-1">Total Collected (Approved)</p>
+                      <p className="text-2xl font-bold text-red-900">
+                        ₹{overpaymentData.total_collected?.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-700 font-medium mb-1">New Estimation Total</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        ₹{overpaymentData.new_estimation_total?.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-red-900 mb-1">Overpayment Amount:</p>
+                    <p className="text-3xl font-bold text-red-600">
+                      ₹{overpaymentData.overpayment_amount?.toLocaleString('en-IN')}
                     </p>
                   </div>
-                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-700 font-medium mb-1">New Estimation Total</p>
-                    <p className="text-2xl font-bold text-blue-900">
-                      ₹{overpaymentData.new_estimation_total?.toLocaleString('en-IN')}
-                    </p>
+                  
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="font-semibold text-amber-900 mb-2">⚠️ What happens if you proceed:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-amber-900 ml-2">
+                      <li>A new estimation version (v{overpaymentData.next_version}) will be created</li>
+                      <li>Status will be set to <strong>Pending Admin Approval</strong></li>
+                      <li>Admin must review and approve the overpayment</li>
+                      <li>System will create a credit reversal entry in payments</li>
+                      <li>Finance team will upload credit note document</li>
+                      <li>Ledger will reflect the adjustment</li>
+                    </ol>
+                  </div>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="font-semibold text-blue-900 mb-2">💡 Alternative Options:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-blue-900 ml-2">
+                      <li>Cancel and revise the estimation amounts</li>
+                      <li>Coordinate with Finance team before proceeding</li>
+                      <li>You can cancel this version later before admin approval</li>
+                    </ul>
                   </div>
                 </div>
-                
-                <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-red-900 mb-1">Overpayment Amount:</p>
-                  <p className="text-3xl font-bold text-red-600">
-                    ₹{overpaymentData.overpayment_amount?.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <p className="font-semibold text-amber-900 mb-2">⚠️ What happens if you proceed:</p>
-                  <ol className="list-decimal list-inside space-y-2 text-sm text-amber-900 ml-2">
-                    <li>A new estimation version (v{overpaymentData.next_version}) will be created</li>
-                    <li>Status will be set to <strong>Pending Admin Approval</strong></li>
-                    <li>Admin must review and approve the overpayment</li>
-                    <li>System will create a credit reversal entry in payments</li>
-                    <li>Finance team will upload credit note document</li>
-                    <li>Ledger will reflect the adjustment</li>
-                  </ol>
-                </div>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="font-semibold text-blue-900 mb-2">💡 Alternative Options:</p>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-blue-900 ml-2">
-                    <li>Cancel and revise the estimation amounts</li>
-                    <li>Coordinate with Finance team before proceeding</li>
-                    <li>You can cancel this version later before admin approval</li>
-                  </ul>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
             
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-2 mt-4">
               <Button
                 type="button"
                 variant="outline"
