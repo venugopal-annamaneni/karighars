@@ -243,8 +243,8 @@ export async function GET(request, { params }) {
       if (milestone.milestone_code === 'MISC_PAYMENT') {
         return NextResponse.json({
           is_misc_payment: true,
-          woodwork_value: woodworkValue,
-          misc_value: miscValue,
+          woodwork_value: woodworkValueWithGst,
+          misc_value: miscValueWithGst,
           expected_woodwork_amount: 0,
           expected_misc_amount: 0,
           expected_total: 0,
@@ -268,9 +268,9 @@ export async function GET(request, { params }) {
       const collectedWoodwork = parseFloat(paymentsRes.rows[0].total_woodwork || 0);
       const collectedMisc = parseFloat(paymentsRes.rows[0].total_misc || 0);
 
-      // Calculate collected percentages
-      const collectedWoodworkPercentage = woodworkValue > 0 ? (collectedWoodwork / woodworkValue) * 100 : 0;
-      const collectedMiscPercentage = miscValue > 0 ? (collectedMisc / miscValue) * 100 : 0;
+      // Calculate collected percentages (based on GST-inclusive values)
+      const collectedWoodworkPercentage = woodworkValueWithGst > 0 ? (collectedWoodwork / woodworkValueWithGst) * 100 : 0;
+      const collectedMiscPercentage = miscValueWithGst > 0 ? (collectedMisc / miscValueWithGst) * 100 : 0;
 
       // Calculate remaining to collect
       const targetWoodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
@@ -279,15 +279,15 @@ export async function GET(request, { params }) {
       const remainingWoodworkPercentage = Math.max(0, targetWoodworkPercentage - collectedWoodworkPercentage);
       const remainingMiscPercentage = Math.max(0, targetMiscPercentage - collectedMiscPercentage);
 
-      // Calculate expected amounts
-      const expectedWoodworkAmount = (woodworkValue * remainingWoodworkPercentage) / 100;
-      const expectedMiscAmount = (miscValue * remainingMiscPercentage) / 100;
+      // Calculate expected amounts (GST-inclusive)
+      const expectedWoodworkAmount = (woodworkValueWithGst * remainingWoodworkPercentage) / 100;
+      const expectedMiscAmount = (miscValueWithGst * remainingMiscPercentage) / 100;
       const expectedTotal = expectedWoodworkAmount + expectedMiscAmount;
 
       return NextResponse.json({
         is_misc_payment: false,
-        woodwork_value: woodworkValue,
-        misc_value: miscValue,
+        woodwork_value: woodworkValueWithGst,
+        misc_value: miscValueWithGst,
         target_woodwork_percentage: targetWoodworkPercentage,
         target_misc_percentage: targetMiscPercentage,
         collected_woodwork_amount: collectedWoodwork,
