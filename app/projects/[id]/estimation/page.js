@@ -158,10 +158,11 @@ export default function EstimationPage() {
       woodwork_value: woodwork,
       misc_internal_value: misc_internal,
       misc_external_value: misc_external,
+      total_value: subtotal,  // Send RAW subtotal to backend
       subtotal: subtotal,
       service_charge: serviceCharge,
       discount: discount,
-      total_value: finalTotal,
+      final_value: finalTotal,
       gst_amount: gstAmount,
       grand_total: grandTotal
     };
