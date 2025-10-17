@@ -202,9 +202,9 @@ export default function ProjectDetailPage() {
       let paymentType = 'other';
       let finalMilestoneId = null;
       
-      if (paymentData.milestone_id === 'MISC') {
+      if (paymentData.milestone_id === 'ADHOC') {
         // Ad-hoc payment - no milestone_id
-        paymentType = 'MISC';
+        paymentType = 'ADHOC';
         finalMilestoneId = null;
       } else if (paymentData.milestone_id) {
         const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
