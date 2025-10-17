@@ -177,7 +177,7 @@ CREATE TABLE projects (
     biz_model_id INTEGER REFERENCES biz_models(id),
     name TEXT NOT NULL,
     location TEXT,
-    phase TEXT DEFAULT 'onboarding' CHECK (phase IN ('onboarding', '2D', '3D', 'execution', 'handover')),
+    stage TEXT NOT NULL,
     status TEXT DEFAULT 'active',
     finance_locked BOOLEAN DEFAULT false,
     sales_order_id TEXT UNIQUE,
