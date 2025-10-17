@@ -834,6 +834,24 @@ export default function ProjectDetailPage() {
                           </div>
                         )}
                         {/* Show Expected Amount Calculation with Cumulative Info */}
+                        {paymentData.calculation && paymentData.calculation.is_misc_payment && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-green-900">🎯 Ad-hoc Payment - Available to Collect</p>
+                              <p className="text-xs text-green-700 mb-2">You can collect any amount up to 100% of each category</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-white p-2 rounded">
+                                <p className="text-xs text-green-700">Woodwork Total (GST-incl)</p>
+                                <p className="text-lg font-bold text-green-800">₹{parseFloat(paymentData.calculation.woodwork_value || 0).toLocaleString('en-IN')}</p>
+                              </div>
+                              <div className="bg-white p-2 rounded">
+                                <p className="text-xs text-green-700">Misc Total (GST-incl)</p>
+                                <p className="text-lg font-bold text-green-800">₹{parseFloat(paymentData.calculation.misc_value || 0).toLocaleString('en-IN')}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {paymentData.calculation && !paymentData.calculation.is_misc_payment && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                             <div>
