@@ -707,7 +707,9 @@ export default function ProjectDetailPage() {
                       onClick={async () => {
                         try {
                           const res = await fetch(`/api/estimations/${estimation.id}/approve-overpayment`, {
-                            method: 'PUT'
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
                           });
                           if (res.ok) {
                             toast.success('Overpayment approved! Credit reversal entry created.');
