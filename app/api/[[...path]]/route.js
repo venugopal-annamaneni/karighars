@@ -567,7 +567,7 @@ export async function POST(request, { params }) {
           requires_approval, approval_status, remarks, status, created_by
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *`,
-        [body.project_id, nextVersion, totalValue, body.woodwork_value || 0, 
+        [body.project_id, nextVersion, subtotal, body.woodwork_value || 0, 
          body.misc_internal_value || 0, body.misc_external_value || 0, 
          serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
          gstPercentage, gstAmount,
