@@ -577,6 +577,53 @@ export async function POST(request, { params }) {
       // Calculate GST (default 18% if not provided)
       const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
       const gstAmount = (finalValue * gstPercentage) / 100;
+      const grandTotal = finalValue + gstAmount;
+      
+      // Check for overpayment (only for revision, not first estimation)
+      let hasOverpayment = false;
+      let overpaymentAmount = 0;
+      let overpaymentStatus = null;
+      
+      if (nextVersion > 1) {
+        // Get total approved payments
+        const paymentsRes = await query(`
+          SELECT COALESCE(SUM(amount), 0) as total_collected
+          FROM customer_payments_in
+          WHERE project_id = $1 AND status = 'approved'
+        `, [body.project_id]);
+        
+        const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
+        
+        if (totalCollected > grandTotal) {
+          hasOverpayment = true;
+          overpaymentAmount = totalCollected - grandTotal;
+          overpaymentStatus = 'pending_approval';
+          
+          // If not admin, reject revision with overpayment
+          if (session.user.role !== 'admin') {
+            return NextResponse.json({
+              error: 'Estimation revision creates overpayment',
+              overpayment: overpaymentAmount,
+              total_collected: totalCollected,
+              new_estimation: grandTotal,
+              message: 'Admin approval required for estimation revisions that create overpayment'
+            }, { status: 403 });
+          }
+        }
+      }
+      
+      // Check if discount exceeds limit
+      const requiresApproval = discountPercentage > maxDiscountPercentage;
+      const approvalStatus = requiresApproval ? 'pending' : 'approved';
+      const subtotal = parseFloat(body.total_value) || 0;
+      const discountPercentage = parseFloat(body.discount_percentage) || 0;
+      const serviceChargeAmount = (subtotal * serviceChargePercentage) / 100;
+      const discountAmount = (subtotal * discountPercentage) / 100;
+      const finalValue = subtotal + serviceChargeAmount - discountAmount;
+      
+      // Calculate GST (default 18% if not provided)
+      const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
+      const gstAmount = (finalValue * gstPercentage) / 100;
       
       // Check if discount exceeds limit
       const requiresApproval = discountPercentage > maxDiscountPercentage;
