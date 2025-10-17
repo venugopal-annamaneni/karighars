@@ -361,7 +361,7 @@ export async function GET(request, { params }) {
           FROM documents d
           LEFT JOIN users u ON d.uploaded_by = u.id
           WHERE d.related_entity = $1 AND d.related_id = $2
-          ORDER BY d.uploaded_at DESC
+          ORDER BY d.created_at DESC
         `, [entityType, entityId]);
         
         return NextResponse.json({ documents: result.rows });
