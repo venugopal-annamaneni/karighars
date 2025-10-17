@@ -502,8 +502,8 @@ export default function ProjectDetailPage() {
     });
   };
 
-  const getPhaseColor = (phase) => {
-    switch (phase) {
+  const getStageColor = (stage) => {
+    switch (stage) {
       case 'onboarding': return 'bg-blue-100 text-blue-700';
       case '2D': return 'bg-purple-100 text-purple-700';
       case '3D': return 'bg-amber-100 text-amber-700';
