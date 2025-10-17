@@ -1185,11 +1185,20 @@ export default function ProjectDetailPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className={`text-xl font-bold ${payment.status === 'approved' ? 'text-green-600' : 'text-gray-400'}`}>
+                            <p className={`text-xl font-bold ${
+                              payment.amount < 0 
+                                ? 'text-red-600' 
+                                : payment.status === 'approved' 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-400'
+                            }`}>
                               {formatCurrency(payment.amount)}
                             </p>
                             {payment.status === 'pending' && (
                               <p className="text-xs text-amber-600">Not counted</p>
+                            )}
+                            {payment.payment_type === 'credit_note_reversal' && (
+                              <Badge className="bg-red-100 text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
                           {payment.status === 'pending' && (session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
