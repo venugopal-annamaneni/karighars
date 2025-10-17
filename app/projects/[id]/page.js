@@ -663,7 +663,7 @@ export default function ProjectDetailPage() {
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-4 gap-4">
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                         <p className="text-sm text-green-700 mb-1">Service Charge ({estimation.service_charge_percentage || 0}%)</p>
                         <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.service_charge_amount || 0)}</p>
@@ -672,9 +672,13 @@ export default function ProjectDetailPage() {
                         <p className="text-sm text-red-700 mb-1">Discount ({estimation.discount_percentage || 0}%)</p>
                         <p className="text-xl font-bold text-red-700">-{formatCurrency(estimation.discount_amount || 0)}</p>
                       </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-700 mb-1">GST ({estimation.gst_percentage || 18}%)</p>
+                        <p className="text-xl font-bold text-blue-700">+{formatCurrency(estimation.gst_amount || 0)}</p>
+                      </div>
                       <div className="bg-primary/10 p-4 rounded-lg border border-primary">
-                        <p className="text-sm text-primary mb-1">Final Total</p>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency(estimation.final_value || estimation.total_value)}</p>
+                        <p className="text-sm text-primary mb-1">Final Total (with GST)</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency((parseFloat(estimation.final_value || 0) + parseFloat(estimation.gst_amount || 0)))}</p>
                       </div>
                     </div>
 
