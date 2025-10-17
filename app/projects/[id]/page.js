@@ -60,6 +60,7 @@ export default function ProjectDetailPage() {
   const [uploadingReceipt, setUploadingReceipt] = useState({});
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   
   const [stageUpdate, setStageUpdate] = useState({ stage: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
