@@ -556,12 +556,12 @@ export default function BizModelsPage() {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Briefcase className="h-5 w-5 text-primary" />
-                      <Badge variant={model.is_active ? 'default' : 'secondary'}>
-                        {model.version}
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {model.code}-{model.version}
                       </Badge>
-                      <Badge variant={model.status === 'built' ? 'outline' : 'secondary'} 
-                             className={model.status === 'built' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
-                        {model.status === 'built' ? '✓ Built' : 'Draft'}
+                      <Badge variant={model.status === 'published' ? 'default' : 'secondary'} 
+                             className={model.status === 'published' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
+                        {model.status === 'published' ? '✓ Published' : 'Draft'}
                       </Badge>
                     </div>
                     <h3 className="font-semibold mb-1">{model.name}</h3>
