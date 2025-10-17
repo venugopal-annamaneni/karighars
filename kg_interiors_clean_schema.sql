@@ -356,6 +356,7 @@ CREATE TABLE customer_payments_in (
 );
 
 COMMENT ON COLUMN customer_payments_in.payment_type IS 'Payment type: milestone code from biz_model_milestones, MISC for ad-hoc payments, or credit_note_reversal for overpayment reversals';
+COMMENT ON COLUMN customer_payments_in.related_estimation_id IS 'For credit_note_reversal: references the estimation that triggered the credit note';
 COMMENT ON COLUMN customer_payments_in.receipt_url IS 'URL to uploaded payment receipt document';
 COMMENT ON COLUMN customer_payments_in.status IS 'Payment status: pending, approved, rejected';
 COMMENT ON COLUMN customer_payments_in.woodwork_amount IS 'Amount allocated to woodwork category';
