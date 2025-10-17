@@ -464,7 +464,7 @@ export default function EstimationPage() {
                     </Select>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Service Charge (%)</Label>
                       <Input
@@ -488,6 +488,19 @@ export default function EstimationPage() {
                         placeholder="0"
                         value={formData.discount_percentage}
                         onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>GST (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="18"
+                        value={formData.gst_percentage}
+                        onChange={(e) => setFormData({ ...formData, gst_percentage: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                   </div>
