@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://kgint-finance.preview.emergentagent.com/api"
+BASE_URL = "https://finance-manager-160.preview.emergentagent.com/api"
 TEST_USER = {
     "name": "Venugopal A",
     "email": "venugopal@example.com",

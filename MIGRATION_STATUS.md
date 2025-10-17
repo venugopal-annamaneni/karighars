@@ -92,12 +92,12 @@
 ## Next Steps
 
 1. **Configure Google OAuth:**
-   - Add redirect URI: `https://kgint-finance.preview.emergentagent.com/api/auth/callback/google`
+   - Add redirect URI: `https://finance-manager-160.preview.emergentagent.com/api/auth/callback/google`
    - In Google Cloud Console: https://console.cloud.google.com/apis/credentials
    - Client ID: `912678435959-s152i7nqggkk2qh7jkl0ivngfnmik0d2`
 
 2. **Sign In:**
-   - Go to: https://kgint-finance.preview.emergentagent.com
+   - Go to: https://finance-manager-160.preview.emergentagent.com
    - Sign in with: venugopal.annamaneni@gmail.com
    - You'll have admin access
 
