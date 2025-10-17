@@ -229,6 +229,8 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "GST refactoring complete! Major changes: 1) Created gst_refactor_schema.sql with schema updates and data truncation 2) Updated estimation API to store gst_percentage and gst_amount 3) Removed GST fields from payment API and updated to use GST-inclusive calculations 4) Updated calculate-payment endpoint to include GST in all milestone calculations 5) Enhanced migration endpoint 6) Added GST input to estimation form UI with live calculation 7) Removed all GST fields from payment dialog. IMPORTANT: Schema migration must be run via POST /api/admin/migrate with {migrationFile: 'gst_refactor_schema.sql'} to apply database changes. Ready for backend testing."
+    - agent: "testing"
+      message: "GST refactoring backend testing completed. RESULTS: ✅ Schema Migration: Successfully applied GST schema changes - added gst_percentage/gst_amount to project_estimations, removed GST fields from customer_payments_in, data truncation working. ✅ Estimation API: GST calculation verified (18% on ₹108K = ₹19,440), fields properly stored. ✅ Payment API: GST removal confirmed, no GST fields in payment records. ⚠️ Calculate Payment API & Migration Endpoint: Cannot test due to authentication requirements but code review shows correct implementation. CRITICAL: 3/5 backend tasks verified working, 2 require authenticated testing. Database schema is correctly configured for GST refactoring."
 
   - task: "File Upload API"
     implemented: true
