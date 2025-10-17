@@ -544,11 +544,12 @@ export async function POST(request, { params }) {
         }
       }
 
-      const totalValue = parseFloat(body.total_value) || 0;
+      // Calculate from subtotal (total_value is raw sum before service charge/discount)
+      const subtotal = parseFloat(body.total_value) || 0;
       const discountPercentage = parseFloat(body.discount_percentage) || 0;
-      const serviceChargeAmount = (totalValue * serviceChargePercentage) / 100;
-      const discountAmount = (totalValue * discountPercentage) / 100;
-      const finalValue = totalValue + serviceChargeAmount - discountAmount;
+      const serviceChargeAmount = (subtotal * serviceChargePercentage) / 100;
+      const discountAmount = (subtotal * discountPercentage) / 100;
+      const finalValue = subtotal + serviceChargeAmount - discountAmount;
       
       // Calculate GST (default 18% if not provided)
       const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
