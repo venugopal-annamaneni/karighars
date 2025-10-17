@@ -573,7 +573,7 @@ export default function ProjectDetailPage() {
                   <form onSubmit={handleStageUpdate} className="space-y-4">
                     <div className="space-y-2">
                       <Label>New Stage</Label>
-                      <Select value={stageUpdate.phase} onValueChange={(value) => setStageUpdate({ ...stageUpdate, phase: value })}>
+                      <Select value={stageUpdate.stage} onValueChange={(value) => setStageUpdate({ ...stageUpdate, stage: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
