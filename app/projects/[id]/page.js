@@ -844,6 +844,35 @@ export default function ProjectDetailPage() {
                           <div className="text-sm text-muted-foreground">Loading calculation...</div>
                         )}
 
+                        {/* Category-wise Amount to Collect - Prominent Display */}
+                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && paymentData.calculation.expected_total > 0 && (
+                          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-green-900 mb-2">📊 Amount to Collect (Category-wise):</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              {paymentData.calculation.expected_woodwork_amount > 0 && (
+                                <div className="bg-white rounded p-2 border border-green-200">
+                                  <p className="text-xs text-gray-600">🪵 Woodwork</p>
+                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_woodwork_percentage.toFixed(1)}%</p>
+                                </div>
+                              )}
+                              {paymentData.calculation.expected_misc_amount > 0 && (
+                                <div className="bg-white rounded p-2 border border-green-200">
+                                  <p className="text-xs text-gray-600">🔧 Misc</p>
+                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_misc_percentage.toFixed(1)}%</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-green-200">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-green-900">Total Expected:</span>
+                                <span className="text-xl font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <Label>Actual Amount Collected *</Label>
                           <Input
