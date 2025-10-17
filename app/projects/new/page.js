@@ -301,24 +301,6 @@ export default function NewProjectPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phase">Initial Phase</Label>
-                <Select
-                  value={formData.phase}
-                  onValueChange={(value) => setFormData({ ...formData, phase: value })}
-                >
-                  <SelectTrigger id="phase">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="onboarding">Onboarding</SelectItem>
-                    <SelectItem value="2D">2D Design</SelectItem>
-                    <SelectItem value="3D">3D Design</SelectItem>
-                    <SelectItem value="execution">Execution</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="biz_model">Business Model *</Label>
                 <Select
                   value={formData.biz_model_id}
