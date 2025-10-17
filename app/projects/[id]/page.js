@@ -93,8 +93,11 @@ export default function ProjectDetailPage() {
         fetch(`/api/documents/project/${projectId}`)
       ]);
 
+      let projectData = null;
+
       if (projectRes.ok) {
         const data = await projectRes.json();
+        projectData = data.project;
         // Merge the project data with payment totals
         setProject({
           ...data.project,
@@ -137,9 +140,9 @@ export default function ProjectDetailPage() {
         setDocuments(data.documents);
       }
 
-      // Fetch milestones if project has bizModel
-      if (data.project && data.project.biz_model_id) {
-        const milestonesRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
+      // Fetch milestones if project has biz_model_id
+      if (projectData && projectData.biz_model_id) {
+        const milestonesRes = await fetch(`/api/biz-models/${projectData.biz_model_id}`);
         if (milestonesRes.ok) {
           const bizData = await milestonesRes.json();
           setMilestones(bizData.milestones.filter(m => m.direction === 'inflow'));
