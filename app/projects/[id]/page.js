@@ -560,7 +560,7 @@ export default function ProjectDetailPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2" onClick={() => setStageUpdate({ phase: project.phase, remarks: '' })}>
                     <Edit className="h-4 w-4" />
-                    Update Phase
+                    Update Stage
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
