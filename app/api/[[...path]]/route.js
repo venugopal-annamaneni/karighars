@@ -1150,6 +1150,9 @@ export async function PUT(request, { params }) {
       });
     }
 
+    console.log('🟢 After BizModel toggle, before approve-overpayment check');
+    console.log('🟢 Current path:', path);
+
     // Approve Overpayment and Create Credit Reversal
     console.log('🟡 Testing approve-overpayment condition:');
     console.log('  path.startsWith("estimations/"):', path.startsWith('estimations/'));
