@@ -266,9 +266,9 @@ export default function BizModelsPage() {
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create New Business Model</DialogTitle>
+                  <DialogTitle>{editingModelId ? 'Edit Business Model (Create New Version)' : 'Create New Business Model'}</DialogTitle>
                   <DialogDescription>
-                    Define a new business model with stages and payment milestones
+                    {editingModelId ? 'Editing will create a new version automatically. Old version will be preserved.' : 'Define a new business model with stages and payment milestones'}
                   </DialogDescription>
                 </DialogHeader>
                 
