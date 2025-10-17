@@ -525,10 +525,22 @@ export async function POST(request, { params }) {
         bizModelId = bizModelRes.rows[0]?.id || null;
       }
       
+      // Fetch first stage from biz_model_stages for the selected bizModel
+      let initialPhase = 'onboarding'; // fallback default
+      if (bizModelId) {
+        const stageRes = await query(
+          'SELECT stage_code FROM biz_model_stages WHERE biz_model_id = $1 ORDER BY sequence_order ASC LIMIT 1',
+          [bizModelId]
+        );
+        if (stageRes.rows.length > 0) {
+          initialPhase = stageRes.rows[0].stage_code;
+        }
+      }
+      
       const result = await query(
         `INSERT INTO projects (project_code, customer_id, name, location, phase, biz_model_id, sales_order_id, created_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-        [projectCode, body.customer_id, body.name, body.location, body.phase || 'onboarding', bizModelId, salesOrderId, session.user.id]
+        [projectCode, body.customer_id, body.name, body.location, initialPhase, bizModelId, salesOrderId, session.user.id]
       );
 
       // Log activity
