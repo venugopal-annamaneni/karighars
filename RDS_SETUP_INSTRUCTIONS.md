@@ -78,7 +78,7 @@ PGPASSWORD='Karighars$2025!!' psql \
 3. **General tab:**
    - Name: KG Interiors RDS
 4. **Connection tab:**
-   - Host: `database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com`
+   - Host: `database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com`
    - Port: `5432`
    - Database: `postgres`
    - Username: `postgres`
