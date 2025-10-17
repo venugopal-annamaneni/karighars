@@ -888,6 +888,7 @@ export async function POST(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
+  console.log('🟠 PUT FUNCTION CALLED - START');
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
