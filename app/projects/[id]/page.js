@@ -775,29 +775,50 @@ export default function ProjectDetailPage() {
                           </Select>
                         </div>
 
-                        {/* Show Expected Amount Calculation */}
-                        {paymentData.expected_amount && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <p className="text-sm font-medium text-blue-900">💰 Expected Receivable</p>
-                            <p className="text-2xl font-bold text-blue-700">₹{parseFloat(paymentData.expected_amount).toLocaleString('en-IN')}</p>
-                            <div className="text-xs text-blue-600 mt-1 space-y-1">
-                              {(() => {
-                                const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
-                                if (milestone && estimation) {
-                                  return (
-                                    <>
-                                      {milestone.woodwork_percentage > 0 && (
-                                        <div>🪵 Woodwork: {milestone.woodwork_percentage}% of ₹{parseFloat(estimation.woodwork_value || 0).toLocaleString('en-IN')} = ₹{((parseFloat(estimation.woodwork_value || 0) * milestone.woodwork_percentage) / 100).toLocaleString('en-IN')}</div>
-                                      )}
-                                      {milestone.misc_percentage > 0 && (
-                                        <div>🔧 Misc: {milestone.misc_percentage}% of ₹{(parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)).toLocaleString('en-IN')} = ₹{(((parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)) * milestone.misc_percentage) / 100).toLocaleString('en-IN')}</div>
-                                      )}
-                                    </>
-                                  );
-                                }
-                              })()}
+                        {/* Show Expected Amount Calculation with Cumulative Info */}
+                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-blue-900">💰 Expected Receivable (Cumulative)</p>
+                              <p className="text-2xl font-bold text-blue-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</p>
                             </div>
+
+                            {/* Woodwork Breakdown */}
+                            {paymentData.calculation.expected_woodwork_amount > 0 && (
+                              <div className="border-t border-blue-200 pt-2">
+                                <p className="text-xs font-semibold text-blue-800 mb-1">🪵 Woodwork Component:</p>
+                                <div className="text-xs text-blue-700 space-y-1 ml-3">
+                                  <div>Total Value: ₹{parseFloat(paymentData.calculation.woodwork_value).toLocaleString('en-IN')}</div>
+                                  <div>Target: {paymentData.calculation.target_woodwork_percentage.toFixed(1)}% → ₹{((paymentData.calculation.woodwork_value * paymentData.calculation.target_woodwork_percentage) / 100).toLocaleString('en-IN')}</div>
+                                  <div>Already Collected: {paymentData.calculation.collected_woodwork_percentage.toFixed(1)}% → ₹{parseFloat(paymentData.calculation.collected_woodwork_amount).toLocaleString('en-IN')}</div>
+                                  <div className="font-semibold text-green-700">To Collect Now: {paymentData.calculation.remaining_woodwork_percentage.toFixed(1)}% → ₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}</div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Misc Breakdown */}
+                            {paymentData.calculation.expected_misc_amount > 0 && (
+                              <div className="border-t border-blue-200 pt-2">
+                                <p className="text-xs font-semibold text-blue-800 mb-1">🔧 Misc Component:</p>
+                                <div className="text-xs text-blue-700 space-y-1 ml-3">
+                                  <div>Total Value: ₹{parseFloat(paymentData.calculation.misc_value).toLocaleString('en-IN')}</div>
+                                  <div>Target: {paymentData.calculation.target_misc_percentage.toFixed(1)}% → ₹{((paymentData.calculation.misc_value * paymentData.calculation.target_misc_percentage) / 100).toLocaleString('en-IN')}</div>
+                                  <div>Already Collected: {paymentData.calculation.collected_misc_percentage.toFixed(1)}% → ₹{parseFloat(paymentData.calculation.collected_misc_amount).toLocaleString('en-IN')}</div>
+                                  <div className="font-semibold text-green-700">To Collect Now: {paymentData.calculation.remaining_misc_percentage.toFixed(1)}% → ₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}</div>
+                                </div>
+                              </div>
+                            )}
+
+                            {paymentData.calculation.expected_total === 0 && (
+                              <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+                                ⚠️ Target milestone percentage already collected. No additional payment expected.
+                              </div>
+                            )}
                           </div>
+                        )}
+
+                        {paymentData.milestone_id && !paymentData.calculation && (
+                          <div className="text-sm text-muted-foreground">Loading calculation...</div>
                         )}
 
                         <div className="space-y-2">
