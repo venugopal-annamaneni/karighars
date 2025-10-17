@@ -29,7 +29,8 @@ export default function EstimationPage() {
     remarks: '',
     status: 'draft',
     service_charge_percentage: 0,
-    discount_percentage: 0
+    discount_percentage: 0,
+    gst_percentage: 18
   });
   
   const [items, setItems] = useState([
