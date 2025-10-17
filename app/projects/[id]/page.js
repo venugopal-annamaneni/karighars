@@ -208,6 +208,15 @@ export default function ProjectDetailPage() {
         miscAmount = parseFloat(paymentData.amount);
       }
 
+      // Get payment type from milestone or use default
+      let paymentType = 'other';
+      if (paymentData.milestone_id) {
+        const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
+        if (milestone) {
+          paymentType = milestone.milestone_code;
+        }
+      }
+
       const res = await fetch('/api/customer-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -216,7 +225,7 @@ export default function ProjectDetailPage() {
           customer_id: project.customer_id,
           estimation_id: estimation?.id,
           milestone_id: paymentData.milestone_id || null,
-          payment_type: paymentData.payment_type,
+          payment_type: paymentType,
           amount: paymentData.amount,
           mode: paymentData.mode,
           reference_number: paymentData.reference_number,
