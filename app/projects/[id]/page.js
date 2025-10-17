@@ -578,11 +578,21 @@ export default function ProjectDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="onboarding">Onboarding</SelectItem>
-                          <SelectItem value="2D">2D Design</SelectItem>
-                          <SelectItem value="3D">3D Design</SelectItem>
-                          <SelectItem value="execution">Execution</SelectItem>
-                          <SelectItem value="handover">Handover</SelectItem>
+                          {stages.length > 0 ? (
+                            stages.map((stage) => (
+                              <SelectItem key={stage.id} value={stage.stage_code}>
+                                {stage.stage_name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <>
+                              <SelectItem value="onboarding">Onboarding</SelectItem>
+                              <SelectItem value="2D">2D Design</SelectItem>
+                              <SelectItem value="3D">3D Design</SelectItem>
+                              <SelectItem value="execution">Execution</SelectItem>
+                              <SelectItem value="handover">Handover</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
