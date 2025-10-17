@@ -894,6 +894,8 @@ export async function PUT(request, { params }) {
   }
 
   const path = params.path ? params.path.join('/') : '';
+  console.log('🔵 PUT REQUEST - Path:', path);
+  console.log('🔵 PUT REQUEST - Params:', params);
   
   // Parse body only if request has content
   let body = {};
