@@ -265,7 +265,25 @@ export default function ProjectDetailPage() {
       return;
     }
 
-    // Fetch cumulative calculation from API
+    // Handle MISC (Ad-hoc) payment - no calculation needed
+    if (milestoneId === 'MISC') {
+      setPaymentData(prev => ({ 
+        ...prev, 
+        milestone_id: 'MISC', 
+        amount: '',
+        woodwork_amount: '',
+        misc_amount: '',
+        expected_amount: null,
+        calculation: {
+          is_misc_payment: true,
+          woodwork_value: (parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.woodwork_value || 0) * parseFloat(estimation.gst_percentage || 18) / 100),
+          misc_value: ((parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)) * (1 + parseFloat(estimation.gst_percentage || 18) / 100))
+        }
+      }));
+      return;
+    }
+
+    // Fetch cumulative calculation from API for milestone-based payments
     try {
       const res = await fetch(`/api/calculate-payment/${projectId}/${milestoneId}`);
       if (!res.ok) {
