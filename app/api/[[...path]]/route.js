@@ -1151,6 +1151,11 @@ export async function PUT(request, { params }) {
     }
 
     // Approve Overpayment and Create Credit Reversal
+    console.log('🟡 Testing approve-overpayment condition:');
+    console.log('  path.startsWith("estimations/"):', path.startsWith('estimations/'));
+    console.log('  path.endsWith("/approve-overpayment"):', path.endsWith('/approve-overpayment'));
+    console.log('  Full condition:', path.startsWith('estimations/') && path.endsWith('/approve-overpayment'));
+    
     if (path.startsWith('estimations/') && path.endsWith('/approve-overpayment')) {
       console.log('🔴 APPROVE OVERPAYMENT ENDPOINT REACHED');
       console.log('Path:', path);
