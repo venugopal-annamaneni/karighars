@@ -910,6 +910,8 @@ export async function PUT(request, { params }) {
   }
 
   try {
+    console.log('🟣 INSIDE PUT TRY BLOCK - Path:', path);
+    
     // Update Customer
     if (path.startsWith('customers/') && path.split('/').length === 2) {
       const customerId = path.split('/')[1];
