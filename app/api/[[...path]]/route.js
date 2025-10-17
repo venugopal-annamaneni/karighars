@@ -1150,11 +1150,16 @@ export async function PUT(request, { params }) {
 
     // Approve Overpayment and Create Credit Reversal
     if (path.startsWith('estimations/') && path.endsWith('/approve-overpayment')) {
+      console.log('🔴 APPROVE OVERPAYMENT ENDPOINT REACHED');
+      console.log('Path:', path);
+      console.log('User role:', session.user.role);
+      
       if (session.user.role !== 'admin' && session.user.role !== 'finance') {
         return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
       }
 
       const estimationId = path.split('/')[1];
+      console.log('Estimation ID:', estimationId);
       
       // Get estimation details
       const estRes = await query(`
