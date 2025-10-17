@@ -69,107 +69,16 @@ export default function CustomersPage() {
     }
   };
 
-  const handleFileChange = async (type, file) => {
-    if (!file) return;
-    
-    setUploadingKyc(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setKycFiles(prev => ({ ...prev, [type]: data.url }));
-        toast.success(`${type.toUpperCase()} uploaded successfully`);
-      } else {
-        toast.error(`Failed to upload ${type}`);
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Upload failed');
-    } finally {
-      setUploadingKyc(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Prepare payload with KYC documents
-      const payload = {
-        ...formData,
-        kyc_documents: kycFiles
-      };
-
       const res = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        const data = await res.json();
-        
-        // Upload KYC documents if customer created
-        if (data.customer) {
-          const uploadPromises = [];
-          
-          if (kycFiles.aadhar) {
-            uploadPromises.push(
-              fetch('/api/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  related_entity: 'customer',
-                  related_id: data.customer.id,
-                  document_type: 'kyc_aadhar',
-                  document_url: kycFiles.aadhar,
-                  file_name: 'Aadhar Card',
-                }),
-              })
-            );
-          }
-          
-          if (kycFiles.pan) {
-            uploadPromises.push(
-              fetch('/api/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  related_entity: 'customer',
-                  related_id: data.customer.id,
-                  document_type: 'kyc_pan',
-                  document_url: kycFiles.pan,
-                  file_name: 'PAN Card',
-                }),
-              })
-            );
-          }
-          
-          if (kycFiles.cheque) {
-            uploadPromises.push(
-              fetch('/api/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  related_entity: 'customer',
-                  related_id: data.customer.id,
-                  document_type: 'kyc_cheque',
-                  document_url: kycFiles.cheque,
-                  file_name: 'Blank Cheque',
-                }),
-              })
-            );
-          }
-          
-          await Promise.all(uploadPromises);
-        }
-        
         toast.success('Customer created successfully');
         setShowDialog(false);
         setFormData({
@@ -178,17 +87,8 @@ export default function CustomersPage() {
           phone: '',
           email: '',
           address: '',
-          gst_number: '',
-          kyc_type: 'none',
-          business_type: 'B2C',
-          bank_details: {
-            account_number: '',
-            ifsc_code: '',
-            bank_name: '',
-            branch_name: ''
-          }
+          gst_number: ''
         });
-        setKycFiles({ aadhar: null, pan: null, cheque: null });
         fetchCustomers();
       } else {
         toast.error('Failed to create customer');
