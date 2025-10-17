@@ -822,29 +822,9 @@ export default function ProjectDetailPage() {
                             </p>
                           )}
                         </div>
-                        {paymentData.milestone_id && milestones.length > 0 && (() => {
-                          const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
-                          if (milestone && estimation) {
-                            const suggestedAmount = (parseFloat(estimation.final_value || estimation.total_value || 0) * milestone.default_percentage) / 100;
-                            const enteredAmount = parseFloat(paymentData.amount || 0);
-                            if (Math.abs(enteredAmount - suggestedAmount) > 0.01) {
-                              return (
-                                <div className="space-y-2">
-                                  <Label>Override Reason</Label>
-                                  <Textarea
-                                    value={paymentData.override_reason}
-                                    onChange={(e) => setPaymentData({ ...paymentData, override_reason: e.target.value })}
-                                    placeholder="Explain why the amount differs from milestone percentage..."
-                                    required
-                                  />
-                                </div>
-                              );
-                            }
-                          }
-                          return null;
-                        })()}
+
                         <div className="space-y-2">
-                          <Label>Payment Mode</Label>
+                          <Label>Mode</Label>
                           <Select value={paymentData.mode} onValueChange={(value) => setPaymentData({ ...paymentData, mode: value })}>
                             <SelectTrigger>
                               <SelectValue />
