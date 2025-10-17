@@ -56,7 +56,7 @@ Use source: `0.0.0.0/0` in step 7 above.
 ```bash
 # Test connection first
 PGPASSWORD='Karighars$2025!!' psql \
-  -h database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
+  -h database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
   -U postgres \
   -p 5432 \
   -d postgres \
@@ -64,7 +64,7 @@ PGPASSWORD='Karighars$2025!!' psql \
 
 # If successful, create database
 PGPASSWORD='Karighars$2025!!' psql \
-  -h database-1-instance-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
+  -h database-1.cluster-cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com \
   -U postgres \
   -p 5432 \
   -d postgres \
