@@ -244,7 +244,7 @@ export default function EstimationPage() {
         </div>
 
         {/* Totals Summary */}
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
@@ -287,10 +287,18 @@ export default function EstimationPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Final Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">GST ({formData.gst_percentage}%)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-primary">{formatCurrency(totals.total_value)}</div>
+              <div className="text-xl font-bold text-blue-600">+{formatCurrency(totals.gst_amount || 0)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-primary">Grand Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{formatCurrency(totals.grand_total)}</div>
             </CardContent>
           </Card>
         </div>
