@@ -367,6 +367,8 @@ COMMENT ON COLUMN customer_payments_in.misc_amount IS 'Amount allocated to misc 
 COMMENT ON COLUMN customer_payments_in.pre_tax_amount IS 'Amount before GST (back-calculated from total)';
 COMMENT ON COLUMN customer_payments_in.gst_amount IS 'GST amount (back-calculated from total using project GST%)';
 COMMENT ON COLUMN customer_payments_in.gst_percentage IS 'GST percentage used for this payment (from estimation)';
+COMMENT ON COLUMN customer_payments_in.expected_percentage IS 'Expected percentage of total estimation value (final_value + GST) for this payment - NOT USED for calculation, for reference only';
+COMMENT ON COLUMN customer_payments_in.actual_percentage IS 'Actual percentage of total estimation value (final_value + GST) that this payment represents';
 
 -- ============================================================================
 -- VENDOR BOQs & PAYMENTS
