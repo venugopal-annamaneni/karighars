@@ -155,24 +155,24 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handlePhaseUpdate = async (e) => {
+  const handleStageUpdate = async (e) => {
     e.preventDefault();
     try {
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(phaseUpdate)
+        body: JSON.stringify(stageUpdate)
       });
 
       if (res.ok) {
-        toast.success('Project phase updated');
-        setShowPhaseDialog(false);
+        toast.success('Project stage updated');
+        setShowStageDialog(false);
         fetchProjectData();
       } else {
-        toast.error('Failed to update phase');
+        toast.error('Failed to update stage');
       }
     } catch (error) {
-      console.error('Error updating phase:', error);
+      console.error('Error updating stage:', error);
       toast.error('An error occurred');
     }
   };
