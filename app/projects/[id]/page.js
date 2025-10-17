@@ -589,9 +589,9 @@ export default function ProjectDetailPage() {
                     <div className="space-y-2">
                       <Label>Remarks</Label>
                       <Textarea
-                        value={phaseUpdate.remarks}
-                        onChange={(e) => setPhaseUpdate({ ...phaseUpdate, remarks: e.target.value })}
-                        placeholder="Add any notes about this phase change..."
+                        value={stageUpdate.remarks}
+                        onChange={(e) => setStageUpdate({ ...stageUpdate, remarks: e.target.value })}
+                        placeholder="Add any notes about this stage change..."
                       />
                     </div>
                     <div className="flex justify-end gap-2">
