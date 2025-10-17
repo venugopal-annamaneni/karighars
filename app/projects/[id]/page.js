@@ -558,7 +558,7 @@ export default function ProjectDetailPage() {
             <div className="flex gap-2">
               <Dialog open={showStageDialog} onOpenChange={setShowStageDialog}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2" onClick={() => setStageUpdate({ phase: project.phase, remarks: '' })}>
+                  <Button variant="outline" className="gap-2" onClick={() => setStageUpdate({ phase: project.stage, remarks: '' })}>
                     <Edit className="h-4 w-4" />
                     Update Stage
                   </Button>
