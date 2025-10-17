@@ -784,7 +784,7 @@ export default function ProjectDetailPage() {
                                 <SelectValue placeholder="Select milestone" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">No milestone</SelectItem>
+                                <SelectItem value="none">No milestone</SelectItem>
                                 {milestones.map((milestone) => (
                                   <SelectItem key={milestone.id} value={milestone.id.toString()}>
                                     {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
