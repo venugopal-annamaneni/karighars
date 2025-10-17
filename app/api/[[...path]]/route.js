@@ -251,19 +251,21 @@ export async function GET(request, { params }) {
       return NextResponse.json({ users: result.rows });
     }
 
-    // Documents
+    // Documents by entity (project/customer/payment/vendor)
     if (path.startsWith('documents/')) {
       const parts = path.split('/');
       if (parts.length === 3) {
-        const relatedEntity = parts[1];
-        const relatedId = parts[2];
+        const entityType = parts[1]; // project, customer, payment, vendor
+        const entityId = parts[2];
+        
         const result = await query(`
           SELECT d.*, u.name as uploaded_by_name
           FROM documents d
           LEFT JOIN users u ON d.uploaded_by = u.id
           WHERE d.related_entity = $1 AND d.related_id = $2
-          ORDER BY d.created_at DESC
-        `, [relatedEntity, relatedId]);
+          ORDER BY d.uploaded_at DESC
+        `, [entityType, entityId]);
+        
         return NextResponse.json({ documents: result.rows });
       }
     }
