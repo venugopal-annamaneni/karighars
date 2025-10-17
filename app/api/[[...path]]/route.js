@@ -957,7 +957,7 @@ export async function PUT(request, { params }) {
         values.push(body.location);
       }
       if (body.phase) {
-        updates.push(`phase = $${paramCounter++}`);
+        updates.push(`stage = $${paramCounter++}`);
         values.push(body.phase);
       }
       if (body.status) {
