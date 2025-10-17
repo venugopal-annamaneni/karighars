@@ -350,7 +350,6 @@ CREATE TABLE customer_payments_in (
     receipt_url TEXT,
     credit_note_url TEXT,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-    expected_percentage NUMERIC(9,4),
     actual_percentage NUMERIC(9,4),
     override_reason TEXT,
     approved_by INTEGER REFERENCES users(id),
