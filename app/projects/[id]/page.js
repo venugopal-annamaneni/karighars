@@ -197,10 +197,17 @@ export default function ProjectDetailPage() {
 
       // Get payment type from milestone or use default
       let paymentType = 'other';
-      if (paymentData.milestone_id) {
+      let finalMilestoneId = null;
+      
+      if (paymentData.milestone_id === 'MISC') {
+        // Ad-hoc payment - no milestone_id
+        paymentType = 'MISC';
+        finalMilestoneId = null;
+      } else if (paymentData.milestone_id) {
         const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
         if (milestone) {
           paymentType = milestone.milestone_code;
+          finalMilestoneId = paymentData.milestone_id;
         }
       }
 
@@ -211,7 +218,7 @@ export default function ProjectDetailPage() {
           project_id: projectId,
           customer_id: project.customer_id,
           estimation_id: estimation?.id,
-          milestone_id: paymentData.milestone_id || null,
+          milestone_id: finalMilestoneId,
           payment_type: paymentType,
           amount: totalAmount.toFixed(2),
           pre_tax_amount: preTaxAmount.toFixed(2),
