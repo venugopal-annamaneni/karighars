@@ -104,7 +104,9 @@ When estimation is revised to lower value:
 - Projects must use published models
 
 ### 4. Stage-Based Workflow
-- Projects have `stage` (from biz_model_stages)
+- Projects have `stage` (copied from biz_model_stages at creation)
+- **No CHECK constraint** - allows flexibility as BizModels evolve
+- Stage values preserved for historical accuracy
 - Payments filtered by current stage
 - Stage transitions tracked in history
 
