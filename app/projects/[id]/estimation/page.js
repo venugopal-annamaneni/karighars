@@ -66,6 +66,16 @@ export default function EstimationPage() {
         const data = await res.json();
         setProject(data.project);
 
+        // Load biz model details
+        const bizModelRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
+        let bizModelData = null; 
+        if (bizModelRes.ok) {
+          bizModelData = await bizModelRes.json();
+          setBizModel(bizModelData.model);
+        } else {
+          throw new Error('Failed to fetch business model');
+        }
+
         // Load existing estimation if available
         if (data.estimation) {
           setFormData({
@@ -93,19 +103,11 @@ export default function EstimationPage() {
             }
           }
         } else {
-          // Load standard service charge from biz model
-          const bizModelRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
-          if (bizModelRes.ok) {
-            const bizModelData = await bizModelRes.json();
-            const standardServiceCharge = bizModelData.model.service_charge_percentage;
-            setFormData({
-              ...formData,
-              service_charge_percentage: standardServiceCharge,
-            });
-            setBizModel(bizModelData.model);
-          } else {
-            throw new Error('Failed to fetch business model');
-          }
+          const standardServiceCharge = bizModelData.model.service_charge_percentage;
+          setFormData({
+            ...formData,
+            service_charge_percentage: standardServiceCharge,
+          });
         }
       }
     } catch (error) {
@@ -205,19 +207,12 @@ export default function EstimationPage() {
         })
       });
 
-      console.log('✅ Check overpayment request sent:', {
-        project_id: projectId,
-        final_value: totals.final_value,
-        gst_amount: totals.gst_amount
-      });
-      console.log('✅ Check overpayment response status:', checkRes.status);
-
+    
       if (checkRes.ok) {
         const checkData = await checkRes.json();
         console.log('📊 Check overpayment data:', checkData);
 
         if (checkData.has_overpayment) {
-          console.log('🔴 Overpayment detected! Showing modal...');
           // Show modal and wait for user decision
           setOverpaymentData(checkData);
           setPendingSubmitData({
@@ -233,8 +228,6 @@ export default function EstimationPage() {
           setShowOverpaymentModal(true);
           setSaving(false);
           return; // Stop here and wait for user action
-        } else {
-          console.log('🟢 No overpayment - proceeding with save');
         }
       }
 
