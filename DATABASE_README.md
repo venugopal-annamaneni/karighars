@@ -237,14 +237,6 @@ customer_payments_in
 
 ---
 
-## 📚 Additional Documentation
-
-- `SCHEMA_CLEANUP_SUMMARY.md` - Detailed schema documentation
-- `QUICK_START_GUIDE.md` - General setup guide
-- `RDS_SETUP_INSTRUCTIONS.md` - AWS RDS specific setup
-
----
-
 **Version:** 1.0  
 **Last Updated:** June 2025  
 **PostgreSQL Version:** 15+
