@@ -275,25 +275,7 @@ export async function GET(request, { params }) {
       }
 
       const milestone = milestoneRes.rows[0];
-
-      // Handle MISC_PAYMENT - no calculation
-      if (milestone.milestone_code === 'MISC_PAYMENT') {
-        return NextResponse.json({
-          is_misc_payment: true,
-          woodwork_value: woodworkValueWithGst,
-          misc_value: miscValueWithGst,
-          expected_woodwork_amount: 0,
-          expected_misc_amount: 0,
-          expected_total: 0,
-          collected_woodwork_amount: 0,
-          collected_misc_amount: 0,
-          collected_woodwork_percentage: 0,
-          collected_misc_percentage: 0,
-          remaining_woodwork_percentage: 0,
-          remaining_misc_percentage: 0
-        });
-      }
-
+      
       // Get all APPROVED payments for this project (cumulative)
       // Note: woodwork_amount and misc_amount are stored as pre-tax values
       // We need to add GST back to compare with GST-inclusive targets
@@ -325,7 +307,6 @@ export async function GET(request, { params }) {
       const expectedTotal = expectedWoodworkAmount + expectedMiscAmount;
 
       return NextResponse.json({
-        is_misc_payment: false,
         woodwork_value: woodworkValueWithGst,
         misc_value: miscValueWithGst,
         target_woodwork_percentage: targetWoodworkPercentage,

@@ -206,11 +206,7 @@ export default function ProjectDetailPage() {
       let paymentType = 'other';
       let finalMilestoneId = null;
 
-      if (paymentData.milestone_id === 'ADHOC') {
-        // Ad-hoc payment - no milestone_id
-        paymentType = 'ADHOC';
-        finalMilestoneId = null;
-      } else if (paymentData.milestone_id) {
+      if (paymentData.milestone_id) {
         const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
         if (milestone) {
           paymentType = milestone.milestone_code;
@@ -279,24 +275,6 @@ export default function ProjectDetailPage() {
       return;
     }
 
-    // Handle ADHOC (Ad-hoc) payment - no calculation needed
-    if (milestoneId === 'ADHOC') {
-      setPaymentData(prev => ({
-        ...prev,
-        milestone_id: 'ADHOC',
-        amount: '',
-        woodwork_amount: '',
-        misc_amount: '',
-        expected_amount: null,
-        calculation: {
-          is_misc_payment: true,
-          woodwork_value: (parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.woodwork_value || 0) * parseFloat(estimation.gst_percentage || 18) / 100),
-          misc_value: ((parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)) * (1 + parseFloat(estimation.gst_percentage || 18) / 100))
-        }
-      }));
-      return;
-    }
-
     // Fetch cumulative calculation from API for milestone-based payments
     try {
       const res = await fetch(`/api/calculate-payment/${projectId}/${milestoneId}`);
@@ -307,33 +285,22 @@ export default function ProjectDetailPage() {
 
       const data = await res.json();
 
-      if (data.is_misc_payment) {
-        // MISC_PAYMENT: No auto-calculation
-        setPaymentData(prev => ({
-          ...prev,
-          milestone_id: milestoneId,
-          amount: '',
-          woodwork_amount: '',
-          misc_amount: '',
-          expected_amount: null,
-          calculation: null
-        }));
-      } else {
-        // Pre-fill with expected amounts
-        const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
-        const miscAmt = data.expected_misc_amount.toFixed(2);
-        const totalAmt = data.expected_total.toFixed(2);
 
-        setPaymentData(prev => ({
-          ...prev,
-          milestone_id: milestoneId,
-          woodwork_amount: woodworkAmt,
-          misc_amount: miscAmt,
-          amount: totalAmt,
-          expected_amount: totalAmt,
-          calculation: data
-        }));
-      }
+      // Pre-fill with expected amounts
+      const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
+      const miscAmt = data.expected_misc_amount.toFixed(2);
+      const totalAmt = data.expected_total.toFixed(2);
+
+      setPaymentData(prev => ({
+        ...prev,
+        milestone_id: milestoneId,
+        woodwork_amount: woodworkAmt,
+        misc_amount: miscAmt,
+        amount: totalAmt,
+        expected_amount: totalAmt,
+        calculation: data
+      }));
+
     } catch (error) {
       console.error('Error calculating payment:', error);
       toast.error('Error calculating expected amount');
@@ -692,7 +659,7 @@ export default function ProjectDetailPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    {(estimation && (estimation.created_by === session.user.id || session.user.role === 'admin') && (estimation.version > 1) ) && (
+                    {(estimation && (estimation.created_by === session.user.id || session.user.role === 'admin') && (estimation.version > 1)) && (
                       <Button
                         onClick={() => setShowCancelConfirmModal(true)}
                         variant="outline"
@@ -708,8 +675,8 @@ export default function ProjectDetailPage() {
                         {estimation ? 'Edit Estimation' : 'Create Estimation'}
                       </Button>
                     </Link>
+                  </div>
                 </div>
-              </div>
               </CardHeader>
               <CardContent>
                 {estimation ? (
@@ -843,54 +810,22 @@ export default function ProjectDetailPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No milestone</SelectItem>
-                                <SelectItem value="ADHOC">🎯 Ad-hoc Payment (ADHOC)</SelectItem>
                                 {milestones
-                                  .filter(milestone => milestone.stage_code === project.stage)
+                                  .filter(milestone => (milestone.stage_code === project.stage || milestone.stage_code === 'ANY'))
                                   .map((milestone) => (
                                     <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                                      {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
+                                      {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
                                     </SelectItem>
                                   ))}
                               </SelectContent>
                             </Select>
-                            {paymentData.milestone_id === 'ADHOC' && (
-                              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
-                                <p className="font-semibold mb-1">💡 Ad-hoc Payment Mode</p>
-                                <p>• Collect any amount up to 100% of Woodwork and 100% of Misc</p>
-                                <p>• Not tied to project stages or milestones</p>
-                                <p>• System will track cumulative collection automatically</p>
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
-                            ⚠️ No milestones configured for this project's BizModel. You can still collect ad-hoc payments by selecting "Ad-hoc Payment (MISC)".
+                            ⚠️ No milestones configured for this project's BizModel.".
                           </div>
                         )}
-                        {/* Show Expected Amount Calculation with Cumulative Info */}
-                        {paymentData.calculation && paymentData.calculation.is_misc_payment && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                            <div>
-                              <p className="text-sm font-medium text-green-900">🎯 Ad-hoc Payment - Available to Collect</p>
-                              <p className="text-xs text-green-700 mb-2">You can collect any amount up to 100% of each category</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-white p-2 rounded">
-                                <p className="text-xs text-green-700">Woodwork Total (GST-incl)</p>
-                                <p className="text-lg font-bold text-green-800">
-                                  {formatCurrency(parseFloat(paymentData.calculation.woodwork_value || 0))}
-                                </p>
-                              </div>
-                              <div className="bg-white p-2 rounded">
-                                <p className="text-xs text-green-700">Misc Total (GST-incl)</p>
-                                <p className="text-lg font-bold text-green-800">
-                                  {formatCurrency(parseFloat(paymentData.calculation.misc_value || 0))}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && (
+                        {paymentData.calculation && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                             <div>
                               <p className="text-sm font-medium text-blue-900">💰 Expected Receivable (Cumulative)</p>
@@ -936,7 +871,7 @@ export default function ProjectDetailPage() {
                         )}
 
                         {/* Category-wise Amount to Collect - Prominent Display */}
-                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && paymentData.calculation.expected_total > 0 && (
+                        {paymentData.calculation && paymentData.calculation.expected_total > 0 && (
                           <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
                             <p className="text-sm font-semibold text-green-900 mb-2">📊 Amount to Collect (Category-wise):</p>
                             <div className="grid grid-cols-2 gap-3">
@@ -1057,8 +992,8 @@ export default function ProjectDetailPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Mode</Label>
-                          <Select value={paymentData.mode} onValueChange={(value) => setPaymentData({ ...paymentData, mode: value })}>
+                          <Label>Mode *</Label>
+                          <Select required value={paymentData.mode} onValueChange={(value) => setPaymentData({ ...paymentData, mode: value })}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1071,11 +1006,12 @@ export default function ProjectDetailPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Reference Number</Label>
+                          <Label>Reference Number </Label>
                           <Input
                             placeholder="Transaction ID / Cheque Number"
                             value={paymentData.reference_number}
                             onChange={(e) => setPaymentData({ ...paymentData, reference_number: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -1095,7 +1031,12 @@ export default function ProjectDetailPage() {
 
                         <div className="flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-                          <Button type="submit">Record Payment</Button>
+                          <Button 
+                            disabled={!paymentData.milestone_id || parseFloat(paymentData.amount || 0) <= 0 }
+                            type="submit"
+                          >
+                            Record Payment
+                          </Button>
                         </div>
                       </form>
                     </DialogContent>
@@ -1143,12 +1084,11 @@ export default function ProjectDetailPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className={`text-xl font-bold ${
-                              payment.amount < 0 
-                              ? 'text-red-600'
-                              : payment.status === 'approved'
-                                ? 'text-green-600'
-                                : 'text-gray-400'
+                            <p className={`text-xl font-bold ${payment.amount < 0
+                                ? 'text-red-600'
+                                : payment.status === 'approved'
+                                  ? 'text-green-600'
+                                  : 'text-gray-400'
                               }`}>
                               {formatCurrency(payment.amount)}
                             </p>
@@ -1287,11 +1227,10 @@ export default function ProjectDetailPage() {
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="text-xl font-bold">{formatCurrency(boq.total_value)}</p>
-                            <Badge className={`text-xs ${
-                              boq.status === 'draft' ? 'bg-slate-100 text-slate-700' :
-                              boq.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                  'bg-blue-100 text-blue-700'
+                            <Badge className={`text-xs ${boq.status === 'draft' ? 'bg-slate-100 text-slate-700' :
+                                boq.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                  boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                    'bg-blue-100 text-blue-700'
                               }`}>
                               {boq.status}
                             </Badge>
@@ -1352,8 +1291,7 @@ export default function ProjectDetailPage() {
                           )}
                         </div>
                         <div className="text-right ml-6">
-                          <p className={`text-xl font-bold ${
-                            entry.amount < 0 ? 'text-red-600' : 'text-green-600'
+                          <p className={`text-xl font-bold ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'
                             }`}>
                             {formatCurrency(entry.amount)}
                           </p>
@@ -1609,7 +1547,7 @@ const WarningExtraPendingReceipts = ({ estimation, payments }) => {
   const estimatedValue = (parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0));
   const estimatedValueFormatted = formatCurrency(estimatedValue);
   const pendingTotal = pendingReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-  if( estimatedValue > pendingTotal ) return null;
+  if (estimatedValue > pendingTotal) return null;
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
