@@ -2,8 +2,8 @@ const { Pool } = require('pg');
 
 async function checkConstraints() {
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0' ? { rejectUnauthorized: false } : undefined
+    connectionString: "postgresql://postgres:Karighars%242025!!@database-1.cx2yg0q8o2qj.ap-south-1.rds.amazonaws.com:5432/kg_interiors_finance?sslmode=require",
+    ssl: { rejectUnauthorized: false }
   });
 
   try {
