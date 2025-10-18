@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 export default function EstimationPage() {
   const { data: session, status } = useSession();
@@ -68,7 +69,7 @@ export default function EstimationPage() {
 
         // Load biz model details
         const bizModelRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
-        let bizModelData = null; 
+        let bizModelData = null;
         if (bizModelRes.ok) {
           bizModelData = await bizModelRes.json();
           setBizModel(bizModelData.model);
@@ -207,7 +208,7 @@ export default function EstimationPage() {
         })
       });
 
-    
+
       if (checkRes.ok) {
         const checkData = await checkRes.json();
 
@@ -323,64 +324,7 @@ export default function EstimationPage() {
         </div>
 
         {/* Totals Summary */}
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{formatCurrency(totals.woodwork_value)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Misc Internal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{formatCurrency(totals.misc_internal_value)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Misc External</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{formatCurrency(totals.misc_external_value)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Service Charge</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-green-600">+{formatCurrency(totals.service_charge || 0)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Discount</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-red-600">-{formatCurrency(totals.discount || 0)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">GST ({formData.gst_percentage}%)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-blue-600">+{formatCurrency(totals.gst_amount || 0)}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-primary/5 border-primary">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-primary">Grand Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{formatCurrency(totals.grand_total)}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <TotalsSummary totals={totals} formData={formData}/>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Line Items */}
@@ -710,4 +654,67 @@ export default function EstimationPage() {
       </main>
     </div>
   );
+}
+
+const TotalsSummary = ({totals, formData}) => {
+  return (
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold">{formatCurrency(totals.woodwork_value)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Misc Internal</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold">{formatCurrency(totals.misc_internal_value)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Misc External</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold">{formatCurrency(totals.misc_external_value)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Service Charge</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold text-green-600">+{formatCurrency(totals.service_charge || 0)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Discount</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold text-red-600">-{formatCurrency(totals.discount || 0)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">GST ({formData.gst_percentage}%)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold text-blue-600">+{formatCurrency(totals.gst_amount || 0)}</div>
+        </CardContent>
+      </Card>
+      <Card className="bg-primary/5 border-primary">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-primary">Grand Total</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-primary">{formatCurrency(totals.grand_total)}</div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
