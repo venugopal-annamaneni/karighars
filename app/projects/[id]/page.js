@@ -1,39 +1,36 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter, useParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
-import Link from 'next/link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import {
-  ArrowLeft,
-  Edit,
-  Plus,
-  IndianRupee,
-  TrendingUp,
-  TrendingDown,
-  FileText,
-  Package,
-  Calendar,
-  Users,
-  MapPin,
   Activity,
   AlertTriangle,
-  StepBack,
-  StepBackIcon
+  ArrowLeft,
+  Calendar,
+  Edit,
+  FileText,
+  IndianRupee,
+  MapPin,
+  Package,
+  Plus,
+  StepBackIcon,
+  Users
 } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function ProjectDetailPage() {
   const { data: session, status } = useSession();
@@ -62,8 +59,6 @@ export default function ProjectDetailPage() {
   });
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState({});
-  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
 
   const [stageUpdate, setStageUpdate] = useState({ stage: '', remarks: '' });
@@ -238,7 +233,7 @@ export default function ProjectDetailPage() {
       });
 
       if (res.ok) {
-        toast.success('Payment recorded successfully. Pending receipt upload by Finance team.');
+        toast.success('Payment recorded successfully. Pending document upload by Finance team.');
         setShowPaymentDialog(false);
         setPaymentData({
           milestone_id: '',
@@ -383,129 +378,57 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handlePaymentReceiptUpload = async (paymentId, file) => {
+  const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt') => {
     if (!file) return;
-
+    debugger;
     setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      // Upload file
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        toast.error('Failed to upload receipt');
-        return;
-      }
-
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Upload failed');
       const uploadData = await uploadRes.json();
 
-      // Update payment status and receipt URL
+      // Build dynamic payload
+      const updateBody = { document_url: uploadData.url, status: 'approved' };
+
       const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receipt_url: uploadData.url,
-          status: 'approved'
-        })
+        body: JSON.stringify(updateBody),
       });
+      if (!updateRes.ok) throw new Error('Failed to update payment');
 
-      if (!updateRes.ok) {
-        toast.error('Failed to approve payment');
-        return;
-      }
-
-      // Create document record
       await fetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          related_entity: 'payment',
+          related_entity: 'customer_payments_in',
           related_id: paymentId,
-          document_type: 'payment_receipt',
+          document_type: type,
           document_url: uploadData.url,
           file_name: uploadData.fileName,
           file_size: uploadData.size,
           mime_type: uploadData.type,
-          remarks: 'Payment receipt'
-        })
+          uploaded_by: session.user.id
+        }),
       });
 
-      toast.success('Receipt uploaded and payment approved!');
+      toast.success(
+        type === 'receipt'
+          ? 'Receipt uploaded and payment approved!'
+          : 'Credit note uploaded and approved!'
+      );
       fetchProjectData();
     } catch (error) {
-      console.error('Error uploading receipt:', error);
-      toast.error('An error occurred');
+      console.error(`Error uploading ${type}:`, error);
+      toast.error(`Failed to upload ${type}`);
     } finally {
       setUploadingReceipt(prev => ({ ...prev, [paymentId]: false }));
     }
   };
 
-  const handleCreditNoteUpload = async (paymentId, file) => {
-    if (!file) return;
-
-    setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      // Upload file
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        toast.error('Failed to upload credit note');
-        return;
-      }
-
-      const uploadData = await uploadRes.json();
-
-      // Update payment with credit note URL and approve
-      const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          credit_note_url: uploadData.url,
-          status: 'approved'
-        })
-      });
-
-      if (!updateRes.ok) {
-        toast.error('Failed to approve credit note');
-        return;
-      }
-
-      // Create document record
-      await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          related_entity: 'payment',
-          related_id: paymentId,
-          document_type: 'credit_note',
-          document_url: uploadData.url,
-          file_name: uploadData.fileName,
-          file_size: uploadData.size,
-          mime_type: uploadData.type,
-          remarks: 'Credit note document'
-        })
-      });
-
-      toast.success('Credit note uploaded and approved!');
-      fetchProjectData();
-    } catch (error) {
-      console.error('Error uploading credit note:', error);
-      toast.error('An error occurred');
-    } finally {
-      setUploadingReceipt(prev => ({ ...prev, [paymentId]: false }));
-    }
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -644,8 +567,8 @@ export default function ProjectDetailPage() {
           </TabsList>
 
           {/* Overpayment Alert Banner */}
-          {estimation && estimation.has_overpayment && estimation.overpayment_status === 'pending_approval' && (
-            <OverpaymentAlert estimation={estimation} session={session} />
+          {estimation && estimation.has_overpayment && (
+            <OverpaymentAlert estimation={estimation} session={session} fetchProjectData={fetchProjectData} />
           )}
 
           <TabsContent value="estimation" className="space-y-4">
@@ -1031,8 +954,8 @@ export default function ProjectDetailPage() {
 
                         <div className="flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-                          <Button 
-                            disabled={!paymentData.milestone_id || parseFloat(paymentData.amount || 0) <= 0 }
+                          <Button
+                            disabled={!paymentData.milestone_id || parseFloat(paymentData.amount || 0) <= 0}
                             type="submit"
                           >
                             Record Payment
@@ -1056,10 +979,10 @@ export default function ProjectDetailPage() {
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{payment.payment_type?.replace('_', ' ').toUpperCase()}</p>
+                            <p className="font-medium">{payment.payment_type.toUpperCase()}</p>
                             {payment.status === 'pending' && (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
-                                Pending Receipt
+                                Pending Approval
                               </Badge>
                             )}
                             {payment.status === 'approved' && (
@@ -1085,17 +1008,17 @@ export default function ProjectDetailPage() {
                         <div className="flex items-center gap-3">
                           <div className="text-right">
                             <p className={`text-xl font-bold ${payment.amount < 0
-                                ? 'text-red-600'
-                                : payment.status === 'approved'
-                                  ? 'text-green-600'
-                                  : 'text-gray-400'
+                              ? 'text-red-600'
+                              : payment.status === 'approved'
+                                ? 'text-green-600'
+                                : 'text-gray-400'
                               }`}>
                               {formatCurrency(payment.amount)}
                             </p>
                             {payment.status === 'pending' && (
                               <p className="text-xs text-amber-600">Not counted</p>
                             )}
-                            {payment.payment_type === 'credit_note_reversal' && (
+                            {payment.payment_type === 'CREDIT_NOTE_REVERSAL' && (
                               <Badge className="bg-red-100 text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
@@ -1104,16 +1027,16 @@ export default function ProjectDetailPage() {
                               <div>
                                 <input
                                   type="file"
-                                  id={`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`}
+                                  id={`${payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'credit-note' : 'receipt'}-${payment.id}`}
                                   accept="image/*,.pdf"
                                   className="hidden"
                                   onChange={(e) => {
                                     const file = e.target.files[0];
                                     if (file) {
-                                      if (payment.payment_type === 'credit_note_reversal') {
-                                        handleCreditNoteUpload(payment.id, file);
+                                      if (payment.payment_type === 'CREDIT_NOTE_REVERSAL') {
+                                        handleDocumentUpload(payment.id, file, 'credit_note');
                                       } else {
-                                        handlePaymentReceiptUpload(payment.id, file);
+                                        handleDocumentUpload(payment.id, file, 'payment_receipt');
                                       }
                                     }
                                   }}
@@ -1122,11 +1045,11 @@ export default function ProjectDetailPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => document.getElementById(`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
+                                  onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
                                   disabled={uploadingReceipt[payment.id]}
-                                  className={payment.payment_type === 'credit_note_reversal' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
+                                  className={payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
                                 >
-                                  {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'credit_note_reversal' ? 'Upload Credit Note' : 'Upload Receipt'}
+                                  {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'Upload Credit Note' : 'Upload Receipt'}
                                 </Button>
                               </div>
                               <Button
@@ -1134,20 +1057,13 @@ export default function ProjectDetailPage() {
                                 variant="outline"
                                 onClick={() => { }}
                               >
-                                Cancel Payment
+                                {payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'Cancel Credit Note' : 'Cancel Payment'}
                               </Button>
                             </div>
                           )}
-                          {payment.receipt_url && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-                                <FileText className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          )}
-                          {payment.credit_note_url && (
-                            <Button size="sm" variant="ghost" className="text-red-600" asChild>
-                              <a href={payment.credit_note_url} target="_blank" rel="noopener noreferrer">
+                          {payment.document_url && (
+                            <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? "text-red-600": ""}>
+                              <a href={payment.document_url} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                               </a>
                             </Button>
@@ -1228,9 +1144,9 @@ export default function ProjectDetailPage() {
                           <div className="text-right">
                             <p className="text-xl font-bold">{formatCurrency(boq.total_value)}</p>
                             <Badge className={`text-xs ${boq.status === 'draft' ? 'bg-slate-100 text-slate-700' :
-                                boq.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                  boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                    'bg-blue-100 text-blue-700'
+                              boq.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-blue-100 text-blue-700'
                               }`}>
                               {boq.status}
                             </Badge>
@@ -1541,24 +1457,42 @@ export default function ProjectDetailPage() {
 
 
 const WarningExtraPendingReceipts = ({ estimation, payments }) => {
+  debugger;
   const pendingReceipts = payments.filter(p => p.status === 'pending');
+  const approvedReceipts = payments.filter(p => p.status === 'approved')
   if (pendingReceipts.length === 0) return null;
 
-  const estimatedValue = (parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0));
-  const estimatedValueFormatted = formatCurrency(estimatedValue);
+  const estimationValue = parseFloat(estimation.final_value || 0) + parseFloat(estimation.gst_amount || 0);
+  const approvedTotal = approvedReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
   const pendingTotal = pendingReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-  if (estimatedValue > pendingTotal) return null;
+  const remainingPayable = estimationValue - approvedTotal;
+
+
+  const overPendingAmount = pendingTotal - remainingPayable;  
+  const overPendingAmountFormatted = formatCurrency(estimationValue);
+  
+  if (pendingTotal <= remainingPayable) return null;
+
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
       <div className="flex flex-col items-start gap-2">
-        <AlertTriangle className="h-5 w-5 text-amber-700" />
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-700" />
+          <span className="text-amber-900 font-bold">Overpayment Alert</span>
+        </div>
         <p className="text-sm text-amber-800">
-          There are <strong>{pendingReceipts.length} pending payment receipt{pendingReceipts.length > 1 ? 's' : ''}</strong> totaling <strong>{formatCurrency(pendingReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0))}</strong>.
-          The current estimated project value is <strong>{estimatedValueFormatted}</strong>.
+          Found <strong>{pendingReceipts.length} pending payment receipt{pendingReceipts.length > 1 ? 's' : ''}</strong> totaling{' '}
+          <strong>{formatCurrency(pendingTotal)}</strong>. The current estimated project value is{' '}
+          <strong>{overPendingAmountFormatted}</strong>.
         </p>
         <p className="text-sm text-amber-800">
-          Post approval of these receipts will increase the collected amount and may lead to <strong>overpayment situation</strong> and <strong>issuance of credit notes</strong>. You may choose to cancel and refund the amount.
+          Project has approved payments worth <strong>{formatCurrency(approvedTotal)}</strong>. 
+          Pending approvals exceed the remaining payable amount by{' '}
+          <strong className="text-amber-900">{formatCurrency(overPendingAmount)}</strong>.
+        </p>
+        <p className="text-sm text-amber-800">
+          You may choose to <strong>cancel some/all pending approval</strong> payments to avoid future issuance of credit notes.
         </p>
       </div>
     </div>
@@ -1615,7 +1549,7 @@ const FinancialSummary = ({ project, estimation }) => {
 }
 
 
-const OverpaymentAlert = ({ estimation, session }) => {
+const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
   return (
 
     <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6">
@@ -1635,14 +1569,14 @@ const OverpaymentAlert = ({ estimation, session }) => {
               </p>
             </div>
             <div className="bg-white p-3 rounded border border-red-200">
-              <p className="text-sm text-red-700 mb-1">Revised Estimation</p>
+              <p className="text-sm text-red-700 mb-1">Current Estimation Value</p>
               <p className="text-xl font-bold text-red-900">
                 ₹{(parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount)).toLocaleString('en-IN')}
               </p>
             </div>
           </div>
           <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
-            <p className="text-sm font-semibold text-red-900">Overpayment Amount:</p>
+            <p className="text-sm font-semibold text-red-900">Overpaid Amount:</p>
             <p className="text-2xl font-bold text-red-600">₹{parseFloat(estimation.overpayment_amount || 0).toLocaleString('en-IN')}</p>
           </div>
           <div className="space-y-2 text-sm text-red-800 mb-4">
@@ -1660,7 +1594,8 @@ const OverpaymentAlert = ({ estimation, session }) => {
               <Button
                 onClick={async () => {
                   try {
-                    const res = await fetch(`/api/estimations/${estimation.id}/approve-overpayment`, {
+                    debugger;
+                    const res = await fetch(`/api/estimations/${estimation.id}/create-creditnote`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({})
@@ -1679,18 +1614,9 @@ const OverpaymentAlert = ({ estimation, session }) => {
                 }}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Approve Overpayment & Create Credit Note
+                Create Credit Note
               </Button>
             )}
-            {/* {(estimation.created_by === session.user.id || session.user.role === 'admin') && (
-              <Button
-                onClick={() => setShowCancelConfirmModal(true)}
-                variant="outline"
-                className="border-orange-500 text-orange-700 hover:bg-orange-50"
-              >
-                Cancel & Revert to v{estimation.version - 1}
-              </Button>
-            )} */}
           </div>
         </div>
       </div>

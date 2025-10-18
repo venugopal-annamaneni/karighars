@@ -275,7 +275,7 @@ export async function GET(request, { params }) {
       }
 
       const milestone = milestoneRes.rows[0];
-      
+
       // Get all APPROVED payments for this project (cumulative)
       // Note: woodwork_amount and misc_amount are stored as pre-tax values
       // We need to add GST back to compare with GST-inclusive targets
@@ -640,7 +640,6 @@ export async function POST(request, { params }) {
       // Check for overpayment (only for revision, not first estimation)
       let hasOverpayment = false;
       let overpaymentAmount = 0;
-      let overpaymentStatus = null;
 
       if (nextVersion > 1) {
         // Get total approved payments
@@ -649,13 +648,12 @@ export async function POST(request, { params }) {
           FROM customer_payments_in
           WHERE project_id = $1 AND status = 'approved'
         `, [body.project_id]);
-
+      
         const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
 
         if (totalCollected > grandTotal) {
           hasOverpayment = true;
           overpaymentAmount = totalCollected - grandTotal;
-          overpaymentStatus = 'pending_approval'; // Set to pending, admin must approve
         }
       }
 
@@ -669,16 +667,16 @@ export async function POST(request, { params }) {
           service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
           gst_percentage, gst_amount,
           requires_approval, approval_status, 
-          has_overpayment, overpayment_amount, overpayment_status,
+          has_overpayment, overpayment_amount,
           remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
         [body.project_id, nextVersion, subtotal, body.woodwork_value || 0,
         body.misc_internal_value || 0, body.misc_external_value || 0,
           serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
           gstPercentage, gstAmount,
           requiresApproval, approvalStatus,
-          hasOverpayment, overpaymentAmount, overpaymentStatus,
+          hasOverpayment, overpaymentAmount,
         body.remarks, body.status || 'draft', session.user.id]
       );
 
@@ -779,7 +777,7 @@ export async function POST(request, { params }) {
           actual_percentage, override_reason,
           amount, pre_tax_amount, gst_amount, gst_percentage,
           payment_date, mode, reference_number, remarks, created_by,
-          receipt_url, status,
+          document_url, status,
           woodwork_amount, misc_amount
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
@@ -787,7 +785,7 @@ export async function POST(request, { params }) {
           actualPercentage, body.override_reason || null,
         body.amount, body.pre_tax_amount || 0, body.gst_amount || 0, body.gst_percentage || 0,
         body.payment_date || new Date(), body.mode || 'bank', body.reference_number, body.remarks, session.user.id,
-        body.receipt_url || null, body.status || 'pending',
+        body.document_url || null, body.status || 'pending',
         body.woodwork_amount || 0, body.misc_amount || 0]
       );
 
@@ -798,7 +796,7 @@ export async function POST(request, { params }) {
         `INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [body.project_id, 'customer_payments_in', result.rows[0].id, session.user.id, 'payment_recorded',
-        `Payment recorded: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''} - Pending receipt upload`]
+        `Payment recorded: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''} - Pending document upload`]
       );
 
       return NextResponse.json({ payment: result.rows[0] });
@@ -826,11 +824,11 @@ export async function POST(request, { params }) {
     // Upload Document
     if (path === 'documents') {
       const result = await query(
-        `INSERT INTO documents (related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, metadata, remarks)
+        `INSERT INTO documents (related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
         [body.related_entity, body.related_id, body.document_type, body.document_url,
         body.file_name, body.file_size, body.mime_type, session.user.id,
-        JSON.stringify(body.metadata || {}), body.remarks || null]
+        body.remarks || null]
       );
       return NextResponse.json({ document: result.rows[0] });
     }
@@ -921,16 +919,11 @@ export async function POST(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
-  console.log('🟠 PUT FUNCTION CALLED - START');
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   const path = params.path ? params.path.join('/') : '';
-  console.log('🔵 PUT REQUEST - Path:', path);
-  console.log('🔵 PUT REQUEST - Params:', params);
-
   // Parse body only if request has content
   let body = {};
   try {
@@ -944,7 +937,6 @@ export async function PUT(request, { params }) {
   }
 
   try {
-    console.log('🟣 INSIDE PUT TRY BLOCK - Path:', path);
 
     // Update Customer
     if (path.startsWith('customers/') && path.split('/').length === 2) {
@@ -1035,11 +1027,6 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'Only the creator or admin can cancel this estimation' }, { status: 403 });
       }
 
-      // Check if overpayment is still pending
-      // if (estimation.overpayment_status !== 'pending_approval') {
-      //   return NextResponse.json({ error: 'Can only cancel pending overpayment estimations' }, { status: 400 });
-      // }
-
       // Delete the estimation with overpayment
       await query('DELETE FROM estimation_items WHERE estimation_id = $1', [estimationId]);
       await query('DELETE FROM project_estimations WHERE id = $1', [estimationId]);
@@ -1074,9 +1061,8 @@ export async function PUT(request, { params }) {
       });
     }
 
-    // Approve Overpayment and Create Credit Note in customer_payments_in (Admin/Finance only)
-    if (path.startsWith('estimations/') && path.endsWith('/approve-overpayment')) {
-      console.log('🔴 APPROVE OVERPAYMENT ENDPOINT REACHED');
+    // Create Credit Note in customer_payments_in (Admin/Finance only)
+    if (path.startsWith('estimations/') && path.endsWith('/create-creditnote')) {
 
       if (session.user.role !== 'admin' && session.user.role !== 'finance') {
         return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
@@ -1102,16 +1088,6 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'No overpayment detected for this estimation' }, { status: 400 });
       }
 
-      // Update estimation status to approved
-      await query(`
-        UPDATE project_estimations 
-        SET overpayment_status = 'approved',
-            overpayment_approved_by = $1,
-            overpayment_approved_at = NOW(),
-            updated_at = NOW()
-        WHERE id = $2
-      `, [session.user.id, estimationId]);
-
       // Create credit note in customer_payments_in (status='pending' until document upload)
       const creditNoteResult = await query(`
         INSERT INTO customer_payments_in (
@@ -1134,7 +1110,7 @@ export async function PUT(request, { params }) {
           estimationId,
           estimationId,
           estimation.customer_id,
-          'credit_note_reversal',
+          'CREDIT_NOTE_REVERSAL',
           -Math.abs(estimation.overpayment_amount), // Negative amount
           new Date(),
           'other', // Changed from 'adjustment' to 'other' (valid enum value)
@@ -1145,10 +1121,8 @@ export async function PUT(request, { params }) {
         ]
       );
 
-      console.log('✅ Overpayment approval completed. Credit note created with status=pending');
-
       return NextResponse.json({
-        message: 'Overpayment approved. Credit note created in pending state. Finance must upload document.',
+        message: 'Credit note created in pending state. Finance must upload document.',
         credit_note: creditNoteResult.rows[0],
         overpayment_amount: estimation.overpayment_amount
       });
@@ -1156,6 +1130,7 @@ export async function PUT(request, { params }) {
 
     // Update Estimation (general handler)
     if (path.startsWith('estimations/')) {
+       
       const estimationId = path.split('/')[1];
       const result = await query(
         `UPDATE project_estimations 
@@ -1181,9 +1156,9 @@ export async function PUT(request, { params }) {
       const values = [];
       let paramCounter = 1;
 
-      if (body.receipt_url !== undefined) {
-        updates.push(`receipt_url = $${paramCounter++}`);
-        values.push(body.receipt_url);
+      if (body.document_url !== undefined) {
+        updates.push(`document_url = $${paramCounter++}`);
+        values.push(body.document_url);
       }
 
       if (body.status !== undefined) {
@@ -1204,48 +1179,69 @@ export async function PUT(request, { params }) {
         values
       );
 
-      // If payment is now approved, update the ledger
       if (body.status === 'approved') {
         const payment = result.rows[0];
-        console.log('Payment approved:', payment);
 
-        // Check if ledger entry already exists
+        // Determine ledger entry type
+        const entryType = body.document_type === 'credit_note' ? 'debit' : 'credit';
+        const remarks =
+          body.document_type === 'credit_note'
+            ? 'Credit note approved by Finance'
+            : 'Payment approved by Finance';
+
+        
         const ledgerCheck = await query(
           'SELECT id FROM project_ledger WHERE source_table = $1 AND source_id = $2',
           ['customer_payments_in', paymentId]
         );
 
-        // Only create ledger entry if it doesn't exist
         if (ledgerCheck.rows.length === 0) {
           await query(
             `INSERT INTO project_ledger (project_id, source_table, source_id, entry_type, amount, remarks)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [payment.project_id, 'customer_payments_in', paymentId, 'credit', payment.amount, 'Payment approved by Finance']
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            [payment.project_id, 'customer_payments_in', paymentId, entryType, payment.amount, remarks]
           );
         }
-        // // If this triggers overpayment resolution, log it
-        // const paymentsRes = await query(`
-        //   SELECT COALESCE(SUM(amount), 0) as total_collected
-        //   FROM customer_payments_in
-        //   WHERE project_id = $1 AND status = 'approved'
-        // `, [body.project_id]);
-        // const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
-        // const estRes = await query('SELECT final_value, gst_amount FROM project_estimations WHERE id = $1', [body.estimation_id]);
-        // let grandTotal = 0;
-        // if (estRes.rows.length > 0) {
-        //   grandTotal = parseFloat(estRes.rows[0].final_value) + parseFloat(estRes.rows[0].gst_amount || 0);
-        // }
-        // if (totalCollected > grandTotal) {
-        //   const overpaymentAmount = totalCollected - grandTotal;
-        //   await query(
-        //     `update project_estimations
-        //      set has_overpayment = true,
-        //          overpayment_amount = $1,
-        //          overpayment_status = 'pending_approval'
-        //      where id = $2`,
-        //     [overpaymentAmount, body.estimation_id]
-        //   );
-        // }
+
+        // Overpayment check
+        const paymentsRes = await query(
+          `SELECT COALESCE(SUM(amount), 0) as total_collected
+          FROM customer_payments_in
+          WHERE estimation_id = $1 AND status = $2`,
+          [payment.estimation_id, 'approved']
+        );
+
+        const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
+
+        const estRes = await query(
+          `SELECT final_value, gst_amount FROM project_estimations WHERE id = $1`,
+          [payment.estimation_id]
+        );
+
+        if (estRes.rows.length > 0) {
+          const grandTotal =
+            parseFloat(estRes.rows[0].final_value) + parseFloat(estRes.rows[0].gst_amount || 0);
+
+          if (totalCollected > grandTotal) {
+            const overpaymentAmount = totalCollected - grandTotal;
+
+            await query(
+              `UPDATE project_estimations
+              SET has_overpayment = true,
+              overpayment_amount = $1
+              WHERE id = $2`,
+              [overpaymentAmount, payment.estimation_id]
+            );
+          } else {
+            await query(
+              `UPDATE project_estimations
+              SET has_overpayment = false,
+              overpayment_amount = 0
+              WHERE id = $1`,
+              [payment.estimation_id]
+            );
+          }
+        }
       }
 
       return NextResponse.json({ payment: result.rows[0] });
@@ -1346,62 +1342,6 @@ export async function PUT(request, { params }) {
       return NextResponse.json({
         bizModel: result.rows[0],
         message: `BizModel status changed from ${currentStatus} to ${newStatus}`
-      });
-    }
-
-    // Upload Credit Note Document (for reversal entry)
-    if (path.startsWith('customer-payments/') && path.endsWith('/upload-credit-note')) {
-      if (session.user.role !== 'admin' && session.user.role !== 'finance') {
-        return NextResponse.json({ error: 'Forbidden - Finance/Admin only' }, { status: 403 });
-      }
-
-      const paymentId = path.split('/')[1];
-      const { credit_note_url } = await request.json();
-
-      if (!credit_note_url) {
-        return NextResponse.json({ error: 'credit_note_url is required' }, { status: 400 });
-      }
-
-      // Get payment details
-      const paymentRes = await query(`
-        SELECT * FROM customer_payments_in WHERE id = $1 AND payment_type = 'credit_reversal'
-      `, [paymentId]);
-
-      if (paymentRes.rows.length === 0) {
-        return NextResponse.json({ error: 'Credit reversal entry not found' }, { status: 404 });
-      }
-
-      const payment = paymentRes.rows[0];
-
-      // Update payment with credit note and mark as approved
-      await query(`
-        UPDATE customer_payments_in 
-        SET credit_note_url = $1, 
-            status = 'approved',
-            approved_by = $2,
-            approved_at = NOW()
-        WHERE id = $3
-      `, [credit_note_url, session.user.id, paymentId]);
-
-      // Update project with credit note URL
-      await query(`
-        UPDATE projects 
-        SET credit_note_url = $1, credit_note_uploaded_at = NOW()
-        WHERE id = $2
-      `, [credit_note_url, payment.project_id]);
-
-      // Update ledger entry to mark as finalized
-      await query(`
-        UPDATE project_ledger 
-        SET description = description || ' [Credit Note Uploaded]'
-        WHERE source_table = 'customer_payments_in' 
-        AND source_id = $1
-      `, [paymentId]);
-
-      return NextResponse.json({
-        message: 'Credit note uploaded and reversal approved',
-        payment_id: paymentId,
-        credit_note_url: credit_note_url
       });
     }
 

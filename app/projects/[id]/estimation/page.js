@@ -210,7 +210,6 @@ export default function EstimationPage() {
     
       if (checkRes.ok) {
         const checkData = await checkRes.json();
-        console.log('📊 Check overpayment data:', checkData);
 
         if (checkData.has_overpayment) {
           // Show modal and wait for user decision
@@ -245,7 +244,7 @@ export default function EstimationPage() {
 
     } catch (error) {
       console.error('Error:', error);
-      toast.error('An error occurred');
+      toast.error('An error occurred #123');
       setSaving(false);
     }
   };
@@ -278,7 +277,7 @@ export default function EstimationPage() {
       }
     } catch (error) {
       console.error('Error saving estimation:', error);
-      toast.error('An error occurred');
+      toast.error('An error occurred #321');
     } finally {
       setSaving(false);
     }
