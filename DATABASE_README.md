@@ -151,6 +151,7 @@ pg_dump -h your-host -U postgres kg_interiors_finance > backup.sql
 # Apply migrations
 PGPASSWORD='your_password' psql -h your-host -U postgres -d kg_interiors_finance -f rename_phase_to_stage.sql
 PGPASSWORD='your_password' psql -h your-host -U postgres -d kg_interiors_finance -f remove_expected_percentage.sql
+PGPASSWORD='your_password' psql -h your-host -U postgres -d kg_interiors_finance -f drop_stage_check_constraint.sql
 ```
 
 ---
