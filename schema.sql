@@ -202,6 +202,7 @@ CREATE TABLE projects (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+COMMENT ON COLUMN projects.stage IS 'Current project stage - values copied from biz_model_stages at project creation. No CHECK constraint to allow flexibility as BizModels evolve';
 COMMENT ON COLUMN projects.invoice_url IS 'URL to uploaded project invoice';
 COMMENT ON COLUMN projects.revenue_realized IS 'Revenue realized from this project based on invoice';
 COMMENT ON COLUMN projects.invoice_uploaded_at IS 'Timestamp when invoice was uploaded';
