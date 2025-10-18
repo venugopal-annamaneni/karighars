@@ -21,14 +21,15 @@ export default function EstimationPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id;
-  
+
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showOverpaymentModal, setShowOverpaymentModal] = useState(false);
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
-  
+  const [bizModel, setBizModel] = useState(null);
+
   const [formData, setFormData] = useState({
     remarks: '',
     status: 'draft',
@@ -36,7 +37,7 @@ export default function EstimationPage() {
     discount_percentage: 0,
     gst_percentage: 18
   });
-  
+
   const [items, setItems] = useState([
     {
       category: 'woodwork',
@@ -64,7 +65,7 @@ export default function EstimationPage() {
       if (res.ok) {
         const data = await res.json();
         setProject(data.project);
-        
+
         // Load existing estimation if available
         if (data.estimation) {
           setFormData({
@@ -74,7 +75,7 @@ export default function EstimationPage() {
             discount_percentage: data.estimation.discount_percentage || 0,
             gst_percentage: data.estimation.gst_percentage || 18
           });
-          
+
           const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
           if (itemsRes.ok) {
             const itemsData = await itemsRes.json();
@@ -90,6 +91,20 @@ export default function EstimationPage() {
                 estimated_margin: parseFloat(item.estimated_margin || 0)
               })));
             }
+          }
+        } else {
+          // Load standard service charge from biz model
+          const bizModelRes = await fetch(`/api/biz-models/${data.project.biz_model_id}`);
+          if (bizModelRes.ok) {
+            const bizModelData = await bizModelRes.json();
+            const standardServiceCharge = bizModelData.model.service_charge_percentage;
+            setFormData({
+              ...formData,
+              service_charge_percentage: standardServiceCharge,
+            });
+            setBizModel(bizModelData.model);
+          } else {
+            throw new Error('Failed to fetch business model');
           }
         }
       }
@@ -122,7 +137,7 @@ export default function EstimationPage() {
   const updateItem = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
-    
+
     // Auto-calculate margin
     if (field === 'unit_price' || field === 'estimated_cost') {
       const unitPrice = parseFloat(newItems[index].unit_price) || 0;
@@ -131,7 +146,7 @@ export default function EstimationPage() {
         newItems[index].estimated_margin = ((unitPrice - estimatedCost) / unitPrice * 100).toFixed(2);
       }
     }
-    
+
     setItems(newItems);
   };
 
@@ -139,7 +154,7 @@ export default function EstimationPage() {
     let woodwork = 0;
     let misc_internal = 0;
     let misc_external = 0;
-    
+
     items.forEach(item => {
       const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
       if (item.category === 'woodwork') {
@@ -150,14 +165,14 @@ export default function EstimationPage() {
         misc_external += total;
       }
     });
-    
+
     const subtotal = woodwork + misc_internal + misc_external;
     const serviceCharge = (subtotal * (formData.service_charge_percentage || 0)) / 100;
     const discount = (subtotal * (formData.discount_percentage || 0)) / 100;
     const finalTotal = subtotal + serviceCharge - discount;
     const gstAmount = (finalTotal * (formData.gst_percentage || 0)) / 100;
     const grandTotal = finalTotal + gstAmount;
-    
+
     return {
       woodwork_value: woodwork,
       misc_internal_value: misc_internal,
@@ -175,10 +190,10 @@ export default function EstimationPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    
+
     try {
       const totals = calculateTotals();
-      
+
       // First, check for overpayment before creating
       const checkRes = await fetch('/api/check-overpayment', {
         method: 'POST',
@@ -189,18 +204,18 @@ export default function EstimationPage() {
           gst_amount: totals.gst_amount
         })
       });
-      
+
       console.log('✅ Check overpayment request sent:', {
         project_id: projectId,
         final_value: totals.final_value,
         gst_amount: totals.gst_amount
       });
       console.log('✅ Check overpayment response status:', checkRes.status);
-      
+
       if (checkRes.ok) {
         const checkData = await checkRes.json();
         console.log('📊 Check overpayment data:', checkData);
-        
+
         if (checkData.has_overpayment) {
           console.log('🔴 Overpayment detected! Showing modal...');
           // Show modal and wait for user decision
@@ -222,7 +237,7 @@ export default function EstimationPage() {
           console.log('🟢 No overpayment - proceeding with save');
         }
       }
-      
+
       // No overpayment, proceed normally
       await saveEstimation({
         project_id: projectId,
@@ -234,14 +249,14 @@ export default function EstimationPage() {
         gst_percentage: formData.gst_percentage,
         items: items.filter(item => item.description.trim() !== '')
       });
-      
+
     } catch (error) {
       console.error('Error:', error);
       toast.error('An error occurred');
       setSaving(false);
     }
   };
-  
+
   const saveEstimation = async (data) => {
     try {
       const res = await fetch('/api/estimations', {
@@ -252,7 +267,7 @@ export default function EstimationPage() {
 
       if (res.ok) {
         const responseData = await res.json();
-        
+
         // Check if overpayment was detected (shouldn't happen now, but keep for safety)
         if (responseData.warning === 'overpayment_detected' && responseData.overpayment) {
           toast.warning(
@@ -262,7 +277,7 @@ export default function EstimationPage() {
         } else {
           toast.success('Estimation saved successfully!');
         }
-        
+
         router.push(`/projects/${projectId}`);
       } else {
         const data = await res.json();
@@ -290,7 +305,7 @@ export default function EstimationPage() {
   if (!session || !project) return null;
 
   const totals = calculateTotals();
-  
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -408,7 +423,7 @@ export default function EstimationPage() {
                         </Button>
                       )}
                     </div>
-                    
+
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs">Category</Label>
@@ -426,7 +441,7 @@ export default function EstimationPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="space-y-2 md:col-span-2">
                         <Label className="text-xs">Description</Label>
                         <Input
@@ -451,7 +466,7 @@ export default function EstimationPage() {
                           className="h-9"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-xs">Unit</Label>
                         <Select
@@ -469,7 +484,7 @@ export default function EstimationPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-xs">Unit Price (₹)</Label>
                         <Input
@@ -481,7 +496,7 @@ export default function EstimationPage() {
                           className="h-9"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-xs">Vendor Type</Label>
                         <Select
@@ -498,7 +513,7 @@ export default function EstimationPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label className="text-xs">Total</Label>
                         <Input
@@ -535,7 +550,7 @@ export default function EstimationPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>Service Charge (%)</Label>
@@ -546,10 +561,13 @@ export default function EstimationPage() {
                         max="100"
                         placeholder="0"
                         value={formData.service_charge_percentage}
+                        className="cursor-not-allowed bg-slate-100"
+                        readOnly
                         onChange={(e) => setFormData({ ...formData, service_charge_percentage: parseFloat(e.target.value) || 0 })}
                       />
+                      <span className='text-xs text-gray-500'>Model: {bizModel.code}</span>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Discount (%)</Label>
                       <Input
@@ -561,8 +579,9 @@ export default function EstimationPage() {
                         value={formData.discount_percentage}
                         onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
                       />
+                      <span className='text-xs text-gray-500'>Maximum Discount: {bizModel.max_discount_percentage} %</span>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>GST (%)</Label>
                       <Input
@@ -577,7 +596,7 @@ export default function EstimationPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Remarks</Label>
                   <Textarea
@@ -587,7 +606,7 @@ export default function EstimationPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-2 mt-6">
                 <Link href={`/projects/${projectId}`}>
                   <Button type="button" variant="outline">
@@ -602,7 +621,7 @@ export default function EstimationPage() {
             </CardContent>
           </Card>
         </form>
-        
+
         {/* Overpayment Warning Modal */}
         <Dialog open={showOverpaymentModal} onOpenChange={setShowOverpaymentModal}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -619,7 +638,7 @@ export default function EstimationPage() {
                 This estimation revision will create an overpayment situation
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="overflow-y-auto flex-1 py-4">
               {overpaymentData && (
                 <div className="space-y-4">
@@ -637,14 +656,14 @@ export default function EstimationPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4">
                     <p className="text-sm font-semibold text-red-900 mb-1">Overpayment Amount:</p>
                     <p className="text-3xl font-bold text-red-600">
                       ₹{overpaymentData.overpayment_amount?.toLocaleString('en-IN')}
                     </p>
                   </div>
-                  
+
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="font-semibold text-amber-900 mb-2">⚠️ What happens if you proceed:</p>
                     <ol className="list-decimal list-inside space-y-2 text-sm text-amber-900 ml-2">
@@ -656,7 +675,7 @@ export default function EstimationPage() {
                       <li>Ledger will reflect the adjustment</li>
                     </ol>
                   </div>
-                  
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="font-semibold text-blue-900 mb-2">💡 Alternative Options:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm text-blue-900 ml-2">
@@ -668,7 +687,7 @@ export default function EstimationPage() {
                 </div>
               )}
             </div>
-            
+
             <DialogFooter className="gap-2 mt-4">
               <Button
                 type="button"
