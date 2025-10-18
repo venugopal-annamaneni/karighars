@@ -24,6 +24,7 @@ That's it! ✅
 ### Migration Files (Optional - for existing databases)
 - **`rename_phase_to_stage.sql`** - Renames projects.phase → projects.stage
 - **`remove_expected_percentage.sql`** - Removes expected_percentage from customer_payments_in
+- **`drop_stage_check_constraint.sql`** - Removes hardcoded stage CHECK constraint to allow dynamic stages from BizModels
 
 ---
 
