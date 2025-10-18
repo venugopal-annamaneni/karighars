@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-require('dotenv').config();
 
 async function checkConstraints() {
   const pool = new Pool({
