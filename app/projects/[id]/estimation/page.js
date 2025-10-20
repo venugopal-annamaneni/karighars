@@ -87,7 +87,7 @@ export default function EstimationPage() {
             gst_percentage: data.estimation.gst_percentage || 18
           });
 
-          const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
+          const itemsRes = await fetch(`/api/projects/${projectId}/estimations/${data.estimation.id}/items`);
           if (itemsRes.ok) {
             const itemsData = await itemsRes.json();
             if (itemsData.items.length > 0) {
@@ -198,7 +198,7 @@ export default function EstimationPage() {
       const totals = calculateTotals();
 
       // First, check for overpayment before creating
-      const checkRes = await fetch('/api/check-overpayment', {
+      const checkRes = await fetch(`/api/projects/${projectId}/check-overpayment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -252,7 +252,7 @@ export default function EstimationPage() {
 
   const saveEstimation = async (data) => {
     try {
-      const res = await fetch('/api/estimations', {
+      const res = await fetch(`/api/projects/${data.project_id}/estimations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

@@ -205,35 +205,35 @@ export default function BizModelsPage() {
     }
   };
 
-  const handleBuildModel = async (modelId) => {
-    try {
-      const res = await fetch(`/api/biz-models/${modelId}/build`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
+  // const handleBuildModel = async (modelId) => {
+  //   try {
+  //     const res = await fetch(`/api/biz-models/${modelId}/build`, {
+  //       method: 'PUT',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({})
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (res.ok) {
-        toast.success(data.message || 'BizModel built successfully');
-        fetchBizModels();
-        if (selectedModel === modelId) {
-          handleModelSelect(modelId); // Refresh details
-        }
-      } else {
-        toast.error(data.error || 'Failed to build BizModel');
-      }
-    } catch (error) {
-      console.error('Error building model:', error);
-      toast.error('An error occurred');
-    }
-  };
+  //     if (res.ok) {
+  //       toast.success(data.message || 'BizModel built successfully');
+  //       fetchBizModels();
+  //       if (selectedModel === modelId) {
+  //         handleModelSelect(modelId); // Refresh details
+  //       }
+  //     } else {
+  //       toast.error(data.error || 'Failed to build BizModel');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error building model:', error);
+  //     toast.error('An error occurred');
+  //   }
+  // };
 
   const handleToggleStatus = async (modelId, e) => {
     e.stopPropagation(); // Prevent card selection
     try {
-      const res = await fetch(`/api/biz-models/${modelId}/toggle-status`, {
+      const res = await fetch(`/api/biz-models/${modelId}?action=toggle-status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})

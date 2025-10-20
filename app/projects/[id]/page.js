@@ -84,11 +84,11 @@ export default function ProjectDetailPage() {
     try {
       const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes, ledgerRes, docsRes] = await Promise.all([
         fetch(`/api/projects/${projectId}`),
-        fetch(`/api/customer-payments?project_id=${projectId}`),
-        fetch(`/api/vendor-payments?project_id=${projectId}`),
-        fetch(`/api/vendor-boqs?project_id=${projectId}`),
+        fetch(`/api/projects/${projectId}/customer-payments`),
+        fetch(`/api/projects/${projectId}/vendor-payments`),
+        fetch(`/api/projects/${projectId}/vendor-boqs`),
         fetch(`/api/projects/${projectId}/ledger`),
-        fetch(`/api/documents/project/${projectId}`)
+        fetch(`/api/projects/${projectId}/documents`),
       ]);
 
       let projectData = null;
@@ -105,7 +105,7 @@ export default function ProjectDetailPage() {
         setEstimation(data.estimation);
 
         if (data.estimation) {
-          const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
+          const itemsRes = await fetch(`/api/projects/${projectId}/estimations/${data.estimation.id}/items`);
           if (itemsRes.ok) {
             const itemsData = await itemsRes.json();
             setEstimationItems(itemsData.items);
@@ -209,7 +209,7 @@ export default function ProjectDetailPage() {
         }
       }
 
-      const res = await fetch('/api/customer-payments', {
+      const res = await fetch(`/api/projects/${projectId}/customer-payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -272,7 +272,7 @@ export default function ProjectDetailPage() {
 
     // Fetch cumulative calculation from API for milestone-based payments
     try {
-      const res = await fetch(`/api/calculate-payment/${projectId}/${milestoneId}`);
+      const res = await fetch(`/api/projects/${projectId}/calculate-payment?milestone_id=${milestoneId}`);
       if (!res.ok) {
         toast.error('Failed to calculate expected amount');
         return;
@@ -378,9 +378,9 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt') => {
-    if (!file) return;
+  const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt', user_id) => {
     debugger;
+    if (!file) return;
     setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
     const formData = new FormData();
     formData.append('file', file);
@@ -393,25 +393,26 @@ export default function ProjectDetailPage() {
       // Build dynamic payload
       const updateBody = { document_url: uploadData.url, status: 'approved' };
 
-      const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
+      const updateRes = await fetch(`/api/projects/${projectId}/customer-payments/${paymentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateBody),
       });
       if (!updateRes.ok) throw new Error('Failed to update payment');
 
-      await fetch('/api/documents', {
+      await fetch(`/api/projects/${projectId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          related_entity: 'customer_payments_in',
+          project_id: projectId,
+          related_entity: 'customer_payments',
           related_id: paymentId,
           document_type: type,
           document_url: uploadData.url,
           file_name: uploadData.fileName,
           file_size: uploadData.size,
           mime_type: uploadData.type,
-          uploaded_by: session.user.id
+          uploaded_by: user_id
         }),
       });
 
@@ -1018,7 +1019,7 @@ export default function ProjectDetailPage() {
                             {payment.status === 'pending' && (
                               <p className="text-xs text-amber-600">Not counted</p>
                             )}
-                            {payment.payment_type === 'CREDIT_NOTE_REVERSAL' && (
+                            {payment.payment_type === 'CREDIT_NOTE' && (
                               <Badge className="bg-red-100 text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
@@ -1027,16 +1028,17 @@ export default function ProjectDetailPage() {
                               <div>
                                 <input
                                   type="file"
-                                  id={`${payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'credit-note' : 'receipt'}-${payment.id}`}
+                                  id={`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`}
                                   accept="image/*,.pdf"
                                   className="hidden"
                                   onChange={(e) => {
+                                    debugger;
                                     const file = e.target.files[0];
                                     if (file) {
-                                      if (payment.payment_type === 'CREDIT_NOTE_REVERSAL') {
-                                        handleDocumentUpload(payment.id, file, 'credit_note');
+                                      if (payment.payment_type === 'CREDIT_NOTE') {
+                                        handleDocumentUpload(payment.id, file, 'credit_note', session.user.id);
                                       } else {
-                                        handleDocumentUpload(payment.id, file, 'payment_receipt');
+                                        handleDocumentUpload(payment.id, file, 'payment_receipt', session.user.id);
                                       }
                                     }
                                   }}
@@ -1045,11 +1047,11 @@ export default function ProjectDetailPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
+                                  onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
                                   disabled={uploadingReceipt[payment.id]}
-                                  className={payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
+                                  className={payment.payment_type === 'CREDIT_NOTE' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
                                 >
-                                  {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'Upload Credit Note' : 'Upload Receipt'}
+                                  {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE' ? 'Upload Credit Note' : 'Upload Receipt'}
                                 </Button>
                               </div>
                               <Button
@@ -1057,12 +1059,12 @@ export default function ProjectDetailPage() {
                                 variant="outline"
                                 onClick={() => { }}
                               >
-                                {payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? 'Cancel Credit Note' : 'Cancel Payment'}
+                                {payment.payment_type === 'CREDIT_NOTE' ? 'Cancel Credit Note' : 'Cancel Payment'}
                               </Button>
                             </div>
                           )}
                           {payment.document_url && (
-                            <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'CREDIT_NOTE_REVERSAL' ? "text-red-600": ""}>
+                            <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'CREDIT_NOTE' ? "text-red-600" : ""}>
                               <a href={payment.document_url} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                               </a>
@@ -1283,24 +1285,6 @@ export default function ProjectDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {project.invoice_url && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-green-900">Project Invoice</p>
-                        <p className="text-sm text-green-700">Revenue Realized: ₹{project.revenue_realized?.toLocaleString('en-IN') || '0'}</p>
-                        <p className="text-xs text-green-600 mt-1">Uploaded on {project.invoice_uploaded_at ? formatDate(project.invoice_uploaded_at) : 'N/A'}</p>
-                      </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={project.invoice_url} target="_blank" rel="noopener noreferrer">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-3">
                   {documents.length === 0 ? (
                     <div className="text-center py-12">
@@ -1318,14 +1302,16 @@ export default function ProjectDetailPage() {
                             {doc.document_type === 'kyc_cheque' && 'KYC - Blank Cheque'}
                             {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
                             {doc.document_type === 'project_invoice' && 'Project Invoice'}
-                            {doc.document_type === 'other' && 'Other Document'}
+                            {doc.document_type === 'credit_note' && 'Credit Note'}
+                            {doc.related_entity === 'customer_payments' && (
+                              <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
+                                ({formatCurrency(doc.related_info.amount)})
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.uploaded_at)}
+                            Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.created_at)}
                           </p>
-                          {doc.remarks && (
-                            <p className="text-xs text-muted-foreground mt-1">Note: {doc.remarks}</p>
-                          )}
                         </div>
                         <Button variant="outline" size="sm" asChild>
                           <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
@@ -1427,7 +1413,7 @@ export default function ProjectDetailPage() {
               variant="destructive"
               onClick={async () => {
                 try {
-                  const res = await fetch(`/api/estimations/${estimation.id}/cancel-overpayment`, {
+                  const res = await fetch(`/api/projects/${projectId}/estimations/${estimation.id}/rollback`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
@@ -1457,7 +1443,6 @@ export default function ProjectDetailPage() {
 
 
 const WarningExtraPendingReceipts = ({ estimation, payments }) => {
-  debugger;
   const pendingReceipts = payments.filter(p => p.status === 'pending');
   const approvedReceipts = payments.filter(p => p.status === 'approved')
   if (pendingReceipts.length === 0) return null;
@@ -1468,9 +1453,9 @@ const WarningExtraPendingReceipts = ({ estimation, payments }) => {
   const remainingPayable = estimationValue - approvedTotal;
 
 
-  const overPendingAmount = pendingTotal - remainingPayable;  
+  const overPendingAmount = pendingTotal - remainingPayable;
   const overPendingAmountFormatted = formatCurrency(estimationValue);
-  
+
   if (pendingTotal <= remainingPayable) return null;
 
 
@@ -1487,7 +1472,7 @@ const WarningExtraPendingReceipts = ({ estimation, payments }) => {
           <strong>{overPendingAmountFormatted}</strong>.
         </p>
         <p className="text-sm text-amber-800">
-          Project has approved payments worth <strong>{formatCurrency(approvedTotal)}</strong>. 
+          Project has approved payments worth <strong>{formatCurrency(approvedTotal)}</strong>.
           Pending approvals exceed the remaining payable amount by{' '}
           <strong className="text-amber-900">{formatCurrency(overPendingAmount)}</strong>.
         </p>
@@ -1595,10 +1580,13 @@ const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
                 onClick={async () => {
                   try {
                     debugger;
-                    const res = await fetch(`/api/estimations/${estimation.id}/create-creditnote`, {
-                      method: 'PUT',
+                    const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
+                      method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({})
+                      body: JSON.stringify({
+                        "payment_type": "CREDIT_NOTE",
+                        "estimation_id": estimation.id
+                      })
                     });
                     if (res.ok) {
                       toast.success('Overpayment approved! Credit note created in Customer Payments (pending document upload).');
