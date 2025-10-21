@@ -10,116 +10,160 @@ export async function GET(request, { params }) {
   }
 
   try {
-
     const { searchParams } = new URL(request.url);
     const projectId = params.id;
     const milestoneId = searchParams.get('milestone_id');
 
-    // Get project estimation (including GST and adjustments)
+    // Get latest estimation
     const estRes = await query(`
-        SELECT 
-          woodwork_value, 
-          misc_internal_value, 
-          misc_external_value,
-          service_charge_amount,
-          discount_amount,
-          final_value,
-          gst_amount
-        FROM project_estimations
-        WHERE project_id = $1
-        ORDER BY created_at DESC
-        LIMIT 1
-      `, [projectId]);
+      SELECT id, woodwork_value, misc_internal_value, misc_external_value, shopping_service_value, final_value
+      FROM project_estimations
+      WHERE project_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [projectId]);
 
     if (estRes.rows.length === 0) {
       return NextResponse.json({ error: 'No estimation found' }, { status: 404 });
     }
 
     const estimation = estRes.rows[0];
-    const woodworkValue = parseFloat(estimation.woodwork_value || 0);
-    const miscValue = parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0);
-    const serviceCharge = parseFloat(estimation.service_charge_amount || 0);
-    const discount = parseFloat(estimation.discount_amount || 0);
-    const finalValue = parseFloat(estimation.final_value || 0);
-    const gstAmount = parseFloat(estimation.gst_amount || 0);
+    const estimationId = estimation.id;
 
-    // Calculate how service charge and discount are distributed across categories
-    const subtotal = woodworkValue + miscValue;
-
-    // Apply service charge and discount proportionally to woodwork and misc
-    const woodworkAfterAdjustments = subtotal > 0
-      ? woodworkValue + (woodworkValue / subtotal) * serviceCharge - (woodworkValue / subtotal) * discount
-      : 0;
-    const miscAfterAdjustments = subtotal > 0
-      ? miscValue + (miscValue / subtotal) * serviceCharge - (miscValue / subtotal) * discount
-      : 0;
-
-    // Calculate GST portions for woodwork and misc (based on their share of final_value)
-    const woodworkGst = finalValue > 0 ? (woodworkAfterAdjustments / finalValue) * gstAmount : 0;
-    const miscGst = finalValue > 0 ? (miscAfterAdjustments / finalValue) * gstAmount : 0;
-
-    // Total values INCLUDING GST (this is what customer pays)
-    const woodworkValueWithGst = woodworkAfterAdjustments + woodworkGst;
-    const miscValueWithGst = miscAfterAdjustments + miscGst;
-
-    // Get milestone config
+    // Get milestone details
     const milestoneRes = await query(`
-        SELECT milestone_code, woodwork_percentage, misc_percentage
-        FROM biz_model_milestones
-        WHERE id = $1
-      `, [milestoneId]);
+      SELECT milestone_code, milestone_name, woodwork_percentage, misc_percentage, shopping_percentage
+      FROM biz_model_milestones
+      WHERE id = $1
+    `, [milestoneId]);
 
     if (milestoneRes.rows.length === 0) {
       return NextResponse.json({ error: 'Milestone not found' }, { status: 404 });
     }
 
     const milestone = milestoneRes.rows[0];
+    const isShoppingMilestone = milestone.milestone_code === 'SHOPPING_100';
 
-    // Get all APPROVED payments for this project (cumulative)
-    // Note: woodwork_amount and misc_amount are stored as pre-tax values
-    // We need to add GST back to compare with GST-inclusive targets
-    const paymentsRes = await query(`
+    if (isShoppingMilestone) {
+      // SHOPPING_100 milestone: Only include shopping_service items
+      const itemsRes = await query(`
+        SELECT COALESCE(SUM(item_total), 0) as shopping_total
+        FROM estimation_items
+        WHERE estimation_id = $1 AND category = 'shopping_service'
+      `, [estimationId]);
+
+      const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
+      const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
+      
+      // Calculate target amount for this milestone
+      const targetAmount = (shoppingTotal * shoppingPercentage) / 100;
+
+      // Get already collected for shopping
+      const paymentsRes = await query(`
+        SELECT COALESCE(SUM(amount), 0) as collected
+        FROM customer_payments
+        WHERE project_id = $1 
+          AND status = 'approved'
+          AND payment_type = 'SHOPPING_100'
+      `, [projectId]);
+
+      const collected = parseFloat(paymentsRes.rows[0].collected || 0);
+      const collectedPercentage = shoppingTotal > 0 ? (collected / shoppingTotal) * 100 : 0;
+      const remainingPercentage = Math.max(0, shoppingPercentage - collectedPercentage);
+      const remainingAmount = Math.max(0, targetAmount - collected);
+
+      return NextResponse.json({
+        milestone_type: 'shopping',
+        milestone_code: milestone.milestone_code,
+        milestone_name: milestone.milestone_name,
+        shopping_total: shoppingTotal,
+        target_percentage: shoppingPercentage,
+        target_amount: targetAmount,
+        collected_amount: collected,
+        collected_percentage: collectedPercentage,
+        remaining_percentage: remainingPercentage,
+        remaining_amount: remainingAmount,
+        expected_payment: remainingAmount,
+        breakdown: {
+          shopping_service: remainingAmount
+        }
+      });
+
+    } else {
+      // Regular milestone: EXCLUDE shopping_service items
+      const itemsRes = await query(`
         SELECT 
-          COALESCE(SUM(woodwork_amount * (1 + gst_percentage / 100)), 0) as total_woodwork_with_gst,
-          COALESCE(SUM(misc_amount * (1 + gst_percentage / 100)), 0) as total_misc_with_gst
+          COALESCE(SUM(CASE WHEN category = 'woodwork' THEN item_total ELSE 0 END), 0) as woodwork_total,
+          COALESCE(SUM(CASE WHEN category IN ('misc_internal', 'misc_external') THEN item_total ELSE 0 END), 0) as misc_total
+        FROM estimation_items
+        WHERE estimation_id = $1 AND category != 'shopping_service'
+      `, [estimationId]);
+
+      const woodworkTotal = parseFloat(itemsRes.rows[0].woodwork_total || 0);
+      const miscTotal = parseFloat(itemsRes.rows[0].misc_total || 0);
+
+      const woodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
+      const miscPercentage = parseFloat(milestone.misc_percentage || 0);
+
+      // Calculate target amounts for this milestone (cumulative)
+      const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
+      const targetMiscAmount = (miscTotal * miscPercentage) / 100;
+      const targetTotal = targetWoodworkAmount + targetMiscAmount;
+
+      // Get already collected amounts (excluding shopping payments)
+      const paymentsRes = await query(`
+        SELECT 
+          COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN woodwork_amount ELSE 0 END), 0) as collected_woodwork,
+          COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN misc_amount ELSE 0 END), 0) as collected_misc
         FROM customer_payments
         WHERE project_id = $1 AND status = 'approved'
       `, [projectId]);
 
-    const collectedWoodwork = parseFloat(paymentsRes.rows[0].total_woodwork_with_gst || 0);
-    const collectedMisc = parseFloat(paymentsRes.rows[0].total_misc_with_gst || 0);
+      const collectedWoodwork = parseFloat(paymentsRes.rows[0].collected_woodwork || 0);
+      const collectedMisc = parseFloat(paymentsRes.rows[0].collected_misc || 0);
+      const collectedTotal = collectedWoodwork + collectedMisc;
 
-    // Calculate collected percentages (based on GST-inclusive values)
-    const collectedWoodworkPercentage = woodworkValueWithGst > 0 ? (collectedWoodwork / woodworkValueWithGst) * 100 : 0;
-    const collectedMiscPercentage = miscValueWithGst > 0 ? (collectedMisc / miscValueWithGst) * 100 : 0;
+      // Calculate collected percentages
+      const collectedWoodworkPercentage = woodworkTotal > 0 ? (collectedWoodwork / woodworkTotal) * 100 : 0;
+      const collectedMiscPercentage = miscTotal > 0 ? (collectedMisc / miscTotal) * 100 : 0;
 
-    // Calculate remaining to collect
-    const targetWoodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
-    const targetMiscPercentage = parseFloat(milestone.misc_percentage || 0);
+      // Calculate remaining
+      const remainingWoodworkPercentage = Math.max(0, woodworkPercentage - collectedWoodworkPercentage);
+      const remainingMiscPercentage = Math.max(0, miscPercentage - collectedMiscPercentage);
+      
+      const remainingWoodworkAmount = Math.max(0, targetWoodworkAmount - collectedWoodwork);
+      const remainingMiscAmount = Math.max(0, targetMiscAmount - collectedMisc);
+      const remainingTotal = remainingWoodworkAmount + remainingMiscAmount;
 
-    const remainingWoodworkPercentage = Math.max(0, targetWoodworkPercentage - collectedWoodworkPercentage);
-    const remainingMiscPercentage = Math.max(0, targetMiscPercentage - collectedMiscPercentage);
+      return NextResponse.json({
+        milestone_type: 'regular',
+        milestone_code: milestone.milestone_code,
+        milestone_name: milestone.milestone_name,
+        woodwork_total: woodworkTotal,
+        misc_total: miscTotal,
+        target_woodwork_percentage: woodworkPercentage,
+        target_misc_percentage: miscPercentage,
+        target_woodwork_amount: targetWoodworkAmount,
+        target_misc_amount: targetMiscAmount,
+        target_total: targetTotal,
+        collected_woodwork_amount: collectedWoodwork,
+        collected_misc_amount: collectedMisc,
+        collected_total: collectedTotal,
+        collected_woodwork_percentage: collectedWoodworkPercentage,
+        collected_misc_percentage: collectedMiscPercentage,
+        remaining_woodwork_percentage: remainingWoodworkPercentage,
+        remaining_misc_percentage: remainingMiscPercentage,
+        remaining_woodwork_amount: remainingWoodworkAmount,
+        remaining_misc_amount: remainingMiscAmount,
+        remaining_total: remainingTotal,
+        expected_payment: remainingTotal,
+        breakdown: {
+          woodwork: remainingWoodworkAmount,
+          misc: remainingMiscAmount
+        }
+      });
+    }
 
-    // Calculate expected amounts (GST-inclusive) - REMAINING amounts only
-    const expectedWoodworkAmount = (woodworkValueWithGst * remainingWoodworkPercentage) / 100;
-    const expectedMiscAmount = (miscValueWithGst * remainingMiscPercentage) / 100;
-    const expectedTotal = expectedWoodworkAmount + expectedMiscAmount;
-
-    return NextResponse.json({
-      woodwork_value: woodworkValueWithGst,
-      misc_value: miscValueWithGst,
-      target_woodwork_percentage: targetWoodworkPercentage,
-      target_misc_percentage: targetMiscPercentage,
-      collected_woodwork_amount: collectedWoodwork,
-      collected_misc_amount: collectedMisc,
-      collected_woodwork_percentage: collectedWoodworkPercentage,
-      collected_misc_percentage: collectedMiscPercentage,
-      remaining_woodwork_percentage: remainingWoodworkPercentage,
-      remaining_misc_percentage: remainingMiscPercentage,
-      expected_woodwork_amount: expectedWoodworkAmount,
-      expected_misc_amount: expectedMiscAmount,
-      expected_total: expectedTotal
-    });
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
