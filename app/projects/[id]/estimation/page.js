@@ -34,8 +34,6 @@ export default function EstimationPage() {
   const [formData, setFormData] = useState({
     remarks: '',
     status: 'draft',
-    service_charge_percentage: 0,
-    discount_percentage: 0,
     gst_percentage: 18
   });
 
@@ -46,6 +44,9 @@ export default function EstimationPage() {
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
+      karighar_charges_percentage: 10,
+      discount_percentage: 0,
+      gst_percentage: 18,
       vendor_type: 'PI',
       estimated_cost: 0,
       estimated_margin: 0
