@@ -83,8 +83,6 @@ export default function EstimationPage() {
           setFormData({
             remarks: data.estimation.remarks || '',
             status: data.estimation.status,
-            service_charge_percentage: data.estimation.service_charge_percentage || 0,
-            discount_percentage: data.estimation.discount_percentage || 0,
             gst_percentage: data.estimation.gst_percentage || 18
           });
 
@@ -98,18 +96,15 @@ export default function EstimationPage() {
                 quantity: parseFloat(item.quantity),
                 unit: item.unit,
                 unit_price: parseFloat(item.unit_price),
+                karighar_charges_percentage: parseFloat(item.karighar_charges_percentage || 10),
+                discount_percentage: parseFloat(item.discount_percentage || 0),
+                gst_percentage: parseFloat(item.gst_percentage || 18),
                 vendor_type: item.vendor_type,
                 estimated_cost: parseFloat(item.estimated_cost || 0),
                 estimated_margin: parseFloat(item.estimated_margin || 0)
               })));
             }
           }
-        } else {
-          const standardServiceCharge = bizModelData.model.service_charge_percentage;
-          setFormData({
-            ...formData,
-            service_charge_percentage: standardServiceCharge,
-          });
         }
       }
     } catch (error) {
