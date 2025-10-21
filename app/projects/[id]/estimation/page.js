@@ -264,15 +264,30 @@ export default function EstimationPage() {
         if (checkData.has_overpayment) {
           // Show modal and wait for user decision
           setOverpaymentData(checkData);
+          
+          // Prepare items with calculated values
+          const itemsWithCalcs = items
+            .filter(item => item.description.trim() !== '')
+            .map(item => {
+              const calc = calculateItemTotal(item);
+              return {
+                ...item,
+                subtotal: calc.subtotal,
+                karighar_charges_amount: calc.karighar_charges_amount,
+                discount_amount: calc.discount_amount,
+                amount_before_gst: calc.amount_before_gst,
+                gst_amount: calc.gst_amount,
+                item_total: calc.item_total
+              };
+            });
+          
           setPendingSubmitData({
             project_id: projectId,
             ...totals,
             remarks: formData.remarks,
             status: formData.status,
-            service_charge_percentage: formData.service_charge_percentage,
-            discount_percentage: formData.discount_percentage,
             gst_percentage: formData.gst_percentage,
-            items: items.filter(item => item.description.trim() !== '')
+            items: itemsWithCalcs
           });
           setShowOverpaymentModal(true);
           setSaving(false);
