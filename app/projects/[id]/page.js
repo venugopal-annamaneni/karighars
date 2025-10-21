@@ -1020,7 +1020,7 @@ export default function ProjectDetailPage() {
                               <p className="text-xs text-amber-600">Not counted</p>
                             )}
                             {payment.payment_type === 'CREDIT_NOTE' && (
-                              <Badge className="bg-red-100 text-red-800 text-xs mt-1">Credit Note</Badge>
+                              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
                           {payment.status === 'pending' && (session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
@@ -1049,14 +1049,13 @@ export default function ProjectDetailPage() {
                                   variant="outline"
                                   onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
                                   disabled={uploadingReceipt[payment.id]}
-                                  className={payment.payment_type === 'CREDIT_NOTE' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
                                 >
                                   {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE' ? 'Upload Credit Note' : 'Upload Receipt'}
                                 </Button>
                               </div>
                               <Button
                                 size="sm"
-                                variant="outline"
+                                variant="destructive"
                                 onClick={() => { }}
                               >
                                 {payment.payment_type === 'CREDIT_NOTE' ? 'Cancel Credit Note' : 'Cancel Payment'}
@@ -1182,10 +1181,10 @@ export default function ProjectDetailPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium capitalize">{entry.transaction_type}</p>
                             {entry.amount > 0 && (
-                              <Badge className="bg-green-100 text-green-700">Inflow</Badge>
+                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100 hover:text-green-700">Inflow</Badge>
                             )}
                             {entry.amount < 0 && (
-                              <Badge className="bg-red-100 text-red-700">Outflow</Badge>
+                              <Badge className="bg-red-100 text-red-700 hover:bg-red-100 hover:text-red-700">Outflow</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
