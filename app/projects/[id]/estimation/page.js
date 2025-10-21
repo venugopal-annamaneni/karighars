@@ -512,6 +512,46 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
+                        <Label className="text-xs">KG Charges (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="10"
+                          value={item.karighar_charges_percentage}
+                          onChange={(e) => updateItem(index, 'karighar_charges_percentage', e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs">Discount (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="0"
+                          value={item.discount_percentage}
+                          onChange={(e) => updateItem(index, 'discount_percentage', e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs">GST (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="18"
+                          value={item.gst_percentage}
+                          onChange={(e) => updateItem(index, 'gst_percentage', e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
                         <Label className="text-xs">Vendor Type</Label>
                         <Select
                           value={item.vendor_type}
@@ -529,14 +569,22 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Total</Label>
+                        <Label className="text-xs">Item Total</Label>
                         <Input
-                          value={formatCurrency((item.quantity || 0) * (item.unit_price || 0))}
+                          value={formatCurrency(calculateItemTotal(item).item_total)}
                           disabled
-                          className="h-9 font-medium"
+                          className="h-9 font-medium bg-green-50"
                         />
                       </div>
                     </div>
+
+                    {/* Show breakdown for clarity */}
+                    {item.category === 'shopping_service' && (
+                      <div className="text-xs text-muted-foreground bg-amber-50 p-2 rounded">
+                        <strong>Note:</strong> For shopping service, customer pays ₹{formatCurrency((item.quantity || 0) * (item.unit_price || 0))} 
+                        directly to vendor. KG charges shown above.
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
