@@ -451,6 +451,7 @@ export default function EstimationPage() {
                             <SelectItem value="woodwork">Woodwork</SelectItem>
                             <SelectItem value="misc_internal">Misc Internal</SelectItem>
                             <SelectItem value="misc_external">Misc External</SelectItem>
+                            <SelectItem value="shopping_service">Shopping Service</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
