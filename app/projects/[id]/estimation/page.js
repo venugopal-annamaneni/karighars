@@ -468,7 +468,7 @@ export default function EstimationPage() {
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-5 gap-4">
+                    <div className="grid md:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs">Quantity</Label>
                         <Input
