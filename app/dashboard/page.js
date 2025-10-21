@@ -35,7 +35,7 @@ export default function DashboardPage() {
   const fetchData = async () => {
     try {
       const [statsRes, projectsRes] = await Promise.all([
-        fetch('/api/dashboard/stats'),
+        fetch('/api/dashboard?output=stats'),
         fetch('/api/projects')
       ]);
 

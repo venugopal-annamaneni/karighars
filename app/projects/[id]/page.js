@@ -1,42 +1,43 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter, useParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
-import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Plus, 
-  IndianRupee, 
-  TrendingUp, 
-  TrendingDown,
-  FileText,
-  Package,
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import {
+  Activity,
+  AlertTriangle,
+  ArrowLeft,
   Calendar,
-  Users,
+  Edit,
+  FileText,
+  IndianRupee,
   MapPin,
-  Activity
+  Package,
+  Plus,
+  StepBackIcon,
+  Users
 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function ProjectDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const projectId = params.id;
-  
+
   const [project, setProject] = useState(null);
   const [estimation, setEstimation] = useState(null);
   const [estimationItems, setEstimationItems] = useState([]);
@@ -58,10 +59,8 @@ export default function ProjectDetailPage() {
   });
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState({});
-  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
-  
+
   const [stageUpdate, setStageUpdate] = useState({ stage: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
     milestone_id: '',
@@ -85,11 +84,11 @@ export default function ProjectDetailPage() {
     try {
       const [projectRes, paymentsRes, vendorPaymentsRes, boqsRes, ledgerRes, docsRes] = await Promise.all([
         fetch(`/api/projects/${projectId}`),
-        fetch(`/api/customer-payments?project_id=${projectId}`),
-        fetch(`/api/vendor-payments?project_id=${projectId}`),
-        fetch(`/api/vendor-boqs?project_id=${projectId}`),
+        fetch(`/api/projects/${projectId}/customer-payments`),
+        fetch(`/api/projects/${projectId}/vendor-payments`),
+        fetch(`/api/projects/${projectId}/vendor-boqs`),
         fetch(`/api/projects/${projectId}/ledger`),
-        fetch(`/api/documents/project/${projectId}`)
+        fetch(`/api/projects/${projectId}/documents`),
       ]);
 
       let projectData = null;
@@ -104,9 +103,9 @@ export default function ProjectDetailPage() {
           payments_made: data.payments_made
         });
         setEstimation(data.estimation);
-        
+
         if (data.estimation) {
-          const itemsRes = await fetch(`/api/estimation-items/${data.estimation.id}`);
+          const itemsRes = await fetch(`/api/projects/${projectId}/estimations/${data.estimation.id}/items`);
           if (itemsRes.ok) {
             const itemsData = await itemsRes.json();
             setEstimationItems(itemsData.items);
@@ -183,17 +182,17 @@ export default function ProjectDetailPage() {
     try {
       // Get GST percentage from estimation (default 18% if not available)
       const gstPercentage = parseFloat(estimation?.gst_percentage || 18);
-      
+
       // Back-calculate pre-tax amount and GST amount from total
       const totalAmount = parseFloat(paymentData.amount || 0);
       const preTaxAmount = totalAmount / (1 + gstPercentage / 100);
       const gstAmount = totalAmount - preTaxAmount;
-      
+
       // Use direct woodwork and misc amounts entered by user
       // These should also be GST-inclusive amounts
       const woodworkAmount = parseFloat(paymentData.woodwork_amount || 0);
       const miscAmount = parseFloat(paymentData.misc_amount || 0);
-      
+
       // Back-calculate pre-tax woodwork and misc
       const preTaxWoodwork = woodworkAmount / (1 + gstPercentage / 100);
       const preTaxMisc = miscAmount / (1 + gstPercentage / 100);
@@ -201,12 +200,8 @@ export default function ProjectDetailPage() {
       // Get payment type from milestone or use default
       let paymentType = 'other';
       let finalMilestoneId = null;
-      
-      if (paymentData.milestone_id === 'ADHOC') {
-        // Ad-hoc payment - no milestone_id
-        paymentType = 'ADHOC';
-        finalMilestoneId = null;
-      } else if (paymentData.milestone_id) {
+
+      if (paymentData.milestone_id) {
         const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
         if (milestone) {
           paymentType = milestone.milestone_code;
@@ -214,7 +209,7 @@ export default function ProjectDetailPage() {
         }
       }
 
-      const res = await fetch('/api/customer-payments', {
+      const res = await fetch(`/api/projects/${projectId}/customer-payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -238,7 +233,7 @@ export default function ProjectDetailPage() {
       });
 
       if (res.ok) {
-        toast.success('Payment recorded successfully. Pending receipt upload by Finance team.');
+        toast.success('Payment recorded successfully. Pending document upload by Finance team.');
         setShowPaymentDialog(false);
         setPaymentData({
           milestone_id: '',
@@ -263,39 +258,21 @@ export default function ProjectDetailPage() {
 
   const handleMilestoneChange = async (milestoneId) => {
     if (!milestoneId || milestoneId === 'none' || !estimation) {
-      setPaymentData(prev => ({ 
-        ...prev, 
-        milestone_id: '', 
-        amount: '', 
-        woodwork_amount: '',
-        misc_amount: '',
-        calculation: null, 
-        expected_amount: null 
-      }));
-      return;
-    }
-
-    // Handle ADHOC (Ad-hoc) payment - no calculation needed
-    if (milestoneId === 'ADHOC') {
-      setPaymentData(prev => ({ 
-        ...prev, 
-        milestone_id: 'ADHOC', 
+      setPaymentData(prev => ({
+        ...prev,
+        milestone_id: '',
         amount: '',
         woodwork_amount: '',
         misc_amount: '',
-        expected_amount: null,
-        calculation: {
-          is_misc_payment: true,
-          woodwork_value: (parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.woodwork_value || 0) * parseFloat(estimation.gst_percentage || 18) / 100),
-          misc_value: ((parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0)) * (1 + parseFloat(estimation.gst_percentage || 18) / 100))
-        }
+        calculation: null,
+        expected_amount: null
       }));
       return;
     }
 
     // Fetch cumulative calculation from API for milestone-based payments
     try {
-      const res = await fetch(`/api/calculate-payment/${projectId}/${milestoneId}`);
+      const res = await fetch(`/api/projects/${projectId}/calculate-payment?milestone_id=${milestoneId}`);
       if (!res.ok) {
         toast.error('Failed to calculate expected amount');
         return;
@@ -303,33 +280,22 @@ export default function ProjectDetailPage() {
 
       const data = await res.json();
 
-      if (data.is_misc_payment) {
-        // MISC_PAYMENT: No auto-calculation
-        setPaymentData(prev => ({ 
-          ...prev, 
-          milestone_id: milestoneId, 
-          amount: '',
-          woodwork_amount: '',
-          misc_amount: '',
-          expected_amount: null,
-          calculation: null
-        }));
-      } else {
-        // Pre-fill with expected amounts
-        const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
-        const miscAmt = data.expected_misc_amount.toFixed(2);
-        const totalAmt = data.expected_total.toFixed(2);
-        
-        setPaymentData(prev => ({ 
-          ...prev, 
-          milestone_id: milestoneId, 
-          woodwork_amount: woodworkAmt,
-          misc_amount: miscAmt,
-          amount: totalAmt,
-          expected_amount: totalAmt,
-          calculation: data
-        }));
-      }
+
+      // Pre-fill with expected amounts
+      const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
+      const miscAmt = data.expected_misc_amount.toFixed(2);
+      const totalAmt = data.expected_total.toFixed(2);
+
+      setPaymentData(prev => ({
+        ...prev,
+        milestone_id: milestoneId,
+        woodwork_amount: woodworkAmt,
+        misc_amount: miscAmt,
+        amount: totalAmt,
+        expected_amount: totalAmt,
+        calculation: data
+      }));
+
     } catch (error) {
       console.error('Error calculating payment:', error);
       toast.error('Error calculating expected amount');
@@ -338,13 +304,13 @@ export default function ProjectDetailPage() {
 
   const handleInvoiceUpload = async (file) => {
     if (!file) return;
-    
+
     // Check if user is Finance role
     if (session.user.role !== 'finance' && session.user.role !== 'admin') {
       toast.error('Only Finance team can upload invoices');
       return;
     }
-    
+
     setUploadingInvoice(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -412,129 +378,58 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handlePaymentReceiptUpload = async (paymentId, file) => {
+  const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt', user_id) => {
+    debugger;
     if (!file) return;
-
     setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      // Upload file
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        toast.error('Failed to upload receipt');
-        return;
-      }
-
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Upload failed');
       const uploadData = await uploadRes.json();
 
-      // Update payment status and receipt URL
-      const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
+      // Build dynamic payload
+      const updateBody = { document_url: uploadData.url, status: 'approved' };
+
+      const updateRes = await fetch(`/api/projects/${projectId}/customer-payments/${paymentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receipt_url: uploadData.url,
-          status: 'approved'
-        })
+        body: JSON.stringify(updateBody),
       });
+      if (!updateRes.ok) throw new Error('Failed to update payment');
 
-      if (!updateRes.ok) {
-        toast.error('Failed to approve payment');
-        return;
-      }
-
-      // Create document record
-      await fetch('/api/documents', {
+      await fetch(`/api/projects/${projectId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          related_entity: 'payment',
+          project_id: projectId,
+          related_entity: 'customer_payments',
           related_id: paymentId,
-          document_type: 'payment_receipt',
+          document_type: type,
           document_url: uploadData.url,
           file_name: uploadData.fileName,
           file_size: uploadData.size,
           mime_type: uploadData.type,
-          remarks: 'Payment receipt'
-        })
+          uploaded_by: user_id
+        }),
       });
 
-      toast.success('Receipt uploaded and payment approved!');
+      toast.success(
+        type === 'receipt'
+          ? 'Receipt uploaded and payment approved!'
+          : 'Credit note uploaded and approved!'
+      );
       fetchProjectData();
     } catch (error) {
-      console.error('Error uploading receipt:', error);
-      toast.error('An error occurred');
+      console.error(`Error uploading ${type}:`, error);
+      toast.error(`Failed to upload ${type}`);
     } finally {
       setUploadingReceipt(prev => ({ ...prev, [paymentId]: false }));
     }
   };
 
-  const handleCreditNoteUpload = async (paymentId, file) => {
-    if (!file) return;
-
-    setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      // Upload file
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        toast.error('Failed to upload credit note');
-        return;
-      }
-
-      const uploadData = await uploadRes.json();
-
-      // Update payment with credit note URL and approve
-      const updateRes = await fetch(`/api/customer-payments/${paymentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          credit_note_url: uploadData.url,
-          status: 'approved'
-        })
-      });
-
-      if (!updateRes.ok) {
-        toast.error('Failed to approve credit note');
-        return;
-      }
-
-      // Create document record
-      await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          related_entity: 'payment',
-          related_id: paymentId,
-          document_type: 'credit_note',
-          document_url: uploadData.url,
-          file_name: uploadData.fileName,
-          file_size: uploadData.size,
-          mime_type: uploadData.type,
-          remarks: 'Credit note document'
-        })
-      });
-
-      toast.success('Credit note uploaded and approved!');
-      fetchProjectData();
-    } catch (error) {
-      console.error('Error uploading credit note:', error);
-      toast.error('An error occurred');
-    } finally {
-      setUploadingReceipt(prev => ({ ...prev, [paymentId]: false }));
-    }
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -549,21 +444,6 @@ export default function ProjectDetailPage() {
 
   if (!session || !project) return null;
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount || 0);
-  };
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
 
   const getStageColor = (stage) => {
     switch (stage) {
@@ -675,49 +555,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Financial Summary */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Estimated Value (with GST)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency((parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0)))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Received from Customer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(project.payments_received)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Paid to Vendors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(project.payments_made)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Net Position</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(project.payments_received - project.payments_made)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+        <FinancialSummary project={project} estimation={estimation} />
         {/* Tabs */}
         <Tabs defaultValue="estimation" className="space-y-4">
           <TabsList>
@@ -730,84 +568,8 @@ export default function ProjectDetailPage() {
           </TabsList>
 
           {/* Overpayment Alert Banner */}
-          {estimation && estimation.has_overpayment && estimation.overpayment_status === 'pending_approval' && (
-            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-red-100 p-3 rounded-full">
-                  <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-red-900 mb-2">⚠️ OVERPAYMENT DETECTED - Action Required</h3>
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white p-3 rounded border border-red-200">
-                      <p className="text-sm text-red-700 mb-1">Total Collected (Approved)</p>
-                      <p className="text-xl font-bold text-red-900">
-                        ₹{((parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount) + parseFloat(estimation.overpayment_amount || 0))).toLocaleString('en-IN')}
-                      </p>
-                    </div>
-                    <div className="bg-white p-3 rounded border border-red-200">
-                      <p className="text-sm text-red-700 mb-1">Revised Estimation</p>
-                      <p className="text-xl font-bold text-red-900">
-                        ₹{(parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount)).toLocaleString('en-IN')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
-                    <p className="text-sm font-semibold text-red-900">Overpayment Amount:</p>
-                    <p className="text-2xl font-bold text-red-600">₹{parseFloat(estimation.overpayment_amount || 0).toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="space-y-2 text-sm text-red-800 mb-4">
-                    <p className="font-semibold">Required Actions:</p>
-                    <ol className="list-decimal list-inside space-y-1 ml-2">
-                      <li>Admin must approve this overpayment</li>
-                      <li>System will create credit note in Customer Payments (pending state)</li>
-                      <li>Finance team uploads credit note document</li>
-                      <li>Credit note becomes approved and reflects in ledger</li>
-                      <li>Or creator can cancel and revert to previous version</li>
-                    </ol>
-                  </div>
-                  <div className="flex gap-3">
-                    {session.user.role === 'admin' && (
-                      <Button 
-                        onClick={async () => {
-                          try {
-                            const res = await fetch(`/api/estimations/${estimation.id}/approve-overpayment`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({})
-                            });
-                            if (res.ok) {
-                              toast.success('Overpayment approved! Credit note created in Customer Payments (pending document upload).');
-                              fetchProjectData();
-                            } else {
-                              const data = await res.json();
-                              toast.error(data.error || 'Failed to approve overpayment');
-                            }
-                          } catch (error) {
-                            console.error('Error:', error);
-                            toast.error('An error occurred');
-                          }
-                        }}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Approve Overpayment & Create Credit Note
-                      </Button>
-                    )}
-                    {(estimation.created_by === session.user.id || session.user.role === 'admin') && (
-                      <Button 
-                        onClick={() => setShowCancelConfirmModal(true)}
-                        variant="outline"
-                        className="border-orange-500 text-orange-700 hover:bg-orange-50"
-                      >
-                        Cancel & Revert to v{estimation.version - 1}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+          {estimation && estimation.has_overpayment && (
+            <OverpaymentAlert estimation={estimation} session={session} fetchProjectData={fetchProjectData} />
           )}
 
           <TabsContent value="estimation" className="space-y-4">
@@ -820,12 +582,24 @@ export default function ProjectDetailPage() {
                       {estimation ? `Version ${estimation.version} • ${estimation.status}` : 'No estimation created yet'}
                     </CardDescription>
                   </div>
-                  <Link href={`/projects/${projectId}/estimation`}>
-                    <Button size="sm" className="gap-2">
-                      {estimation ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      {estimation ? 'Edit Estimation' : 'Create Estimation'}
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    {(estimation && (estimation.created_by === session.user.id || session.user.role === 'admin') && (estimation.version > 1)) && (
+                      <Button
+                        onClick={() => setShowCancelConfirmModal(true)}
+                        variant="outline"
+                        className="border-orange-500 text-orange-700 hover:bg-orange-50"
+                      >
+                        <StepBackIcon className="h-4 w-4" />
+                        Revert to v{estimation.version - 1}
+                      </Button>
+                    )}
+                    <Link href={`/projects/${projectId}/estimation`}>
+                      <Button size="sm" className="gap-2">
+                        {estimation ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        {estimation ? 'Edit Estimation' : 'Create Estimation'}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -857,11 +631,14 @@ export default function ProjectDetailPage() {
                       </div>
                       <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                         <p className="text-sm text-red-700 mb-1">Discount ({estimation.discount_percentage || 0}%)</p>
-                        <p className="text-xl font-bold text-red-700">-{formatCurrency(estimation.discount_amount || 0)}</p>
+                        <p className="text-xl font-bold text-red-700">
+                          {formatCurrency(estimation.discount_amount > 0 ? -estimation.discount_amount : 0)}
+                        </p>
                       </div>
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <p className="text-sm text-blue-700 mb-1">GST ({estimation.gst_percentage || 18}%)</p>
-                        <p className="text-xl font-bold text-blue-700">+{formatCurrency(estimation.gst_amount || 0)}</p>
+                        <p className="text-xl font-bold text-blue-700">
+                          +{formatCurrency(estimation.gst_amount || 0)}</p>
                       </div>
                       <div className="bg-primary/10 p-4 rounded-lg border border-primary">
                         <p className="text-sm text-primary mb-1">Final Total (with GST)</p>
@@ -957,50 +734,22 @@ export default function ProjectDetailPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No milestone</SelectItem>
-                                <SelectItem value="ADHOC">🎯 Ad-hoc Payment (ADHOC)</SelectItem>
                                 {milestones
-                                  .filter(milestone => milestone.stage_code === project.stage)
+                                  .filter(milestone => (milestone.stage_code === project.stage || milestone.stage_code === 'ANY'))
                                   .map((milestone) => (
                                     <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                                      {milestone.milestone_name} - {milestone.milestone_code === 'MISC_PAYMENT' ? 'User Entered' : `W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
+                                      {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
                                     </SelectItem>
                                   ))}
                               </SelectContent>
                             </Select>
-                            {paymentData.milestone_id === 'ADHOC' && (
-                              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
-                                <p className="font-semibold mb-1">💡 Ad-hoc Payment Mode</p>
-                                <p>• Collect any amount up to 100% of Woodwork and 100% of Misc</p>
-                                <p>• Not tied to project stages or milestones</p>
-                                <p>• System will track cumulative collection automatically</p>
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
-                            ⚠️ No milestones configured for this project's BizModel. You can still collect ad-hoc payments by selecting "Ad-hoc Payment (MISC)".
+                            ⚠️ No milestones configured for this project's BizModel.".
                           </div>
                         )}
-                        {/* Show Expected Amount Calculation with Cumulative Info */}
-                        {paymentData.calculation && paymentData.calculation.is_misc_payment && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                            <div>
-                              <p className="text-sm font-medium text-green-900">🎯 Ad-hoc Payment - Available to Collect</p>
-                              <p className="text-xs text-green-700 mb-2">You can collect any amount up to 100% of each category</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-white p-2 rounded">
-                                <p className="text-xs text-green-700">Woodwork Total (GST-incl)</p>
-                                <p className="text-lg font-bold text-green-800">₹{parseFloat(paymentData.calculation.woodwork_value || 0).toLocaleString('en-IN')}</p>
-                              </div>
-                              <div className="bg-white p-2 rounded">
-                                <p className="text-xs text-green-700">Misc Total (GST-incl)</p>
-                                <p className="text-lg font-bold text-green-800">₹{parseFloat(paymentData.calculation.misc_value || 0).toLocaleString('en-IN')}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && (
+                        {paymentData.calculation && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                             <div>
                               <p className="text-sm font-medium text-blue-900">💰 Expected Receivable (Cumulative)</p>
@@ -1046,7 +795,7 @@ export default function ProjectDetailPage() {
                         )}
 
                         {/* Category-wise Amount to Collect - Prominent Display */}
-                        {paymentData.calculation && !paymentData.calculation.is_misc_payment && paymentData.calculation.expected_total > 0 && (
+                        {paymentData.calculation && paymentData.calculation.expected_total > 0 && (
                           <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
                             <p className="text-sm font-semibold text-green-900 mb-2">📊 Amount to Collect (Category-wise):</p>
                             <div className="grid grid-cols-2 gap-3">
@@ -1077,7 +826,7 @@ export default function ProjectDetailPage() {
                         {/* Input fields for actual amounts */}
                         <div className="border-t pt-4 space-y-3">
                           <p className="text-sm font-semibold">Enter Actual Amount Collected:</p>
-                          
+
                           <div className="grid md:grid-cols-2 gap-3">
                             <div className="space-y-2">
                               <Label>Amount towards Woodwork (₹) *</Label>
@@ -1090,8 +839,8 @@ export default function ProjectDetailPage() {
                                   const woodwork = e.target.value;
                                   const misc = paymentData.misc_amount || 0;
                                   const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
-                                  setPaymentData({ 
-                                    ...paymentData, 
+                                  setPaymentData({
+                                    ...paymentData,
                                     woodwork_amount: woodwork,
                                     amount: total.toFixed(2)
                                   });
@@ -1116,8 +865,8 @@ export default function ProjectDetailPage() {
                                   const misc = e.target.value;
                                   const woodwork = paymentData.woodwork_amount || 0;
                                   const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
-                                  setPaymentData({ 
-                                    ...paymentData, 
+                                  setPaymentData({
+                                    ...paymentData,
                                     misc_amount: misc,
                                     amount: total.toFixed(2)
                                   });
@@ -1142,12 +891,12 @@ export default function ProjectDetailPage() {
                             </div>
                             {paymentData.expected_amount && paymentData.amount && (
                               <p className={`text-xs mt-1 ${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 ? 'text-amber-600' : 'text-green-600'}`}>
-                                {Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1 
+                                {Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)) > 1
                                   ? `⚠️ Difference from expected: ₹${Math.abs(parseFloat(paymentData.amount) - parseFloat(paymentData.expected_amount)).toFixed(2)}`
                                   : '✓ Matches expected amount'}
                               </p>
                             )}
-                            
+
                             {/* GST Breakdown */}
                             {estimation && paymentData.amount && parseFloat(paymentData.amount) > 0 && (
                               <div className="mt-3 pt-3 border-t border-blue-200 space-y-1">
@@ -1167,8 +916,8 @@ export default function ProjectDetailPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Mode</Label>
-                          <Select value={paymentData.mode} onValueChange={(value) => setPaymentData({ ...paymentData, mode: value })}>
+                          <Label>Mode *</Label>
+                          <Select required value={paymentData.mode} onValueChange={(value) => setPaymentData({ ...paymentData, mode: value })}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1181,11 +930,12 @@ export default function ProjectDetailPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Reference Number</Label>
+                          <Label>Reference Number </Label>
                           <Input
                             placeholder="Transaction ID / Cheque Number"
                             value={paymentData.reference_number}
                             onChange={(e) => setPaymentData({ ...paymentData, reference_number: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -1205,7 +955,12 @@ export default function ProjectDetailPage() {
 
                         <div className="flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-                          <Button type="submit">Record Payment</Button>
+                          <Button
+                            disabled={!paymentData.milestone_id || parseFloat(paymentData.amount || 0) <= 0}
+                            type="submit"
+                          >
+                            Record Payment
+                          </Button>
                         </div>
                       </form>
                     </DialogContent>
@@ -1220,14 +975,15 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    <WarningExtraPendingReceipts estimation={estimation} payments={customerPayments} />
                     {customerPayments.map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{payment.payment_type?.replace('_', ' ').toUpperCase()}</p>
+                            <p className="font-medium">{payment.payment_type.toUpperCase()}</p>
                             {payment.status === 'pending' && (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
-                                Pending Receipt
+                                Pending Approval
                               </Badge>
                             )}
                             {payment.status === 'approved' && (
@@ -1252,62 +1008,64 @@ export default function ProjectDetailPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className={`text-xl font-bold ${
-                              payment.amount < 0 
-                                ? 'text-red-600' 
-                                : payment.status === 'approved' 
-                                  ? 'text-green-600' 
-                                  : 'text-gray-400'
-                            }`}>
+                            <p className={`text-xl font-bold ${payment.amount < 0
+                              ? 'text-red-600'
+                              : payment.status === 'approved'
+                                ? 'text-green-600'
+                                : 'text-gray-400'
+                              }`}>
                               {formatCurrency(payment.amount)}
                             </p>
                             {payment.status === 'pending' && (
                               <p className="text-xs text-amber-600">Not counted</p>
                             )}
-                            {payment.payment_type === 'credit_note_reversal' && (
+                            {payment.payment_type === 'CREDIT_NOTE' && (
                               <Badge className="bg-red-100 text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
                           {payment.status === 'pending' && (session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
-                            <div>
-                              <input
-                                type="file"
-                                id={`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`}
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (file) {
-                                    if (payment.payment_type === 'credit_note_reversal') {
-                                      handleCreditNoteUpload(payment.id, file);
-                                    } else {
-                                      handlePaymentReceiptUpload(payment.id, file);
+                            <div className='flex flex-col items-end gap-2'>
+                              <div>
+                                <input
+                                  type="file"
+                                  id={`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`}
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    debugger;
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                      if (payment.payment_type === 'CREDIT_NOTE') {
+                                        handleDocumentUpload(payment.id, file, 'credit_note', session.user.id);
+                                      } else {
+                                        handleDocumentUpload(payment.id, file, 'payment_receipt', session.user.id);
+                                      }
                                     }
-                                  }
-                                }}
-                                disabled={uploadingReceipt[payment.id]}
-                              />
+                                  }}
+                                  disabled={uploadingReceipt[payment.id]}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
+                                  disabled={uploadingReceipt[payment.id]}
+                                  className={payment.payment_type === 'CREDIT_NOTE' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
+                                >
+                                  {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE' ? 'Upload Credit Note' : 'Upload Receipt'}
+                                </Button>
+                              </div>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => document.getElementById(`${payment.payment_type === 'credit_note_reversal' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
-                                disabled={uploadingReceipt[payment.id]}
-                                className={payment.payment_type === 'credit_note_reversal' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
+                                onClick={() => { }}
                               >
-                                {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'credit_note_reversal' ? 'Upload Credit Note' : 'Upload Receipt'}
+                                {payment.payment_type === 'CREDIT_NOTE' ? 'Cancel Credit Note' : 'Cancel Payment'}
                               </Button>
                             </div>
                           )}
-                          {payment.receipt_url && (
-                            <Button size="sm" variant="ghost" asChild>
-                              <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-                                <FileText className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          )}
-                          {payment.credit_note_url && (
-                            <Button size="sm" variant="ghost" className="text-red-600" asChild>
-                              <a href={payment.credit_note_url} target="_blank" rel="noopener noreferrer">
+                          {payment.document_url && (
+                            <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'CREDIT_NOTE' ? "text-red-600" : ""}>
+                              <a href={payment.document_url} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                               </a>
                             </Button>
@@ -1387,12 +1145,11 @@ export default function ProjectDetailPage() {
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="text-xl font-bold">{formatCurrency(boq.total_value)}</p>
-                            <Badge className={`text-xs ${
-                              boq.status === 'draft' ? 'bg-slate-100 text-slate-700' :
+                            <Badge className={`text-xs ${boq.status === 'draft' ? 'bg-slate-100 text-slate-700' :
                               boq.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                              'bg-blue-100 text-blue-700'
-                            }`}>
+                                boq.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-blue-100 text-blue-700'
+                              }`}>
                               {boq.status}
                             </Badge>
                           </div>
@@ -1435,8 +1192,8 @@ export default function ProjectDetailPage() {
                             {formatDate(entry.entry_date)}
                             {entry.transaction_details && (() => {
                               try {
-                                const details = typeof entry.transaction_details === 'string' 
-                                  ? JSON.parse(entry.transaction_details) 
+                                const details = typeof entry.transaction_details === 'string'
+                                  ? JSON.parse(entry.transaction_details)
                                   : entry.transaction_details;
                                 return <> • {details.customer_name || details.vendor_name}</>;
                               } catch (e) {
@@ -1452,9 +1209,8 @@ export default function ProjectDetailPage() {
                           )}
                         </div>
                         <div className="text-right ml-6">
-                          <p className={`text-xl font-bold ${
-                            entry.amount < 0 ? 'text-red-600' : 'text-green-600'
-                          }`}>
+                          <p className={`text-xl font-bold ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'
+                            }`}>
                             {formatCurrency(entry.amount)}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -1529,24 +1285,6 @@ export default function ProjectDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {project.invoice_url && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-green-900">Project Invoice</p>
-                        <p className="text-sm text-green-700">Revenue Realized: ₹{project.revenue_realized?.toLocaleString('en-IN') || '0'}</p>
-                        <p className="text-xs text-green-600 mt-1">Uploaded on {project.invoice_uploaded_at ? formatDate(project.invoice_uploaded_at) : 'N/A'}</p>
-                      </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={project.invoice_url} target="_blank" rel="noopener noreferrer">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
                 <div className="space-y-3">
                   {documents.length === 0 ? (
                     <div className="text-center py-12">
@@ -1564,14 +1302,16 @@ export default function ProjectDetailPage() {
                             {doc.document_type === 'kyc_cheque' && 'KYC - Blank Cheque'}
                             {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
                             {doc.document_type === 'project_invoice' && 'Project Invoice'}
-                            {doc.document_type === 'other' && 'Other Document'}
+                            {doc.document_type === 'credit_note' && 'Credit Note'}
+                            {doc.related_entity === 'customer_payments' && (
+                              <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
+                                ({formatCurrency(doc.related_info.amount)})
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.uploaded_at)}
+                            Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.created_at)}
                           </p>
-                          {doc.remarks && (
-                            <p className="text-xs text-muted-foreground mt-1">Note: {doc.remarks}</p>
-                          )}
                         </div>
                         <Button variant="outline" size="sm" asChild>
                           <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
@@ -1635,7 +1375,7 @@ export default function ProjectDetailPage() {
           </TabsContent>
         </Tabs>
       </main>
-      
+
       {/* Cancel Estimation Confirmation Modal */}
       <Dialog open={showCancelConfirmModal} onOpenChange={setShowCancelConfirmModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
@@ -1656,7 +1396,7 @@ export default function ProjectDetailPage() {
                 </ul>
               </div>
               <p className="text-sm text-muted-foreground">
-                This will cancel the pending overpayment approval and restore the previous estimation as active.
+                This will restore the previous estimation as active.
               </p>
             </div>
           </div>
@@ -1673,7 +1413,7 @@ export default function ProjectDetailPage() {
               variant="destructive"
               onClick={async () => {
                 try {
-                  const res = await fetch(`/api/estimations/${estimation.id}/cancel-overpayment`, {
+                  const res = await fetch(`/api/projects/${projectId}/estimations/${estimation.id}/rollback`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
@@ -1699,4 +1439,177 @@ export default function ProjectDetailPage() {
       </Dialog>
     </div>
   );
+}
+
+
+const WarningExtraPendingReceipts = ({ estimation, payments }) => {
+  const pendingReceipts = payments.filter(p => p.status === 'pending');
+  const approvedReceipts = payments.filter(p => p.status === 'approved')
+  if (pendingReceipts.length === 0) return null;
+
+  const estimationValue = parseFloat(estimation.final_value || 0) + parseFloat(estimation.gst_amount || 0);
+  const approvedTotal = approvedReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+  const pendingTotal = pendingReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+  const remainingPayable = estimationValue - approvedTotal;
+
+
+  const overPendingAmount = pendingTotal - remainingPayable;
+  const overPendingAmountFormatted = formatCurrency(estimationValue);
+
+  if (pendingTotal <= remainingPayable) return null;
+
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="flex flex-col items-start gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-700" />
+          <span className="text-amber-900 font-bold">Overpayment Alert</span>
+        </div>
+        <p className="text-sm text-amber-800">
+          Found <strong>{pendingReceipts.length} pending payment receipt{pendingReceipts.length > 1 ? 's' : ''}</strong> totaling{' '}
+          <strong>{formatCurrency(pendingTotal)}</strong>. The current estimated project value is{' '}
+          <strong>{overPendingAmountFormatted}</strong>.
+        </p>
+        <p className="text-sm text-amber-800">
+          Project has approved payments worth <strong>{formatCurrency(approvedTotal)}</strong>.
+          Pending approvals exceed the remaining payable amount by{' '}
+          <strong className="text-amber-900">{formatCurrency(overPendingAmount)}</strong>.
+        </p>
+        <p className="text-sm text-amber-800">
+          You may choose to <strong>cancel some/all pending approval</strong> payments to avoid future issuance of credit notes.
+        </p>
+      </div>
+    </div>
+  );
+
+}
+
+const FinancialSummary = ({ project, estimation }) => {
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Estimated Value (with GST)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {formatCurrency((parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0)))}
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Received from Customer</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">
+            {formatCurrency(project.payments_received)}
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Paid to Vendors</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-red-600">
+            {formatCurrency(project.payments_made)}
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Net Position</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {formatCurrency(project.payments_received - project.payments_made)}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+  )
+}
+
+
+const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
+  return (
+
+    <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6">
+      <div className="flex items-start gap-4">
+        <div className="bg-red-100 p-3 rounded-full">
+          <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-red-900 mb-2">⚠️ OVERPAYMENT DETECTED - Action Required</h3>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white p-3 rounded border border-red-200">
+              <p className="text-sm text-red-700 mb-1">Total Collected (Approved)</p>
+              <p className="text-xl font-bold text-red-900">
+                ₹{((parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount) + parseFloat(estimation.overpayment_amount || 0))).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="bg-white p-3 rounded border border-red-200">
+              <p className="text-sm text-red-700 mb-1">Current Estimation Value</p>
+              <p className="text-xl font-bold text-red-900">
+                ₹{(parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount)).toLocaleString('en-IN')}
+              </p>
+            </div>
+          </div>
+          <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+            <p className="text-sm font-semibold text-red-900">Overpaid Amount:</p>
+            <p className="text-2xl font-bold text-red-600">₹{parseFloat(estimation.overpayment_amount || 0).toLocaleString('en-IN')}</p>
+          </div>
+          <div className="space-y-2 text-sm text-red-800 mb-4">
+            <p className="font-semibold">Required Actions:</p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>Admin must approve this overpayment</li>
+              <li>System will create credit note in Customer Payments (pending state)</li>
+              <li>Finance team uploads credit note document</li>
+              <li>Credit note becomes approved and reflects in ledger</li>
+              <li>Or creator can cancel and revert to previous version</li>
+            </ol>
+          </div>
+          <div className="flex gap-3">
+            {session.user.role === 'admin' && (
+              <Button
+                onClick={async () => {
+                  try {
+                    debugger;
+                    const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        "payment_type": "CREDIT_NOTE",
+                        "estimation_id": estimation.id
+                      })
+                    });
+                    if (res.ok) {
+                      toast.success('Overpayment approved! Credit note created in Customer Payments (pending document upload).');
+                      fetchProjectData();
+                    } else {
+                      const data = await res.json();
+                      toast.error(data.error || 'Failed to approve overpayment');
+                    }
+                  } catch (error) {
+                    console.error('Error:', error);
+                    toast.error('An error occurred');
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Create Credit Note
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  )
 }

@@ -26,7 +26,7 @@ export default function BizModelsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingModelId, setEditingModelId] = useState(null);
-  
+
   const [newModel, setNewModel] = useState({
     code: '',
     name: '',
@@ -89,11 +89,11 @@ export default function BizModelsPage() {
   };
 
   const addStage = () => {
-    setStages([...stages, { 
-      stage_code: '', 
-      stage_name: '', 
-      sequence_order: stages.length + 1, 
-      description: '' 
+    setStages([...stages, {
+      stage_code: '',
+      stage_name: '',
+      sequence_order: stages.length + 1,
+      description: ''
     }]);
   };
 
@@ -108,12 +108,12 @@ export default function BizModelsPage() {
   };
 
   const addMilestone = () => {
-    setMilestones([...milestones, { 
-      milestone_code: '', 
-      milestone_name: '', 
+    setMilestones([...milestones, {
+      milestone_code: '',
+      milestone_name: '',
       direction: 'inflow',
-      stage_code: '', 
-      description: '', 
+      stage_code: '',
+      description: '',
       is_mandatory: true,
       sequence_order: milestones.length + 1,
       woodwork_percentage: 0,
@@ -135,7 +135,7 @@ export default function BizModelsPage() {
     try {
       // If editing, we're creating a new version
       const isEditing = editingModelId !== null;
-      
+
       const res = await fetch('/api/biz-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +181,7 @@ export default function BizModelsPage() {
       const res = await fetch(`/api/biz-models/${modelId}`);
       if (res.ok) {
         const data = await res.json();
-        
+
         // Populate form with existing data
         setNewModel({
           code: data.model.code,
@@ -192,10 +192,10 @@ export default function BizModelsPage() {
           max_discount_percentage: data.model.max_discount_percentage,
           is_active: data.model.is_active,
         });
-        
+
         setStages(data.stages.length > 0 ? data.stages : [{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
         setMilestones(data.milestones.length > 0 ? data.milestones : [{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
-        
+
         setEditingModelId(modelId);
         setShowCreateDialog(true);
       }
@@ -205,35 +205,35 @@ export default function BizModelsPage() {
     }
   };
 
-  const handleBuildModel = async (modelId) => {
-    try {
-      const res = await fetch(`/api/biz-models/${modelId}/build`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
+  // const handleBuildModel = async (modelId) => {
+  //   try {
+  //     const res = await fetch(`/api/biz-models/${modelId}/build`, {
+  //       method: 'PUT',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({})
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (res.ok) {
-        toast.success(data.message || 'BizModel built successfully');
-        fetchBizModels();
-        if (selectedModel === modelId) {
-          handleModelSelect(modelId); // Refresh details
-        }
-      } else {
-        toast.error(data.error || 'Failed to build BizModel');
-      }
-    } catch (error) {
-      console.error('Error building model:', error);
-      toast.error('An error occurred');
-    }
-  };
+  //     if (res.ok) {
+  //       toast.success(data.message || 'BizModel built successfully');
+  //       fetchBizModels();
+  //       if (selectedModel === modelId) {
+  //         handleModelSelect(modelId); // Refresh details
+  //       }
+  //     } else {
+  //       toast.error(data.error || 'Failed to build BizModel');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error building model:', error);
+  //     toast.error('An error occurred');
+  //   }
+  // };
 
   const handleToggleStatus = async (modelId, e) => {
     e.stopPropagation(); // Prevent card selection
     try {
-      const res = await fetch(`/api/biz-models/${modelId}/toggle-status`, {
+      const res = await fetch(`/api/biz-models/${modelId}?action=toggle-status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -299,7 +299,7 @@ export default function BizModelsPage() {
                     {editingModelId ? 'Editing will create a new version automatically. Old version will be preserved.' : 'Define a new business model with stages and payment milestones'}
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <Tabs defaultValue="basic" className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -447,6 +447,16 @@ export default function BizModelsPage() {
                               />
                             </div>
                             <div className="space-y-2">
+                              <Label className="text-xs">Sequence Order</Label>
+                              <Input
+                                type="number"
+                                placeholder="1"
+                                value={milestone.sequence_order}
+                                onChange={(e) => updateMilestone(index, 'sequence_order', parseInt(e.target.value))}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
                               <Label className="text-xs">Milestone Name</Label>
                               <Input
                                 placeholder="e.g., Advance Payment"
@@ -479,17 +489,9 @@ export default function BizModelsPage() {
                                 className="h-9"
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs">Sequence Order</Label>
-                              <Input
-                                type="number"
-                                placeholder="1"
-                                value={milestone.sequence_order}
-                                onChange={(e) => updateMilestone(index, 'sequence_order', parseInt(e.target.value))}
-                                className="h-9"
-                              />
-                            </div>
-                            {milestone.direction === 'inflow' && milestone.milestone_code !== 'MISC_PAYMENT' && (
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {milestone.direction === 'inflow' && (
                               <>
                                 <div className="space-y-2">
                                   <Label className="text-xs">Woodwork % 🪵</Label>
@@ -527,13 +529,6 @@ export default function BizModelsPage() {
                               />
                             </div>
                           </div>
-                          {milestone.milestone_code === 'MISC_PAYMENT' && (
-                            <div className="bg-amber-50 border border-amber-200 rounded p-2">
-                              <p className="text-xs text-amber-800">
-                                💡 MISC_PAYMENT milestone captures user-entered amount only (no auto-calculation)
-                              </p>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -565,19 +560,18 @@ export default function BizModelsPage() {
                 <div key={model.id} className="relative">
                   <button
                     onClick={() => handleModelSelect(model.id)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                      selectedModel === model.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    }`}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedModel === model.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                      }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Briefcase className="h-5 w-5 text-primary" />
                       <Badge variant="outline" className="font-mono text-xs">
                         {model.code}-{model.version}
                       </Badge>
-                      <Badge variant={model.status === 'published' ? 'default' : 'secondary'} 
-                             className={model.status === 'published' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
+                      <Badge variant={model.status === 'published' ? 'default' : 'secondary'}
+                        className={model.status === 'published' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
                         {model.status === 'published' ? '✓ Published' : 'Draft'}
                       </Badge>
                     </div>
@@ -595,8 +589,8 @@ export default function BizModelsPage() {
                     </div>
                   </button>
                   <div className="absolute top-2 right-2 flex gap-1">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       className="gap-1 h-7 px-2"
                       onClick={(e) => {
@@ -608,8 +602,8 @@ export default function BizModelsPage() {
                       Edit
                     </Button>
                     {session.user.role === 'admin' && (
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant={model.status === 'published' ? 'secondary' : 'default'}
                         className="gap-1 h-7 px-2"
                         onClick={(e) => handleToggleStatus(model.id, e)}
