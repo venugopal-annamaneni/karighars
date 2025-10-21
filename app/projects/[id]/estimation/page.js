@@ -116,12 +116,18 @@ export default function EstimationPage() {
   };
 
   const addItem = () => {
+    // Get default karighar_charges_percentage from biz model
+    const defaultKarigharCharges = bizModel?.service_charge_percentage || 10;
+    
     setItems([...items, {
       category: 'woodwork',
       description: '',
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
+      karighar_charges_percentage: defaultKarigharCharges,
+      discount_percentage: 0,
+      gst_percentage: 18,
       vendor_type: 'PI',
       estimated_cost: 0,
       estimated_margin: 0
