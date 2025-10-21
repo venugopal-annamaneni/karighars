@@ -613,49 +613,18 @@ export default function EstimationPage() {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Service Charge (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="0"
-                        value={formData.service_charge_percentage}
-                        className="cursor-not-allowed bg-slate-100"
-                        readOnly
-                        onChange={(e) => setFormData({ ...formData, service_charge_percentage: parseFloat(e.target.value) || 0 })}
-                      />
-                      <span className='text-xs text-gray-500'>Model: {bizModel.code}</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Discount (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="0"
-                        value={formData.discount_percentage}
-                        onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
-                      />
-                      <span className='text-xs text-gray-500'>Maximum Discount: {bizModel.max_discount_percentage} %</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>GST (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="18"
-                        value={formData.gst_percentage}
-                        onChange={(e) => setFormData({ ...formData, gst_percentage: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Default GST (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      placeholder="18"
+                      value={formData.gst_percentage}
+                      onChange={(e) => setFormData({ ...formData, gst_percentage: parseFloat(e.target.value) || 0 })}
+                    />
+                    <span className='text-xs text-gray-500'>This will be applied to new items</span>
                   </div>
                 </div>
 
