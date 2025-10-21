@@ -11,6 +11,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
+  
   // Get next version number
   const versionResult = await query(
     'SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM project_estimations WHERE project_id = $1',
@@ -18,34 +19,14 @@ export async function POST(request) {
   );
   const nextVersion = versionResult.rows[0].next_version;
 
-  // Get project's BizModel
-  const projectRes = await query('SELECT biz_model_id FROM projects WHERE id = $1', [body.project_id]);
-  const bizModelId = projectRes.rows[0]?.biz_model_id;
-
-  let serviceChargePercentage = body.service_charge_percentage || 0;
-  let maxDiscountPercentage = 5; // default
-
-  if (bizModelId) {
-    const bizModelRes = await query('SELECT service_charge_percentage, max_discount_percentage FROM biz_models WHERE id = $1', [bizModelId]);
-    if (bizModelRes.rows.length > 0) {
-      if (!body.service_charge_percentage) {
-        serviceChargePercentage = bizModelRes.rows[0].service_charge_percentage;
-      }
-      maxDiscountPercentage = bizModelRes.rows[0].max_discount_percentage;
-    }
-  }
-
-  // Calculate from subtotal (total_value is raw sum before service charge/discount)
-  const subtotal = parseFloat(body.total_value) || 0;
-  const discountPercentage = parseFloat(body.discount_percentage) || 0;
-  const serviceChargeAmount = (subtotal * serviceChargePercentage) / 100;
-  const discountAmount = (subtotal * discountPercentage) / 100;
-  const finalValue = subtotal + serviceChargeAmount - discountAmount;
-
-  // Calculate GST (default 18% if not provided)
-  const gstPercentage = parseFloat(body.gst_percentage) || 18.00;
-  const gstAmount = (finalValue * gstPercentage) / 100;
-  const grandTotal = finalValue + gstAmount;
+  // Totals are now calculated at item level and passed from frontend
+  const woodworkValue = parseFloat(body.woodwork_value) || 0;
+  const miscInternalValue = parseFloat(body.misc_internal_value) || 0;
+  const miscExternalValue = parseFloat(body.misc_external_value) || 0;
+  const shoppingServiceValue = parseFloat(body.shopping_service_value) || 0;
+  const gstAmount = parseFloat(body.gst_amount) || 0;
+  const finalValue = parseFloat(body.final_value) || 0;
+  const gstPercentage = parseFloat(body.gst_percentage) || 18;
 
   // Check for overpayment (only for revision, not first estimation)
   let hasOverpayment = false;
@@ -54,55 +35,59 @@ export async function POST(request) {
   if (nextVersion > 1) {
     // Get total approved payments
     const paymentsRes = await query(`
-          SELECT COALESCE(SUM(amount), 0) as total_collected
-          FROM customer_payments
-          WHERE project_id = $1 AND status = 'approved'
-        `, [body.project_id]);
+      SELECT COALESCE(SUM(amount), 0) as total_collected
+      FROM customer_payments
+      WHERE project_id = $1 AND status = 'approved'
+    `, [body.project_id]);
 
     const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
 
-    if (totalCollected > grandTotal) {
+    if (totalCollected > finalValue) {
       hasOverpayment = true;
-      overpaymentAmount = totalCollected - grandTotal;
+      overpaymentAmount = totalCollected - finalValue;
     }
   }
 
-  // Check if discount exceeds limit
-  const requiresApproval = discountPercentage > maxDiscountPercentage;
-  const approvalStatus = requiresApproval ? 'pending' : 'approved';
-
   const result = await query(
     `INSERT INTO project_estimations (
-          project_id, version, total_value, woodwork_value, misc_internal_value, misc_external_value, 
-          service_charge_percentage, service_charge_amount, discount_percentage, discount_amount, final_value,
-          gst_percentage, gst_amount,
-          requires_approval, approval_status, 
-          has_overpayment, overpayment_amount,
-          remarks, status, created_by
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
-    [body.project_id, nextVersion, subtotal, body.woodwork_value || 0,
-    body.misc_internal_value || 0, body.misc_external_value || 0,
-      serviceChargePercentage, serviceChargeAmount, discountPercentage, discountAmount, finalValue,
-      gstPercentage, gstAmount,
-      requiresApproval, approvalStatus,
+      project_id, version, 
+      woodwork_value, misc_internal_value, misc_external_value, shopping_service_value,
+      gst_percentage, gst_amount, final_value,
+      has_overpayment, overpayment_amount,
+      remarks, status, created_by
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+    [
+      body.project_id, nextVersion,
+      woodworkValue, miscInternalValue, miscExternalValue, shoppingServiceValue,
+      gstPercentage, gstAmount, finalValue,
       hasOverpayment, overpaymentAmount,
-    body.remarks, body.status || 'draft', session.user.id]
+      body.remarks, body.status || 'draft', session.user.id
+    ]
   );
 
-  // Add estimation items if provided
+  // Add estimation items with all calculated fields
   if (body.items && body.items.length > 0) {
     for (const item of body.items) {
       await query(
-        `INSERT INTO estimation_items (estimation_id, category, description, quantity, unit, unit_price, vendor_type, estimated_cost, estimated_margin)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [result.rows[0].id, item.category, item.description, item.quantity, item.unit,
-        item.unit_price, item.vendor_type, item.estimated_cost, item.estimated_margin]
+        `INSERT INTO estimation_items (
+          estimation_id, category, description, quantity, unit, unit_price,
+          karighar_charges_percentage, discount_percentage, gst_percentage,
+          subtotal, karighar_charges_amount, discount_amount, amount_before_gst, gst_amount, item_total,
+          vendor_type, estimated_cost, estimated_margin
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [
+          result.rows[0].id, item.category, item.description, item.quantity, item.unit, item.unit_price,
+          item.karighar_charges_percentage, item.discount_percentage, item.gst_percentage,
+          item.subtotal, item.karighar_charges_amount, item.discount_amount, item.amount_before_gst, item.gst_amount, item.item_total,
+          item.vendor_type, item.estimated_cost, item.estimated_margin
+        ]
       );
     }
   }
 
-  // If overpayment detected, return warning (DO NOT create credit note yet)
+  // If overpayment detected, return warning
   if (hasOverpayment) {
     return NextResponse.json({
       estimation: result.rows[0],
