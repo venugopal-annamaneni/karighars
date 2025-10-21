@@ -784,7 +784,7 @@ export default function EstimationPage() {
 
 const TotalsSummary = ({totals, formData}) => {
   return (
-    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
@@ -811,34 +811,27 @@ const TotalsSummary = ({totals, formData}) => {
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Service Charge</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Shopping Service</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-xl font-bold text-green-600">+{formatCurrency(totals.service_charge || 0)}</div>
+          <div className="text-xl font-bold text-purple-600">{formatCurrency(totals.shopping_service_value)}</div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Discount</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl font-bold text-red-600">-{formatCurrency(totals.discount || 0)}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">GST ({formData.gst_percentage}%)</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">GST Total</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold text-blue-600">+{formatCurrency(totals.gst_amount || 0)}</div>
         </CardContent>
       </Card>
-      <Card className="bg-primary/5 border-primary">
+      <Card className="bg-primary/5 border-primary md:col-span-2 lg:col-span-3">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-primary">Grand Total</CardTitle>
+          <CardTitle className="text-sm font-medium text-primary">Grand Total (to KG)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-primary">{formatCurrency(totals.grand_total)}</div>
+          <div className="text-2xl font-bold text-primary">{formatCurrency(totals.final_value)}</div>
+          <div className="text-xs text-muted-foreground mt-1">All charges, discounts & GST included</div>
         </CardContent>
       </Card>
     </div>
