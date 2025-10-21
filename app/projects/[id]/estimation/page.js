@@ -155,40 +155,87 @@ export default function EstimationPage() {
     setItems(newItems);
   };
 
-  const calculateTotals = () => {
-    let woodwork = 0;
-    let misc_internal = 0;
-    let misc_external = 0;
-
-    items.forEach(item => {
-      const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
-      if (item.category === 'woodwork') {
-        woodwork += total;
-      } else if (item.category === 'misc_internal') {
-        misc_internal += total;
-      } else if (item.category === 'misc_external') {
-        misc_external += total;
-      }
-    });
-
-    const subtotal = woodwork + misc_internal + misc_external;
-    const serviceCharge = (subtotal * (formData.service_charge_percentage || 0)) / 100;
-    const discount = (subtotal * (formData.discount_percentage || 0)) / 100;
-    const finalTotal = subtotal + serviceCharge - discount;
-    const gstAmount = (finalTotal * (formData.gst_percentage || 0)) / 100;
-    const grandTotal = finalTotal + gstAmount;
-
+  const calculateItemTotal = (item) => {
+    const quantity = parseFloat(item.quantity) || 0;
+    const unitPrice = parseFloat(item.unit_price) || 0;
+    const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
+    const discountPerc = parseFloat(item.discount_percentage) || 0;
+    const gstPerc = parseFloat(item.gst_percentage) || 0;
+    
+    // Step 1: Calculate subtotal
+    const subtotal = quantity * unitPrice;
+    
+    // Step 2: Calculate karighar charges
+    const karigharChargesAmount = (subtotal * karigharChargesPerc) / 100;
+    
+    // Step 3: Calculate discount
+    // For shopping_service: discount only on karighar_charges
+    // For others: discount on (subtotal + karighar_charges)
+    let discountAmount = 0;
+    if (item.category === 'shopping_service') {
+      discountAmount = (karigharChargesAmount * discountPerc) / 100;
+    } else {
+      discountAmount = ((subtotal + karigharChargesAmount) * discountPerc) / 100;
+    }
+    
+    // Step 4: Calculate amount before GST
+    // For shopping_service: Only karighar_charges - discount (no subtotal)
+    // For others: subtotal + karighar_charges - discount
+    let amountBeforeGst = 0;
+    if (item.category === 'shopping_service') {
+      amountBeforeGst = karigharChargesAmount - discountAmount;
+    } else {
+      amountBeforeGst = subtotal + karigharChargesAmount - discountAmount;
+    }
+    
+    // Step 5: Calculate GST
+    const gstAmount = (amountBeforeGst * gstPerc) / 100;
+    
+    // Step 6: Final item total
+    const itemTotal = amountBeforeGst + gstAmount;
+    
     return {
-      woodwork_value: woodwork,
-      misc_internal_value: misc_internal,
-      misc_external_value: misc_external,
-      total_value: subtotal,  // Send RAW subtotal to backend
-      subtotal: subtotal,
-      service_charge: serviceCharge,
-      discount: discount,
-      final_value: finalTotal,
+      subtotal,
+      karighar_charges_amount: karigharChargesAmount,
+      discount_amount: discountAmount,
+      amount_before_gst: amountBeforeGst,
       gst_amount: gstAmount,
-      grand_total: grandTotal
+      item_total: itemTotal
+    };
+  };
+
+  const calculateTotals = () => {
+    let woodworkTotal = 0;
+    let miscInternalTotal = 0;
+    let miscExternalTotal = 0;
+    let shoppingServiceTotal = 0;
+    let totalGst = 0;
+    
+    items.forEach(item => {
+      const itemCalc = calculateItemTotal(item);
+      
+      if (item.category === 'woodwork') {
+        woodworkTotal += itemCalc.item_total;
+      } else if (item.category === 'misc_internal') {
+        miscInternalTotal += itemCalc.item_total;
+      } else if (item.category === 'misc_external') {
+        miscExternalTotal += itemCalc.item_total;
+      } else if (item.category === 'shopping_service') {
+        shoppingServiceTotal += itemCalc.item_total;
+      }
+      
+      totalGst += itemCalc.gst_amount;
+    });
+    
+    const grandTotal = woodworkTotal + miscInternalTotal + miscExternalTotal + shoppingServiceTotal;
+    
+    return {
+      woodwork_value: woodworkTotal,
+      misc_internal_value: miscInternalTotal,
+      misc_external_value: miscExternalTotal,
+      shopping_service_value: shoppingServiceTotal,
+      gst_amount: totalGst,
+      final_value: grandTotal
     };
   };
 
