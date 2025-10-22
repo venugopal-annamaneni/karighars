@@ -262,8 +262,6 @@ export default function ProjectDetailPage() {
         ...prev,
         milestone_id: '',
         amount: '',
-        woodwork_amount: '',
-        misc_amount: '',
         calculation: null,
         expected_amount: null
       }));
@@ -280,17 +278,12 @@ export default function ProjectDetailPage() {
 
       const data = await res.json();
 
-
-      // Pre-fill with expected amounts
-      const woodworkAmt = data.expected_woodwork_amount.toFixed(2);
-      const miscAmt = data.expected_misc_amount.toFixed(2);
-      const totalAmt = data.expected_total.toFixed(2);
+      // Pre-fill with expected amount (total only)
+      const totalAmt = data.expected_payment.toFixed(2);
 
       setPaymentData(prev => ({
         ...prev,
         milestone_id: milestoneId,
-        woodwork_amount: woodworkAmt,
-        misc_amount: miscAmt,
         amount: totalAmt,
         expected_amount: totalAmt,
         calculation: data
