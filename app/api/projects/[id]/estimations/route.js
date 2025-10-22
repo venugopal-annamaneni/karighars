@@ -24,9 +24,10 @@ export async function POST(request) {
   const miscInternalValue = parseFloat(body.misc_internal_value) || 0;
   const miscExternalValue = parseFloat(body.misc_external_value) || 0;
   const shoppingServiceValue = parseFloat(body.shopping_service_value) || 0;
+  const serviceCharge = parseFloat(body.service_charge) || 0;
+  const discount = parseFloat(body.discount) || 0;
   const gstAmount = parseFloat(body.gst_amount) || 0;
   const finalValue = parseFloat(body.final_value) || 0;
-  const gstPercentage = parseFloat(body.gst_percentage) || 18;
 
   // Check for overpayment (only for revision, not first estimation)
   let hasOverpayment = false;
@@ -52,15 +53,15 @@ export async function POST(request) {
     `INSERT INTO project_estimations (
       project_id, version, 
       woodwork_value, misc_internal_value, misc_external_value, shopping_service_value,
-      gst_percentage, gst_amount, final_value,
+      service_charge, discount, gst_amount, final_value,
       has_overpayment, overpayment_amount,
       remarks, status, created_by
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
     [
       body.project_id, nextVersion,
       woodworkValue, miscInternalValue, miscExternalValue, shoppingServiceValue,
-      gstPercentage, gstAmount, finalValue,
+      serviceCharge, discount, gstAmount, finalValue,
       hasOverpayment, overpaymentAmount,
       body.remarks, body.status || 'draft', session.user.id
     ]
@@ -74,14 +75,14 @@ export async function POST(request) {
           estimation_id, category, description, quantity, unit, unit_price,
           karighar_charges_percentage, discount_percentage, gst_percentage,
           subtotal, karighar_charges_amount, discount_amount, amount_before_gst, gst_amount, item_total,
-          vendor_type, estimated_cost, estimated_margin
+          vendor_type
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
         [
           result.rows[0].id, item.category, item.description, item.quantity, item.unit, item.unit_price,
           item.karighar_charges_percentage, item.discount_percentage, item.gst_percentage,
           item.subtotal, item.karighar_charges_amount, item.discount_amount, item.amount_before_gst, item.gst_amount, item.item_total,
-          item.vendor_type, item.estimated_cost, item.estimated_margin
+          item.vendor_type
         ]
       );
     }

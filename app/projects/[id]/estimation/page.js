@@ -47,9 +47,7 @@ export default function EstimationPage() {
       karighar_charges_percentage: 10,
       discount_percentage: 0,
       gst_percentage: 18,
-      vendor_type: 'PI',
-      estimated_cost: 0,
-      estimated_margin: 0
+      vendor_type: 'PI'
     }
   ]);
 
@@ -99,9 +97,7 @@ export default function EstimationPage() {
                 karighar_charges_percentage: parseFloat(item.karighar_charges_percentage || 10),
                 discount_percentage: parseFloat(item.discount_percentage || 0),
                 gst_percentage: parseFloat(item.gst_percentage || 18),
-                vendor_type: item.vendor_type,
-                estimated_cost: parseFloat(item.estimated_cost || 0),
-                estimated_margin: parseFloat(item.estimated_margin || 0)
+                vendor_type: item.vendor_type
               })));
             }
           }
@@ -128,9 +124,7 @@ export default function EstimationPage() {
       karighar_charges_percentage: defaultKarigharCharges,
       discount_percentage: 0,
       gst_percentage: 18,
-      vendor_type: 'PI',
-      estimated_cost: 0,
-      estimated_margin: 0
+      vendor_type: 'PI'
     }]);
   };
 
@@ -140,18 +134,9 @@ export default function EstimationPage() {
   };
 
   const updateItem = (index, field, value) => {
+    debugger;
     const newItems = [...items];
     newItems[index][field] = value;
-
-    // Auto-calculate margin
-    if (field === 'unit_price' || field === 'estimated_cost') {
-      const unitPrice = parseFloat(newItems[index].unit_price) || 0;
-      const estimatedCost = parseFloat(newItems[index].estimated_cost) || 0;
-      if (unitPrice > 0 && estimatedCost > 0) {
-        newItems[index].estimated_margin = ((unitPrice - estimatedCost) / unitPrice * 100).toFixed(2);
-      }
-    }
-
     setItems(newItems);
   };
 
@@ -163,24 +148,30 @@ export default function EstimationPage() {
     const gstPerc = parseFloat(item.gst_percentage) || 0;
     
     // Step 1: Calculate subtotal
-    const subtotal = quantity * unitPrice;
+    let subtotal = 0;
+    if(item.category === 'shopping_service')
+      subtotal = quantity * unitPrice;
+    else
+      subtotal = quantity * unitPrice;
     
     // Step 2: Calculate karighar charges
-    const karigharChargesAmount = (subtotal * karigharChargesPerc) / 100;
+    let karigharChargesAmount = 0;
+    if( item.category === 'shopping_service')
+      karigharChargesAmount = (subtotal * karigharChargesPerc) / 100;
+    else
+      karigharChargesAmount = subtotal * karigharChargesPerc / 100;
     
     // Step 3: Calculate discount
-    // For shopping_service: discount only on karighar_charges
-    // For others: discount on (subtotal + karighar_charges)
     let discountAmount = 0;
     if (item.category === 'shopping_service') {
-      discountAmount = (karigharChargesAmount * discountPerc) / 100;
+      //discountAmount = (karigharChargesAmount * discountPerc) / 100;
+      discountAmount = (subtotal * discountPerc) / 100;
     } else {
-      discountAmount = ((subtotal + karigharChargesAmount) * discountPerc) / 100;
+      //discountAmount = ((subtotal + karigharChargesAmount) * discountPerc) / 100;
+      discountAmount = (subtotal * discountPerc) / 100;
     }
     
     // Step 4: Calculate amount before GST
-    // For shopping_service: Only karighar_charges - discount (no subtotal)
-    // For others: subtotal + karighar_charges - discount
     let amountBeforeGst = 0;
     if (item.category === 'shopping_service') {
       amountBeforeGst = karigharChargesAmount - discountAmount;
@@ -205,41 +196,77 @@ export default function EstimationPage() {
   };
 
   const calculateTotals = () => {
+    let woodworkSubtotal = 0;
     let woodworkTotal = 0;
+    let woodworkKGCharges = 0;
+    let woodworkDiscounts = 0;
+
+    let miscInternalSubtotal = 0;
     let miscInternalTotal = 0;
+    let miscInternalKGCharges = 0;
+    let miscInternalDiscounts = 0;
+
+    let miscExternalSubtotal = 0;
     let miscExternalTotal = 0;
+    let miscExternalKGCharges = 0;
+    let miscExternalDiscounts = 0;
+
+    let shoppingServiceSubtotal = 0;
     let shoppingServiceTotal = 0;
+    let shoppingKGCharges = 0;
+    let shoppingDiscounts = 0;
+
     let totalGst = 0;
     
     items.forEach(item => {
       const itemCalc = calculateItemTotal(item);
       
       if (item.category === 'woodwork') {
+        woodworkSubtotal += itemCalc.subtotal;
+        woodworkKGCharges += itemCalc.karighar_charges_amount;        
+        woodworkDiscounts += itemCalc.discount_amount;
         woodworkTotal += itemCalc.item_total;
       } else if (item.category === 'misc_internal') {
+        miscInternalSubtotal += itemCalc.subtotal;
+        miscInternalKGCharges += itemCalc.karighar_charges_amount;
+        miscInternalDiscounts += itemCalc.discount_amount;
         miscInternalTotal += itemCalc.item_total;
       } else if (item.category === 'misc_external') {
+        miscExternalSubtotal += itemCalc.subtotal;
+        miscExternalKGCharges += itemCalc.karighar_charges_amount;
+        miscExternalDiscounts += itemCalc.discount_amount;
         miscExternalTotal += itemCalc.item_total;
       } else if (item.category === 'shopping_service') {
+        // For shopping, the subTotal is paid to vendor's directly
+        shoppingServiceSubtotal = itemCalc.subtotal;
+        shoppingKGCharges += itemCalc.karighar_charges_amount;
+        shoppingDiscounts += itemCalc.discount_amount;
         shoppingServiceTotal += itemCalc.item_total;
       }
       
       totalGst += itemCalc.gst_amount;
     });
     
+    
+    
+    const serviceCharge = woodworkKGCharges + miscInternalKGCharges + miscExternalKGCharges + shoppingKGCharges;
+    const discount = woodworkDiscounts + miscInternalDiscounts + miscExternalDiscounts + shoppingDiscounts;
     const grandTotal = woodworkTotal + miscInternalTotal + miscExternalTotal + shoppingServiceTotal;
     
-    return {
-      woodwork_value: woodworkTotal,
-      misc_internal_value: miscInternalTotal,
-      misc_external_value: miscExternalTotal,
-      shopping_service_value: shoppingServiceTotal,
+    return { 
+      woodwork_value: woodworkSubtotal,
+      misc_internal_value: miscInternalSubtotal,
+      misc_external_value: miscExternalSubtotal,
+      shopping_service_value: shoppingServiceSubtotal,
+      service_charge: serviceCharge,
+      discount: discount,
       gst_amount: totalGst,
       final_value: grandTotal
     };
   };
 
   const handleSubmit = async (e) => {
+    debugger;
     e.preventDefault();
     setSaving(true);
 
@@ -252,8 +279,7 @@ export default function EstimationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: projectId,
-          final_value: totals.final_value,
-          gst_amount: totals.gst_amount
+          final_value: totals.final_value
         })
       });
 
@@ -316,7 +342,7 @@ export default function EstimationPage() {
         ...totals,
         remarks: formData.remarks,
         status: formData.status,
-        gst_percentage: formData.gst_percentage,
+        //gst_percentage: formData.gst_percentage,
         items: itemsWithCalcs
       });
 
@@ -581,8 +607,7 @@ export default function EstimationPage() {
                     {/* Show breakdown for clarity */}
                     {item.category === 'shopping_service' && (
                       <div className="text-xs text-muted-foreground bg-amber-50 p-2 rounded">
-                        <strong>Note:</strong> For shopping service, customer pays ₹{formatCurrency((item.quantity || 0) * (item.unit_price || 0))} 
-                        directly to vendor. KG charges shown above.
+                        <strong>Note:</strong> For shopping service, customer pays {formatCurrency((item.quantity || 0) * (item.unit_price || 0))} directly to vendor. Only KG charges, discount & GST amount are considered for calculations.
                       </div>
                     )}
                   </div>
@@ -788,13 +813,29 @@ const TotalsSummary = ({totals, formData}) => {
       </Card>
       <Card>
         <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Design / Consultation / Service Charges</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold text-green-600">+{formatCurrency(totals.service_charge || 0)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Discount</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold text-red-600">+{formatCurrency(totals.discount || 0)}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">GST Total</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold text-blue-600">+{formatCurrency(totals.gst_amount || 0)}</div>
         </CardContent>
       </Card>
-      <Card className="bg-primary/5 border-primary md:col-span-2 lg:col-span-3">
+      <Card className="bg-primary/5 border-primary">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-primary">Grand Total (to KG)</CardTitle>
         </CardHeader>
