@@ -248,11 +248,6 @@ CREATE TABLE estimation_items (
     unit_price NUMERIC(20,2) DEFAULT 0,
     total NUMERIC(20,2),
     vendor_type TEXT,
-    estimated_cost NUMERIC(20,2) DEFAULT 0,
-    actual_cost NUMERIC(20,2),
-    estimated_margin NUMERIC(20,2),
-    actual_margin NUMERIC(20,2),
-    linked_vendor_boq_item_id INTEGER,
     created_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (id),
     FOREIGN KEY (estimation_id) REFERENCES project_estimations(id) ON DELETE CASCADE,
@@ -322,17 +317,16 @@ CREATE TABLE project_estimations (
     id INTEGER NOT NULL DEFAULT nextval('project_estimations_id_seq'::regclass),
     project_id INTEGER,
     version INTEGER DEFAULT 1,
-    total_value NUMERIC(20,2) DEFAULT 0,
     woodwork_value NUMERIC(20,2) DEFAULT 0,
     misc_internal_value NUMERIC(20,2) DEFAULT 0,
     misc_external_value NUMERIC(20,2) DEFAULT 0,
-    service_charge_percentage NUMERIC(20,2) DEFAULT 0,
-    service_charge_amount NUMERIC(20,2) DEFAULT 0,
-    discount_percentage NUMERIC(20,2) DEFAULT 0,
+    shopping_service_value NUMERIC(20,2) DEFAULT 0,
+    kg_charges NUMERIC(20,2) DEFAULT 0,
     discount_amount NUMERIC(20,2) DEFAULT 0,
-    final_value NUMERIC(20,2) DEFAULT 0,
-    gst_percentage NUMERIC(20,2) DEFAULT 18.00,
     gst_amount NUMERIC(20,2) DEFAULT 0.00,
+    final_value NUMERIC(20,2) DEFAULT 0,
+    
+    
     status TEXT DEFAULT 'draft'::text,
     requires_approval BOOLEAN DEFAULT false,
     approval_status TEXT DEFAULT 'approved'::text,
@@ -345,17 +339,14 @@ CREATE TABLE project_estimations (
     created_by INTEGER,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    overpayment_status TEXT,
-    overpayment_approved_by INTEGER,
-    overpayment_approved_at TIMESTAMPTZ,
+    
     PRIMARY KEY (id),
-    FOREIGN KEY (overpayment_approved_by) REFERENCES users(id),
+    
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES users(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
     CHECK ((approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))),
     CHECK ((status = ANY (ARRAY['draft'::text, 'finalized'::text, 'locked'::text]))),
-    CHECK (((overpayment_status = ANY (ARRAY['pending_approval'::text, 'approved'::text, 'rejected'::text])) OR (overpayment_status IS NULL)))
 );
 
 COMMENT ON COLUMN project_estimations.gst_percentage IS 'GST percentage for this estimation (default 18%)';

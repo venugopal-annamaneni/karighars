@@ -10,7 +10,7 @@ export async function POST(request, { params }) {
   }
   const body = await request.json();
   const project_id = params.id;
-  const { final_value, gst_amount } = body;
+  const { final_value } = body;
   // Get next version number
   const versionRes = await query(
     'SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM project_estimations WHERE project_id = $1',
@@ -30,7 +30,7 @@ export async function POST(request, { params }) {
       `, [project_id]);
 
   const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
-  const grandTotal = parseFloat(final_value) + parseFloat(gst_amount);
+  const grandTotal = parseFloat(final_value);
 
   if (totalCollected > grandTotal) {
     const overpaymentAmount = totalCollected - grandTotal;

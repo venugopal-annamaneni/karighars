@@ -379,7 +379,6 @@ export default function ProjectDetailPage() {
   };
 
   const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt', user_id) => {
-    debugger;
     if (!file) return;
     setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
     const formData = new FormData();
@@ -619,30 +618,30 @@ export default function ProjectDetailPage() {
                         <p className="text-xl font-bold">{formatCurrency(estimation.misc_external_value)}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Subtotal</p>
-                        <p className="text-xl font-bold">{formatCurrency(estimation.total_value)}</p>
+                        <p className="text-sm text-muted-foreground mb-1">Shopping</p>
+                        <p className="text-xl font-bold">{formatCurrency(estimation.shopping_service_value)}</p>
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-4 gap-4">
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <p className="text-sm text-green-700 mb-1">Service Charge ({estimation.service_charge_percentage || 0}%)</p>
-                        <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.service_charge_amount || 0)}</p>
+                        <p className="text-sm text-green-700 mb-1">Service Charge</p>
+                        <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.service_charge || 0)}</p>
                       </div>
                       <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                        <p className="text-sm text-red-700 mb-1">Discount ({estimation.discount_percentage || 0}%)</p>
+                        <p className="text-sm text-red-700 mb-1">Discount</p>
                         <p className="text-xl font-bold text-red-700">
-                          {formatCurrency(estimation.discount_amount > 0 ? -estimation.discount_amount : 0)}
+                          {formatCurrency(estimation.discount > 0 ? -estimation.discount : 0)}
                         </p>
                       </div>
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-700 mb-1">GST ({estimation.gst_percentage || 18}%)</p>
+                        <p className="text-sm text-blue-700 mb-1">GST</p>
                         <p className="text-xl font-bold text-blue-700">
                           +{formatCurrency(estimation.gst_amount || 0)}</p>
                       </div>
                       <div className="bg-primary/10 p-4 rounded-lg border border-primary">
                         <p className="text-sm text-primary mb-1">Final Total (with GST)</p>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency((parseFloat(estimation.final_value || 0) + parseFloat(estimation.gst_amount || 0)))}</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(parseFloat(estimation.final_value || 0))}</p>
                       </div>
                     </div>
 
@@ -662,7 +661,11 @@ export default function ProjectDetailPage() {
                               <th className="text-left p-3">Description</th>
                               <th className="text-right p-3">Quantity</th>
                               <th className="text-right p-3">Unit Price</th>
-                              <th className="text-right p-3">Total</th>
+                              <th className="text-right p-3">Subtotal</th>
+                              <th className="text-right p-3">Consultation/Srv Charge</th>
+                              <th className="text-right p-3">Discount</th>
+                              <th className="text-right p-3">GST%</th>
+                              <th className="text-right p-3">Item Total</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y">
@@ -674,11 +677,39 @@ export default function ProjectDetailPage() {
                                   </Badge>
                                 </td>
                                 <td className="p-3">{item.description}</td>
-                                <td className="text-right p-3">{item.quantity} {item.unit}</td>
+                                <td className="text-right p-3">{parseFloat(item.quantity)} {item.unit}</td>
                                 <td className="text-right p-3">{formatCurrency(item.unit_price)}</td>
                                 <td className="text-right p-3 font-medium">{formatCurrency(item.total)}</td>
+                                <td className="text-right p-3">
+                                  {formatCurrency(item.karighar_charges_amount)}
+                                  <div className='text-xs text-red-500'>({item.karighar_charges_percentage}%)</div>
+                                </td>
+                                <td className="text-right p-3">
+                                  {formatCurrency(item.discount_amount)}
+                                  <div className='text-xs text-red-500'>({item.discount_percentage}%)</div>
+                                </td>
+                                <td className="text-right p-3">{item.gst_percentage}%</td>
+                                <td className="text-right p-3">{formatCurrency(item.item_total)}</td>
                               </tr>
                             ))}
+                          
+                            <tr>
+                              <td className="text-right p-3 font-bold" colSpan={5}>
+                                {formatCurrency(parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0) + parseFloat(estimation.shopping_service_value || 0))}
+                              </td>
+                              <td className="text-right p-3 font-bold" colSpan={1}>
+                                {formatCurrency(parseFloat(estimation.service_charge || 0))}
+                              </td>
+                              <td className="text-right p-3 font-bold" colSpan={1}>
+                                {formatCurrency(parseFloat(estimation.discount || 0))}
+                              </td>
+                              <td>
+                                &nbsp;
+                              </td>
+                              <td className="text-right p-3 font-bold" colSpan={1}>
+                                {formatCurrency(parseFloat(estimation.final_value || 0))}
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                         {estimationItems.length > 5 && (
@@ -1032,7 +1063,6 @@ export default function ProjectDetailPage() {
                                   accept="image/*,.pdf"
                                   className="hidden"
                                   onChange={(e) => {
-                                    debugger;
                                     const file = e.target.files[0];
                                     if (file) {
                                       if (payment.payment_type === 'CREDIT_NOTE') {
@@ -1493,7 +1523,7 @@ const FinancialSummary = ({ project, estimation }) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatCurrency((parseFloat(estimation?.final_value || 0) + parseFloat(estimation?.gst_amount || 0)))}
+            {formatCurrency(parseFloat(estimation?.final_value || 0))}
           </div>
         </CardContent>
       </Card>
@@ -1578,7 +1608,6 @@ const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
               <Button
                 onClick={async () => {
                   try {
-                    debugger;
                     const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
