@@ -30,10 +30,13 @@ export default function BizModelsPage() {
   const [newModel, setNewModel] = useState({
     code: '',
     name: '',
-    version: '',
     description: '',
-    service_charge_percentage: 10,
-    max_discount_percentage: 5,
+    design_charge_percentage: 0,
+    max_design_charge_discount_percentage: 0,
+    service_charge_percentage: 0,
+    max_service_charge_discount_percentage: 0,
+    shopping_charge_percentage: 0,
+    max_shopping_charge_discount_percentage: 0,
     is_active: true,
   });
 
@@ -133,11 +136,13 @@ export default function BizModelsPage() {
 
   const handleCreateModel = async () => {
     try {
-      // If editing, we're creating a new version
+      debugger;
       const isEditing = editingModelId !== null;
+      const api = isEditing ? `/api/biz-models/${editingModelId}`: '/api/biz-models';
+      const method = isEditing ? 'PUT': 'POST'; 
 
-      const res = await fetch('/api/biz-models', {
-        method: 'POST',
+      const res = await fetch(api, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newModel,
@@ -150,7 +155,7 @@ export default function BizModelsPage() {
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(isEditing ? `New version created: ${data.bizModel.version}` : 'Business Model created successfully');
+        toast.success(isEditing ? `Business Model saved successfully` : 'Business Model created successfully');
         setShowCreateDialog(false);
         setEditingModelId(null);
         fetchBizModels();
@@ -158,10 +163,13 @@ export default function BizModelsPage() {
         setNewModel({
           code: '',
           name: '',
-          version: '',
           description: '',
-          service_charge_percentage: 10,
-          max_discount_percentage: 5,
+          design_charge_percentage: 0,
+          max_design_charge_discount_percentage: 0,
+          service_charge_percentage: 0,
+          max_service_charge_discount_percentage: 0,
+          shopping_charge_percentage: 0,
+          max_shopping_charge_discount_percentage: 0,
           is_active: true,
         });
         setStages([{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
@@ -178,6 +186,7 @@ export default function BizModelsPage() {
 
   const handleEditModel = async (modelId) => {
     try {
+      debugger;
       const res = await fetch(`/api/biz-models/${modelId}`);
       if (res.ok) {
         const data = await res.json();
@@ -186,10 +195,13 @@ export default function BizModelsPage() {
         setNewModel({
           code: data.model.code,
           name: data.model.name,
-          version: '', // Will be auto-generated
           description: data.model.description,
+          design_charge_percentage: data.model.design_charge_percentage,
+          max_design_charge_discount_percentage: data.model.max_design_charge_discount_percentage,
           service_charge_percentage: data.model.service_charge_percentage,
-          max_discount_percentage: data.model.max_discount_percentage,
+          max_service_charge_discount_percentage: data.model.max_service_charge_discount_percentage,
+          shopping_charge_percentage: data.model.shopping_charge_percentage,
+          max_shopping_charge_discount_percentage: data.model.max_shopping_charge_discount_percentage,
           is_active: data.model.is_active,
         });
 
@@ -287,16 +299,16 @@ export default function BizModelsPage() {
           {session.user.role === 'admin' && (
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => setEditingModelId(null)}>
                   <Plus className="h-4 w-4" />
-                  Create New BizModel
+                  Create New Business Model
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingModelId ? 'Edit Business Model (Create New Version)' : 'Create New Business Model'}</DialogTitle>
+                  <DialogTitle>{editingModelId ? 'Edit Business Model' : 'Create New Business Model'}</DialogTitle>
                   <DialogDescription>
-                    {editingModelId ? 'Editing will create a new version automatically. Old version will be preserved.' : 'Define a new business model with stages and payment milestones'}
+                    {editingModelId ? 'Business Model can be edited till it is published' : 'Define a new business model with stages and payment milestones'}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -334,7 +346,25 @@ export default function BizModelsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Service Charge (%)</Label>
+                        <Label>Design Consultation Charges (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.design_charge_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, design_charge_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Max Discount (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.max_design_charge_discount_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, max_design_charge_discount_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Service Charges (%)</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -347,8 +377,26 @@ export default function BizModelsPage() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={newModel.max_discount_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, max_discount_percentage: parseFloat(e.target.value) })}
+                          value={newModel.max_service_charge_discount_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, max_service_charge_discount_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Shopping Charges (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.shopping_charge_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, shopping_charge_percentage: parseFloat(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Max Discount (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.max_shopping_charge_discount_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, max_shopping_charge_discount_percentage: parseFloat(e.target.value) })}
                         />
                       </div>
                     </div>
@@ -490,7 +538,7 @@ export default function BizModelsPage() {
                               />
                             </div>
                           </div>
-                          <div className="grid md:grid-cols-2 gap-3">
+                          <div className="grid md:grid-cols-3 gap-3">
                             {milestone.direction === 'inflow' && (
                               <>
                                 <div className="space-y-2">
@@ -517,6 +565,18 @@ export default function BizModelsPage() {
                                   />
                                   <p className="text-xs text-muted-foreground">% of misc (internal + external) to collect</p>
                                 </div>
+                                <div className="space-y-2">
+                                  <Label className="text-xs">Shopping % 🔧</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={milestone.shopping_percentage}
+                                    onChange={(e) => updateMilestone(index, 'shopping_percentage', parseFloat(e.target.value))}
+                                    className="h-9"
+                                  />
+                                  <p className="text-xs text-muted-foreground">% of shopping charges to collect</p>
+                                </div>
                               </>
                             )}
                             <div className="space-y-2 md:col-span-2">
@@ -540,7 +600,7 @@ export default function BizModelsPage() {
                     Cancel
                   </Button>
                   <Button onClick={handleCreateModel}>
-                    Create Business Model
+                    {editingModelId ? "Save Business Model": "Create Business Model"}
                   </Button>
                 </div>
               </DialogContent>
@@ -548,13 +608,16 @@ export default function BizModelsPage() {
           )}
         </div>
 
-        {/* BizModel Selection */}
+        {/* Business Model Selection */}
         <Card>
           <CardHeader>
             <CardTitle>Select Business Model</CardTitle>
             <CardDescription>Choose a business model to view its configuration</CardDescription>
           </CardHeader>
           <CardContent>
+            {bizModels.length === 0 && (
+              <p className='text-xs italic text-red-900'>No business model created yet.</p>
+            )}
             <div className="grid gap-4 md:grid-cols-3">
               {bizModels.map((model) => (
                 <div key={model.id} className="relative">
@@ -568,7 +631,7 @@ export default function BizModelsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Briefcase className="h-5 w-5 text-primary" />
                       <Badge variant="outline" className="font-mono text-xs">
-                        {model.code}-{model.version}
+                        {model.code}
                       </Badge>
                       <Badge variant={model.status === 'published' ? 'default' : 'secondary'}
                         className={model.status === 'published' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
@@ -576,23 +639,14 @@ export default function BizModelsPage() {
                       </Badge>
                     </div>
                     <h3 className="font-semibold mb-1">{model.name}</h3>
-                    <p className="text-sm text-muted-foreground">{model.description}</p>
-                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                      <div>
-                        <p className="text-muted-foreground">Service Charge</p>
-                        <p className="font-medium">{model.service_charge_percentage}%</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Max Discount</p>
-                        <p className="font-medium">{model.max_discount_percentage}%</p>
-                      </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground">{model.description || "Description is not provided"}</p>
                   </button>
                   <div className="absolute top-2 right-2 flex gap-1">
                     <Button
                       size="sm"
                       variant="outline"
                       className="gap-1 h-7 px-2"
+                      disabled={model.status === 'published'}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditModel(model.id);
@@ -622,9 +676,9 @@ export default function BizModelsPage() {
         {modelDetails && (
           <Tabs defaultValue="stages" className="space-y-4">
             <TabsList>
+              <TabsTrigger value="config">Configuration</TabsTrigger>
               <TabsTrigger value="stages">Project Stages</TabsTrigger>
               <TabsTrigger value="milestones">Payment Milestones</TabsTrigger>
-              <TabsTrigger value="config">Configuration</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stages" className="space-y-4">
@@ -744,15 +798,11 @@ export default function BizModelsPage() {
                   <CardDescription>Settings and rules for this business model</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-y-4 md:gap-y-0 gap-x-2">
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Model Code</p>
                         <p className="text-lg font-medium">{modelDetails.model.code}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Version</p>
-                        <Badge>{modelDetails.model.version}</Badge>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Status</p>
@@ -762,25 +812,49 @@ export default function BizModelsPage() {
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm text-green-700 mb-1">Default Service Charge</p>
+                      <div className="p-4 border border-green-800 rounded-lg">
+                        <p className="text-sm text-green-700">Design Consultation Charges</p>
                         <p className="text-2xl font-bold text-green-700">
-                          {modelDetails.model.service_charge_percentage}%
+                          {modelDetails.model.design_charge_percentage}%
                         </p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Added to all estimations by default
-                        </p>
-                      </div>
-                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-sm text-amber-700 mb-1">Maximum Discount</p>
+                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
                         <p className="text-2xl font-bold text-amber-700">
-                          {modelDetails.model.max_discount_percentage}%
-                        </p>
-                        <p className="text-xs text-amber-600 mt-1">
-                          Discounts above this require approval
+                          {modelDetails.model.max_design_charge_discount_percentage}%
                         </p>
                       </div>
                     </div>
+                    <div className="space-y-4">
+                      <div className="p-4 border border-blue-800 rounded-lg">
+                        <p className="text-sm text-blue-700">Service Charges</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {modelDetails.model.service_charge_percentage}%
+                        </p>
+                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
+                        <p className="text-2xl font-bold text-amber-700">
+                          {modelDetails.model.max_service_charge_discount_percentage}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="p-4 border border-yellow-800 rounded-lg">
+                        <p className="text-sm text-yellow-700">Shopping Charges</p>
+                        <p className="text-2xl font-bold text-yellow-700">
+                          {modelDetails.model.shopping_charge_percentage}%
+                        </p>
+                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
+                        <p className="text-2xl font-bold text-amber-700">
+                          {modelDetails.model.max_shopping_charge_discount_percentage}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className='grid grid-cols-1 text-right mt-4 md:mt-0'>
+                    <p className="text-xs font-semibold text-red-700">
+                      Added to all estimations by default
+                    </p>
+                    <p className="text-xs font-semibold text-red-700">
+                      Discounts above the maxium configured here require approval
+                    </p>
                   </div>
                 </CardContent>
               </Card>

@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
 
   try {
     const result = await query(`
-            SELECT * FROM biz_models WHERE is_active = true ORDER BY version LIMIT $1 OFFSET $2
+            SELECT * FROM biz_models WHERE is_active = true LIMIT $1 OFFSET $2
           `, [pageSize, offset]);
     return NextResponse.json({ bizModels: result.rows });
   } catch (error) {
@@ -37,49 +37,10 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Auto-generate version
-    let version = body.version;
-
-    if (body.is_editing && body.base_model_id) {
-      // Editing: Get the base model's version and increment
-      const baseModel = await query('SELECT version FROM biz_models WHERE id = $1', [body.base_model_id]);
-      if (baseModel.rows.length > 0) {
-        const currentVersion = baseModel.rows[0].version;
-
-        // Extract version number and increment
-        const versionMatch = currentVersion.match(/V?(\d+)$/i);
-        if (versionMatch) {
-          const num = parseInt(versionMatch[1]);
-          version = `V${num + 1}`;
-        } else {
-          version = 'V2'; // Default if can't parse
-        }
-      }
-    } else if (!version) {
-      // New model: Check if code already exists, get max version
-      const existing = await query(
-        `SELECT version FROM biz_models WHERE code = $1 ORDER BY created_at DESC LIMIT 1`,
-        [body.code]
-      );
-
-      if (existing.rows.length > 0) {
-        const currentVersion = existing.rows[0].version;
-        const versionMatch = currentVersion.match(/V?(\d+)$/i);
-        if (versionMatch) {
-          const num = parseInt(versionMatch[1]);
-          version = `V${num + 1}`;
-        } else {
-          version = 'V2';
-        }
-      } else {
-        version = 'V1'; // First version
-      }
-    }
-
     const result = await query(
-      `INSERT INTO biz_models (code, name, version, description, service_charge_percentage, max_discount_percentage, is_active, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [body.code, body.name, version, body.description, body.service_charge_percentage, body.max_discount_percentage, body.is_active, body.status || 'draft']
+      `INSERT INTO biz_models (code, name, description, service_charge_percentage, max_service_charge_discount_percentage,design_charge_percentage,max_design_charge_discount_percentage,shopping_charge_percentage,max_shopping_charge_discount_percentage, is_active, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [body.code, body.name, body.description, body.service_charge_percentage, body.max_service_charge_discount_percentage, body.design_charge_percentage, body.max_design_charge_discount_percentage, body.shopping_charge_percentage, body.max_shopping_charge_discount_percentage, body.is_active, body.status || 'draft']
     );
 
     // Add stages if provided
@@ -112,4 +73,3 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
