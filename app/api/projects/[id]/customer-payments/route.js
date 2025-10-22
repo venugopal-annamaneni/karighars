@@ -110,16 +110,13 @@ export async function POST(request, { params }) {
     let actualPercentage = null;
     if (body.estimation_id) {
       const estRes = await query(
-        'SELECT final_value, gst_amount FROM project_estimations WHERE id = $1',
+        'SELECT final_value FROM project_estimations WHERE id = $1',
         [body.estimation_id]
       );
       if (estRes.rows.length > 0) {
-        const totalWithGst =
-          parseFloat(estRes.rows[0].final_value) +
-          parseFloat(estRes.rows[0].gst_amount || 0);
-        if (totalWithGst > 0) {
-          actualPercentage =
-            (parseFloat(body.amount) / totalWithGst) * 100;
+        const total = parseFloat(estRes.rows[0].final_value);
+        if (total > 0) {
+          actualPercentage = (parseFloat(body.amount) / total) * 100;
         }
       }
     }
@@ -128,11 +125,11 @@ export async function POST(request, { params }) {
       `INSERT INTO customer_payments (
         project_id, estimation_id, customer_id, payment_type, milestone_id,
         actual_percentage, override_reason,
-        amount, pre_tax_amount, gst_amount, gst_percentage,
+        amount, gst_amount, gst_percentage,
         payment_date, mode, reference_number, remarks, created_by,
-        document_url, status, woodwork_amount, misc_amount
+        document_url, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *`,
       [
         body.project_id,
@@ -143,7 +140,6 @@ export async function POST(request, { params }) {
         actualPercentage,
         body.override_reason || null,
         body.amount,
-        body.pre_tax_amount || 0,
         body.gst_amount || 0,
         body.gst_percentage || 0,
         body.payment_date || new Date(),
@@ -152,9 +148,7 @@ export async function POST(request, { params }) {
         body.remarks,
         session.user.id,
         body.document_url || null,
-        body.status || 'pending',
-        body.woodwork_amount || 0,
-        body.misc_amount || 0
+        body.status || 'pending'
       ]
     );
 
