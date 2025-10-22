@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
     const isShoppingMilestone = milestone.milestone_code === 'SHOPPING_100';
 
     if (isShoppingMilestone) {
-      // SHOPPING_100 milestone: Only include shopping_service items
+      // SHOPPING_100 milestone: Calculate from shopping_service items only
       const itemsRes = await query(`
         SELECT COALESCE(SUM(item_total), 0) as shopping_total
         FROM estimation_items
@@ -55,10 +55,10 @@ export async function GET(request, { params }) {
       const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
       const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
       
-      // Calculate target amount for this milestone
+      // Calculate target amount
       const targetAmount = (shoppingTotal * shoppingPercentage) / 100;
 
-      // Get already collected for shopping
+      // Get total collected for shopping payments (payment_type = 'SHOPPING_100')
       const paymentsRes = await query(`
         SELECT COALESCE(SUM(amount), 0) as collected
         FROM customer_payments
@@ -67,30 +67,27 @@ export async function GET(request, { params }) {
           AND payment_type = 'SHOPPING_100'
       `, [projectId]);
 
-      const collected = parseFloat(paymentsRes.rows[0].collected || 0);
-      const collectedPercentage = shoppingTotal > 0 ? (collected / shoppingTotal) * 100 : 0;
-      const remainingPercentage = Math.max(0, shoppingPercentage - collectedPercentage);
-      const remainingAmount = Math.max(0, targetAmount - collected);
+      const collectedAmount = parseFloat(paymentsRes.rows[0].collected || 0);
+      const remainingAmount = Math.max(0, targetAmount - collectedAmount);
 
       return NextResponse.json({
         milestone_type: 'shopping',
         milestone_code: milestone.milestone_code,
         milestone_name: milestone.milestone_name,
-        shopping_total: shoppingTotal,
         target_percentage: shoppingPercentage,
         target_amount: targetAmount,
-        collected_amount: collected,
-        collected_percentage: collectedPercentage,
-        remaining_percentage: remainingPercentage,
+        collected_amount: collectedAmount,
         remaining_amount: remainingAmount,
         expected_payment: remainingAmount,
-        breakdown: {
-          shopping_service: remainingAmount
+        // Breakdown for UI display only (not stored in DB)
+        display_breakdown: {
+          shopping_service: shoppingTotal,
+          shopping_percentage: shoppingPercentage
         }
       });
 
     } else {
-      // Regular milestone: EXCLUDE shopping_service items
+      // Regular milestone: Calculate from woodwork + misc items (exclude shopping)
       const itemsRes = await query(`
         SELECT 
           COALESCE(SUM(CASE WHEN category = 'woodwork' THEN item_total ELSE 0 END), 0) as woodwork_total,
@@ -105,61 +102,40 @@ export async function GET(request, { params }) {
       const woodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
       const miscPercentage = parseFloat(milestone.misc_percentage || 0);
 
-      // Calculate target amounts for this milestone (cumulative)
+      // Calculate target amounts for this milestone
       const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
       const targetMiscAmount = (miscTotal * miscPercentage) / 100;
-      const targetTotal = targetWoodworkAmount + targetMiscAmount;
+      const targetAmount = targetWoodworkAmount + targetMiscAmount;
 
-      // Get already collected amounts (excluding shopping payments)
+      // Get total collected for regular payments (exclude SHOPPING_100)
       const paymentsRes = await query(`
-        SELECT 
-          COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN woodwork_amount ELSE 0 END), 0) as collected_woodwork,
-          COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN misc_amount ELSE 0 END), 0) as collected_misc
+        SELECT COALESCE(SUM(amount), 0) as collected
         FROM customer_payments
-        WHERE project_id = $1 AND status = 'approved'
+        WHERE project_id = $1 
+          AND status = 'approved'
+          AND payment_type != 'SHOPPING_100'
       `, [projectId]);
 
-      const collectedWoodwork = parseFloat(paymentsRes.rows[0].collected_woodwork || 0);
-      const collectedMisc = parseFloat(paymentsRes.rows[0].collected_misc || 0);
-      const collectedTotal = collectedWoodwork + collectedMisc;
-
-      // Calculate collected percentages
-      const collectedWoodworkPercentage = woodworkTotal > 0 ? (collectedWoodwork / woodworkTotal) * 100 : 0;
-      const collectedMiscPercentage = miscTotal > 0 ? (collectedMisc / miscTotal) * 100 : 0;
-
-      // Calculate remaining
-      const remainingWoodworkPercentage = Math.max(0, woodworkPercentage - collectedWoodworkPercentage);
-      const remainingMiscPercentage = Math.max(0, miscPercentage - collectedMiscPercentage);
-      
-      const remainingWoodworkAmount = Math.max(0, targetWoodworkAmount - collectedWoodwork);
-      const remainingMiscAmount = Math.max(0, targetMiscAmount - collectedMisc);
-      const remainingTotal = remainingWoodworkAmount + remainingMiscAmount;
+      const collectedAmount = parseFloat(paymentsRes.rows[0].collected || 0);
+      const remainingAmount = Math.max(0, targetAmount - collectedAmount);
 
       return NextResponse.json({
         milestone_type: 'regular',
         milestone_code: milestone.milestone_code,
         milestone_name: milestone.milestone_name,
-        woodwork_total: woodworkTotal,
-        misc_total: miscTotal,
-        target_woodwork_percentage: woodworkPercentage,
-        target_misc_percentage: miscPercentage,
-        target_woodwork_amount: targetWoodworkAmount,
-        target_misc_amount: targetMiscAmount,
-        target_total: targetTotal,
-        collected_woodwork_amount: collectedWoodwork,
-        collected_misc_amount: collectedMisc,
-        collected_total: collectedTotal,
-        collected_woodwork_percentage: collectedWoodworkPercentage,
-        collected_misc_percentage: collectedMiscPercentage,
-        remaining_woodwork_percentage: remainingWoodworkPercentage,
-        remaining_misc_percentage: remainingMiscPercentage,
-        remaining_woodwork_amount: remainingWoodworkAmount,
-        remaining_misc_amount: remainingMiscAmount,
-        remaining_total: remainingTotal,
-        expected_payment: remainingTotal,
-        breakdown: {
-          woodwork: remainingWoodworkAmount,
-          misc: remainingMiscAmount
+        target_percentage: Math.max(woodworkPercentage, miscPercentage),
+        target_amount: targetAmount,
+        collected_amount: collectedAmount,
+        remaining_amount: remainingAmount,
+        expected_payment: remainingAmount,
+        // Breakdown for UI display only (not stored in DB)
+        display_breakdown: {
+          woodwork_total: woodworkTotal,
+          misc_total: miscTotal,
+          woodwork_percentage: woodworkPercentage,
+          misc_percentage: miscPercentage,
+          target_woodwork_amount: targetWoodworkAmount,
+          target_misc_amount: targetMiscAmount
         }
       });
     }
