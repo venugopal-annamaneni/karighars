@@ -1,5 +1,5 @@
 -- KG Interiors Finance Management System - Database Schema
--- Generated: 2025-10-21T01:31:42.552Z
+-- Generated: 2025-10-22T04:05:23.996Z
 -- PostgreSQL 15+
 
 -- Drop existing tables if needed (for clean installation)
@@ -84,6 +84,7 @@ CREATE TABLE biz_model_milestones (
     woodwork_percentage NUMERIC(20,2) DEFAULT 0,
     misc_percentage NUMERIC(20,2) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now(),
+    shopping_percentage NUMERIC(20,2) DEFAULT 0,
     UNIQUE (biz_model_id, milestone_code),
     PRIMARY KEY (id),
     FOREIGN KEY (biz_model_id) REFERENCES biz_models(id) ON DELETE CASCADE,
@@ -92,6 +93,7 @@ CREATE TABLE biz_model_milestones (
 
 COMMENT ON COLUMN biz_model_milestones.woodwork_percentage IS 'Cumulative percentage to be collected for woodwork items by this milestone';
 COMMENT ON COLUMN biz_model_milestones.misc_percentage IS 'Cumulative percentage to be collected for misc items by this milestone';
+COMMENT ON COLUMN biz_model_milestones.shopping_percentage IS 'Cumulative percentage for shopping service items (used in SHOPPING_100 milestone)';
 
 CREATE TABLE biz_model_stages (
     id INTEGER NOT NULL DEFAULT nextval('biz_model_stages_id_seq'::regclass),
@@ -249,11 +251,30 @@ CREATE TABLE estimation_items (
     total NUMERIC(20,2),
     vendor_type TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
+    karighar_charges_percentage NUMERIC(20,2) DEFAULT 10,
+    discount_percentage NUMERIC(20,2) DEFAULT 0,
+    gst_percentage NUMERIC(20,2) DEFAULT 18,
+    subtotal NUMERIC(20,2) DEFAULT 0,
+    karighar_charges_amount NUMERIC(20,2) DEFAULT 0,
+    discount_amount NUMERIC(20,2) DEFAULT 0,
+    amount_before_gst NUMERIC(20,2) DEFAULT 0,
+    gst_amount NUMERIC(20,2) DEFAULT 0,
+    item_total NUMERIC(20,2) DEFAULT 0,
     PRIMARY KEY (id),
     FOREIGN KEY (estimation_id) REFERENCES project_estimations(id) ON DELETE CASCADE,
-    CHECK ((category = ANY (ARRAY['woodwork'::text, 'misc_internal'::text, 'misc_external'::text]))),
-    CHECK ((vendor_type = ANY (ARRAY['PI'::text, 'Aristo'::text, 'Other'::text])))
+    CHECK ((vendor_type = ANY (ARRAY['PI'::text, 'Aristo'::text, 'Other'::text]))),
+    CHECK ((category = ANY (ARRAY['woodwork'::text, 'misc_internal'::text, 'misc_external'::text, 'shopping_service'::text])))
 );
+
+COMMENT ON COLUMN estimation_items.karighar_charges_percentage IS 'KG charges percentage - D&C for woodwork, Service charge for misc/shopping';
+COMMENT ON COLUMN estimation_items.discount_percentage IS 'Discount percentage on (subtotal + karighar_charges) for woodwork/misc, only on karighar_charges for shopping';
+COMMENT ON COLUMN estimation_items.gst_percentage IS 'GST percentage applicable on this item';
+COMMENT ON COLUMN estimation_items.subtotal IS 'Quantity × Unit Price';
+COMMENT ON COLUMN estimation_items.karighar_charges_amount IS 'Subtotal × karighar_charges_percentage';
+COMMENT ON COLUMN estimation_items.discount_amount IS 'Discount amount calculated';
+COMMENT ON COLUMN estimation_items.amount_before_gst IS 'Amount after karighar charges and discount, before GST';
+COMMENT ON COLUMN estimation_items.gst_amount IS 'GST amount';
+COMMENT ON COLUMN estimation_items.item_total IS 'Final item total including all charges and GST';
 
 CREATE TABLE financial_event_definitions (
     id INTEGER NOT NULL DEFAULT nextval('financial_event_definitions_id_seq'::regclass),
@@ -321,12 +342,8 @@ CREATE TABLE project_estimations (
     misc_internal_value NUMERIC(20,2) DEFAULT 0,
     misc_external_value NUMERIC(20,2) DEFAULT 0,
     shopping_service_value NUMERIC(20,2) DEFAULT 0,
-    kg_charges NUMERIC(20,2) DEFAULT 0,
-    discount_amount NUMERIC(20,2) DEFAULT 0,
-    gst_amount NUMERIC(20,2) DEFAULT 0.00,
     final_value NUMERIC(20,2) DEFAULT 0,
-    
-    
+    gst_amount NUMERIC(20,2) DEFAULT 0.00,
     status TEXT DEFAULT 'draft'::text,
     requires_approval BOOLEAN DEFAULT false,
     approval_status TEXT DEFAULT 'approved'::text,
@@ -339,17 +356,16 @@ CREATE TABLE project_estimations (
     created_by INTEGER,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    
+    service_charge NUMERIC(20,2),
+    discount NUMERIC(20,2),
     PRIMARY KEY (id),
-    
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES users(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
-    CHECK ((approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))),
     CHECK ((status = ANY (ARRAY['draft'::text, 'finalized'::text, 'locked'::text]))),
+    CHECK ((approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))
 );
 
-COMMENT ON COLUMN project_estimations.gst_percentage IS 'GST percentage for this estimation (default 18%)';
 COMMENT ON COLUMN project_estimations.gst_amount IS 'Calculated GST amount based on final_value';
 COMMENT ON COLUMN project_estimations.has_overpayment IS 'True if this revision creates overpayment situation';
 COMMENT ON COLUMN project_estimations.overpayment_amount IS 'Amount of overpayment if estimation < collected';
