@@ -9,10 +9,15 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const {searchParams} = new URL(request.url);
+  const pageNo = Number(searchParams.get("page_no") || 1);
+  const pageSize = Number(searchParams.get("page_size") || 20);
+  const offset = (pageNo - 1) * pageSize;
+
   try {
     const result = await query(`
-            SELECT * FROM biz_models WHERE is_active = true ORDER BY version
-          `);
+            SELECT * FROM biz_models WHERE is_active = true ORDER BY version LIMIT $1 OFFSET $2
+          `, [pageSize, offset]);
     return NextResponse.json({ bizModels: result.rows });
   } catch (error) {
     console.error('API Error:', error);

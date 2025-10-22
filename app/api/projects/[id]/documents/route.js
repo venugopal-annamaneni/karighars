@@ -51,7 +51,6 @@ export async function GET(request, { params }) {
 
 
 export async function POST(request, { params }) {
-  console.log("here");
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

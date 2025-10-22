@@ -3,20 +3,30 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  
+  const { searchParams } = new URL(request.url);
+  const pageNo = Number(searchParams.get("page_no") || 1);
+  const pageSize = Number(searchParams.get("page_size") || 20);
+  const offset = (pageNo - 1) * pageSize;
+
+  const filter = searchParams.get("filter") || "";
+  const filterValue = `%${filter}%`;
+
+
   const result = await query(`
-          SELECT p.*, 
-                 c.name as customer_name, 
-                 u.name as created_by_name,
-                 e.final_value,
-                 e.gst_amount,
-                 (e.final_value + COALESCE(e.gst_amount, 0)) as estimated_value_with_gst
+          SELECT 
+            p.*,
+            c.name AS customer_name,
+            u.name AS created_by_name,
+            e.final_value,
+            e.gst_amount,
+            (e.final_value + COALESCE(e.gst_amount, 0)) AS estimated_value_with_gst,
+            COUNT(*) OVER() AS total_records
           FROM projects p
           LEFT JOIN customers c ON p.customer_id = c.id
           LEFT JOIN users u ON p.created_by = u.id
@@ -26,9 +36,16 @@ export async function GET() {
             WHERE project_id = p.id 
             ORDER BY created_at DESC 
             LIMIT 1
-          ) e ON true
+          ) e ON TRUE 
+           WHERE 
+          ($3 = '' OR 
+            p.project_code ILIKE $3 OR 
+            c.name ILIKE $3 OR 
+            p.location ILIKE $3
+          )
           ORDER BY p.created_at DESC
-        `);
+          LIMIT $1 OFFSET $2
+        `, [pageSize, offset,filterValue]);
   return NextResponse.json({ projects: result.rows });
 }
 

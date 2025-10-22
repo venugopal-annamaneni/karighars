@@ -59,15 +59,6 @@ export async function POST(request, { params }) {
     // 2️⃣ Handle Credit Note creation
     if (isCreditNote) {
       const projectId = body.project_id;
-
-      console.log(`
-        SELECT e.*, p.customer_id, p.id AS project_id
-        FROM project_estimations e
-        JOIN projects p ON e.project_id = p.id
-        WHERE p.id = ${projectId}
-        ORDER BY e.version DESC
-        LIMIT 1
-      `)
       const estRes = await query(`
         SELECT e.*, p.customer_id, p.id AS project_id
         FROM project_estimations e

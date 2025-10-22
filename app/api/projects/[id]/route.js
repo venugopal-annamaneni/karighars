@@ -109,9 +109,7 @@ export async function PUT(request, { params }) {
     }
 
     values.push(projectId);
-
-    console.log(values);
-
+    
     const result = await query(
       `UPDATE projects SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`,
       values

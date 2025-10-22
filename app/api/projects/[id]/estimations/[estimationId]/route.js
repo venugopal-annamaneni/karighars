@@ -20,9 +20,7 @@ export async function PUT(request, { params }) {
     // No body or invalid JSON, use empty object
     body = {};
   }
-
-  console.log("here");
-
+  
   const estimationId = params.estimationId;
   const result = await query(
     `UPDATE project_estimations 

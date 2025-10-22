@@ -51,7 +51,6 @@ export async function PUT(request, { params }) {
     }
 
     values.push(paymentId);
-    console.log(values);
 
     const result = await query(
       `UPDATE customer_payments SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`,

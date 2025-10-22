@@ -305,7 +305,7 @@ export default function DashboardPage() {
               <Link href="/payments">
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <IndianRupee className="h-4 w-4" />
-                  Record Payment
+                  Payments Dashboard
                 </Button>
               </Link>
             </div>

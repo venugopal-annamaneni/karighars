@@ -52,13 +52,9 @@ export async function GET(request, { params }) {
         WHERE estimation_id = $1 AND category = 'shopping_service'
       `, [estimationId]);
 
-      console.log(itemsRes.rows[0]);
-      console.log(milestone);
-
+      
       const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
       const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
-      console.log(shoppingTotal);
-      console.log(shoppingPercentage);
       
       // Calculate target amount for this milestone
       const targetShoppingAmount = (shoppingTotal * shoppingPercentage) / 100;
