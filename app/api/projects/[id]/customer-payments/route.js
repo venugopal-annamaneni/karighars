@@ -48,7 +48,6 @@ export async function POST(request, { params }) {
   }
 
   const body = await request.json();
-  console.log("hello");
   const isCreditNote = body.payment_type === 'CREDIT_NOTE';
 
   try {
@@ -59,14 +58,24 @@ export async function POST(request, { params }) {
 
     // 2️⃣ Handle Credit Note creation
     if (isCreditNote) {
-      const estimationId = body.estimation_id;
+      const projectId = body.project_id;
 
-      const estRes = await query(`
-        SELECT e.*, p.customer_id, p.id as project_id
+      console.log(`
+        SELECT e.*, p.customer_id, p.id AS project_id
         FROM project_estimations e
         JOIN projects p ON e.project_id = p.id
-        WHERE e.id = $1
-      `, [estimationId]);
+        WHERE p.id = ${projectId}
+        ORDER BY e.version DESC
+        LIMIT 1
+      `)
+      const estRes = await query(`
+        SELECT e.*, p.customer_id, p.id AS project_id
+        FROM project_estimations e
+        JOIN projects p ON e.project_id = p.id
+        WHERE p.id = $1
+        ORDER BY e.version DESC
+        LIMIT 1
+      `, [projectId]);
 
       if (estRes.rows.length === 0) {
         return NextResponse.json({ error: 'Estimation not found' }, { status: 404 });
@@ -79,21 +88,20 @@ export async function POST(request, { params }) {
 
       const creditNoteResult = await query(`
         INSERT INTO customer_payments (
-          project_id, estimation_id, customer_id,
+          project_id, customer_id,
           payment_type, amount, payment_date, mode, reference_number,
           remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `, [
         estimation.project_id,
-        estimationId,
         estimation.customer_id,
         'CREDIT_NOTE',
         -Math.abs(estimation.overpayment_amount),
         new Date(),
         'other',
-        `CREDIT-NOTE-${estimationId}`,
+        `CREDIT-NOTE-${projectId}`,
         `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
         'pending',
         session.user.id
@@ -106,41 +114,22 @@ export async function POST(request, { params }) {
       });
     }
 
-    // 3️⃣ Handle Normal Payment creation
-    let actualPercentage = null;
-    if (body.estimation_id) {
-      const estRes = await query(
-        'SELECT final_value, gst_amount FROM project_estimations WHERE id = $1',
-        [body.estimation_id]
-      );
-      if (estRes.rows.length > 0) {
-        const totalWithGst =
-          parseFloat(estRes.rows[0].final_value) +
-          parseFloat(estRes.rows[0].gst_amount || 0);
-        if (totalWithGst > 0) {
-          actualPercentage =
-            (parseFloat(body.amount) / totalWithGst) * 100;
-        }
-      }
-    }
-
+    
     const result = await query(
       `INSERT INTO customer_payments (
-        project_id, estimation_id, customer_id, payment_type, milestone_id,
-        actual_percentage, override_reason,
+        project_id, customer_id, payment_type, milestone_id,
+        override_reason,
         amount, pre_tax_amount, gst_amount, gst_percentage,
         payment_date, mode, reference_number, remarks, created_by,
-        document_url, status, woodwork_amount, misc_amount
+        document_url, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
         body.project_id,
-        body.estimation_id,
         body.customer_id,
         body.payment_type || 'REGULAR',
         body.milestone_id || null,
-        actualPercentage,
         body.override_reason || null,
         body.amount,
         body.pre_tax_amount || 0,
@@ -152,9 +141,7 @@ export async function POST(request, { params }) {
         body.remarks,
         session.user.id,
         body.document_url || null,
-        body.status || 'pending',
-        body.woodwork_amount || 0,
-        body.misc_amount || 0
+        body.status || 'pending'
       ]
     );
 
@@ -167,8 +154,7 @@ export async function POST(request, { params }) {
         result.rows[0].id,
         session.user.id,
         'payment_recorded',
-        `Payment recorded: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''
-        } - Pending document upload`
+        `Payment recorded: ₹${body.amount} - Pending document upload`
       ]
     );
 

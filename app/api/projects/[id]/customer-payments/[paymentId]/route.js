@@ -51,6 +51,7 @@ export async function PUT(request, { params }) {
     }
 
     values.push(paymentId);
+    console.log(values);
 
     const result = await query(
       `UPDATE customer_payments SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`,
@@ -81,24 +82,37 @@ export async function PUT(request, { params }) {
         );
       }
 
+      // Get the latest estimation id
+      const latestEstRes = await query(
+        `SELECT e.id
+          FROM project_estimations e
+          WHERE e.project_id = $1
+          ORDER BY e.version DESC
+          LIMIT 1`, [payment.project_id]
+      )
+      if(latestEstRes.rows.length == 0) {
+        return NextResponse.json({ error: 'This project does not have a valid estimation' }, { status: 500 });
+      }
+      const estimationId = latestEstRes.rows[0].id;
+
       // Overpayment check
       const paymentsRes = await query(
         `SELECT COALESCE(SUM(amount), 0) as total_collected
           FROM customer_payments
-          WHERE estimation_id = $1 AND status = $2`,
-        [payment.estimation_id, 'approved']
+          WHERE project_id = $1 AND status = $2`,
+        [payment.project_id, 'approved']
       );
 
       const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
 
       const estRes = await query(
-        `SELECT final_value, gst_amount FROM project_estimations WHERE id = $1`,
-        [payment.estimation_id]
+        `SELECT final_value FROM project_estimations WHERE id = $1`,
+        [estimationId]
       );
 
       if (estRes.rows.length > 0) {
         const grandTotal =
-          parseFloat(estRes.rows[0].final_value) + parseFloat(estRes.rows[0].gst_amount || 0);
+          parseFloat(estRes.rows[0].final_value);
 
         if (totalCollected > grandTotal) {
           const overpaymentAmount = totalCollected - grandTotal;
@@ -108,7 +122,7 @@ export async function PUT(request, { params }) {
               SET has_overpayment = true,
               overpayment_amount = $1
               WHERE id = $2`,
-            [overpaymentAmount, payment.estimation_id]
+            [overpaymentAmount, estimationId]
           );
         } else {
           await query(
@@ -116,7 +130,7 @@ export async function PUT(request, { params }) {
               SET has_overpayment = false,
               overpayment_amount = 0
               WHERE id = $1`,
-            [payment.estimation_id]
+            [estimationId]
           );
         }
       }
