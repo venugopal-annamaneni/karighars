@@ -136,7 +136,6 @@ export default function BizModelsPage() {
 
   const handleCreateModel = async () => {
     try {
-      debugger;
       const isEditing = editingModelId !== null;
       const api = isEditing ? `/api/biz-models/${editingModelId}`: '/api/biz-models';
       const method = isEditing ? 'PUT': 'POST'; 
@@ -186,7 +185,6 @@ export default function BizModelsPage() {
 
   const handleEditModel = async (modelId) => {
     try {
-      debugger;
       const res = await fetch(`/api/biz-models/${modelId}`);
       if (res.ok) {
         const data = await res.json();

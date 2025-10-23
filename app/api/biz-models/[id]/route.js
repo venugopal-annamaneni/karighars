@@ -123,8 +123,6 @@ export async function PUT(request, { params }) {
       ]
     );
 
-    console.log(updateRes.rows);
-
     if (updateRes.rows.length === 0) {
       return NextResponse.json({ error: "Biz model not found" }, { status: 404 });
     }

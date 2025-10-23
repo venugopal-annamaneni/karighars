@@ -280,9 +280,6 @@ export default function ProjectDetailPage() {
       }
 
       const data = await res.json();
-      debugger;
-
-
       // Pre-fill with expected amounts
       const woodworkAmt = data.target_woodwork_amount?.toFixed(2) || 0;
       const miscAmt = data.target_misc_amount?.toFixed(2) || 0;
@@ -1525,7 +1522,6 @@ export default function ProjectDetailPage() {
 
 
 const WarningExtraPendingReceipts = ({ estimation, payments }) => {
-  debugger;
   const pendingReceipts = payments.filter(p => p.status === 'pending');
   const approvedReceipts = payments.filter(p => p.status === 'approved')
   if (pendingReceipts.length === 0) return null;
