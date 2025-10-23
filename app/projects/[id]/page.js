@@ -23,6 +23,7 @@ import {
   MapPin,
   Package,
   Plus,
+  ShoppingBasketIcon,
   StepBackIcon,
   Users
 } from 'lucide-react';
@@ -215,7 +216,7 @@ export default function ProjectDetailPage() {
         body: JSON.stringify({
           project_id: projectId,
           customer_id: project.customer_id,
-          estimation_id: estimation?.id,
+          // estimation_id: estimation?.id,
           milestone_id: finalMilestoneId,
           payment_type: paymentType,
           amount: totalAmount.toFixed(2),
@@ -277,13 +278,27 @@ export default function ProjectDetailPage() {
       }
 
       const data = await res.json();
+<<<<<<< HEAD
 
       // Pre-fill with expected amount (total only)
       const totalAmt = data.expected_payment.toFixed(2);
+=======
+      // Pre-fill with expected amounts
+      const woodworkAmt = data.target_woodwork_amount?.toFixed(2) || 0;
+      const miscAmt = data.target_misc_amount?.toFixed(2) || 0;
+      const shoppingAmt = data.target_shopping_amount?.toFixed(2) || 0;
+      const totalAmt = data.expected_total.toFixed(2) || 0;
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
 
       setPaymentData(prev => ({
         ...prev,
         milestone_id: milestoneId,
+<<<<<<< HEAD
+=======
+        woodwork_amount: woodworkAmt,
+        misc_amount: miscAmt,
+        shopping_amount: shoppingAmt,
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
         amount: totalAmt,
         expected_amount: totalAmt,
         calculation: data
@@ -554,6 +569,7 @@ export default function ProjectDetailPage() {
             <TabsTrigger value="estimation">Estimation</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="boqs">Vendor BOQs</TabsTrigger>
+            <TabsTrigger value="vendor-payments">Vendor Payments</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
@@ -685,7 +701,7 @@ export default function ProjectDetailPage() {
                                 <td className="text-right p-3">{formatCurrency(item.item_total)}</td>
                               </tr>
                             ))}
-                          
+
                             <tr>
                               <td className="text-right p-3 font-bold" colSpan={5}>
                                 {formatCurrency(parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0) + parseFloat(estimation.shopping_service_value || 0))}
@@ -741,7 +757,7 @@ export default function ProjectDetailPage() {
                         Record Payment
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+                    <DialogContent className="max-h-[90vh] overflow-y-auto max-w-3xl">
                       <DialogHeader>
                         <DialogTitle>Record Customer Payment</DialogTitle>
                         <DialogDescription>
@@ -760,9 +776,9 @@ export default function ProjectDetailPage() {
                                 <SelectItem value="none">No milestone</SelectItem>
                                 {milestones
                                   .filter(milestone => (milestone.stage_code === project.stage || milestone.stage_code === 'ANY'))
-                                  .map((milestone) => (
+                                  .map((milestone) => (                                    
                                     <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                                      {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}%`}
+                                      {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}% S:${milestone.shopping_percentage}%`}
                                     </SelectItem>
                                   ))}
                               </SelectContent>
@@ -774,6 +790,7 @@ export default function ProjectDetailPage() {
                           </div>
                         )}
                         {paymentData.calculation && (
+<<<<<<< HEAD
                           <Card className="bg-blue-50 border-blue-200">
                             <CardContent className="pt-4">
                               <div className="space-y-3">
@@ -784,6 +801,37 @@ export default function ProjectDetailPage() {
                                 <div className="flex justify-between items-center">
                                   <span className="text-sm font-medium">Already Collected:</span>
                                   <span className="font-semibold">₹{parseFloat(paymentData.calculation.collected_amount).toLocaleString('en-IN')}</span>
+=======
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                            {/* Woodwork Breakdown */}
+                            {paymentData.calculation.target_woodwork_amount > 0 && (
+                              <div className="border-b border-blue-200 pb-2">
+                                <p className="text-xs font-semibold text-green-800 mb-1">🪵 Woodwork Component:</p>
+                                <div className="text-xs text-green-700 space-y-1 ml-3">
+                                  <div>Total Value: ₹{parseFloat(paymentData.calculation.woodwork_total).toLocaleString('en-IN')}</div>
+                                  <div>Target: {paymentData.calculation.target_woodwork_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_woodwork_amount).toLocaleString('en-IN')}</div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Misc Breakdown */}
+                            {paymentData.calculation.target_misc_amount > 0 && (
+                              <div className="border-b border-blue-200 pb-2">
+                                <p className="text-xs font-semibold text-green-800 mb-1">🔧 Misc Component:</p>
+                                <div className="text-xs text-green-700 space-y-1 ml-3">
+                                  <div>Total Value: ₹{parseFloat(paymentData.calculation.misc_total).toLocaleString('en-IN')}</div>
+                                  <div>Target: {paymentData.calculation.target_misc_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_misc_amount).toLocaleString('en-IN')}</div>
+                                </div>
+                              </div>
+                            )}
+
+                            {paymentData.calculation.target_shopping_amount > 0 && (
+                              <div className="border-b border-blue-200 pb-2">
+                                <p className="text-xs font-semibold text-green-800 mb-1"><ShoppingBasketIcon /> Shopping Component:</p>
+                                <div className="text-xs text-green-700 space-y-1 ml-3">
+                                  <div>Total Value: ₹{parseFloat(paymentData.calculation.shopping_total).toLocaleString('en-IN')}</div>
+                                  <div>Target: {paymentData.calculation.target_shopping_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_shopping_amount).toLocaleString('en-IN')}</div>
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between items-center">
@@ -822,20 +870,71 @@ export default function ProjectDetailPage() {
                                   </div>
                                 )}
                               </div>
+<<<<<<< HEAD
                             </CardContent>
                           </Card>
+=======
+                            )}
+                            <div className='grid grid-cols-3 md:grid-col-3 gap-3 bg-white p-4 rounded-lg'>
+                              <div>
+                                <p className="text-sm font-medium text-green-900">💰 Target Receivable</p>
+                                <p className="text-2xl font-bold text-green-700">₹{parseFloat(paymentData.calculation.target_total).toLocaleString('en-IN')}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-blue-900">💰 Total Paid</p>
+                                <p className="text-2xl font-bold text-blue-700">₹{parseFloat(paymentData.calculation.collected_total).toLocaleString('en-IN')}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-red-900">💰 Expected Receiable</p>
+                                <p className="text-2xl font-bold text-red-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</p>
+                              </div>
+                            </div>
+                          </div>
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                         )}
 
                         {paymentData.milestone_id && !paymentData.calculation && (
                           <div className="text-sm text-muted-foreground">Loading calculation...</div>
                         )}
 
+<<<<<<< HEAD
+=======
+                        {/* Amount to Collect - Prominent Display */}
+                        {/* {paymentData.calculation && paymentData.calculation.expected_total > 0 && (
+                          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-green-900 mb-2">📊 Amount to Collect (Category-wise):</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              {paymentData.calculation.expected_woodwork_amount > 0 && (
+                                <div className="bg-white rounded p-2 border border-green-200">
+                                  <p className="text-xs text-gray-600">🪵 Woodwork</p>
+                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_woodwork_percentage.toFixed(1)}%</p>
+                                </div>
+                              )}
+                              {paymentData.calculation.expected_misc_amount > 0 && (
+                                <div className="bg-white rounded p-2 border border-green-200">
+                                  <p className="text-xs text-gray-600">🔧 Misc</p>
+                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_misc_percentage.toFixed(1)}%</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-green-200">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-green-900">Total Expected:</span>
+                                <span className="text-xl font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )} */}
+
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                         {/* Input fields for actual amounts */}
                         <div className="border-t pt-4 space-y-3">
-                          <p className="text-sm font-semibold">Enter Actual Amount Collected:</p>
+                          {/* <p className="text-sm font-semibold">Enter Actual Amount Collected:</p> */}
 
-                          <div className="grid md:grid-cols-2 gap-3">
-                            <div className="space-y-2">
+                          <div className="grid md:grid-cols-1 gap-3">
+                            {/* <div className="space-y-2">
                               <Label>Amount towards Woodwork (₹) *</Label>
                               <Input
                                 type="number"
@@ -859,32 +958,32 @@ export default function ProjectDetailPage() {
                                   Expected: ₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}
                                 </p>
                               )}
-                            </div>
+                            </div> */}
 
                             <div className="space-y-2">
-                              <Label>Amount towards Misc (₹) *</Label>
+                              <Label>Amount Collected (₹) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
                                 placeholder="0"
-                                value={paymentData.misc_amount || ''}
+                                value={paymentData.amount || ''}
                                 onChange={(e) => {
-                                  const misc = e.target.value;
-                                  const woodwork = paymentData.woodwork_amount || 0;
-                                  const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
+                                  // const misc = e.target.value;
+                                  // const woodwork = paymentData.woodwork_amount || 0;
+                                  const amount = e.target.value;
+                                  const total = (parseFloat(amount) || 0);
                                   setPaymentData({
                                     ...paymentData,
-                                    misc_amount: misc,
                                     amount: total.toFixed(2)
                                   });
                                 }}
                                 required
                               />
-                              {paymentData.calculation && paymentData.calculation.expected_misc_amount > 0 && (
+                              {/* {paymentData.calculation && paymentData.calculation.expected_misc_amount > 0 && (
                                 <p className="text-xs text-muted-foreground">
                                   Expected: ₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}
                                 </p>
-                              )}
+                              )} */}
                             </div>
                           </div>
 
@@ -1083,7 +1182,7 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Vendor Payments</CardTitle>
                 <CardDescription>Money paid to vendors</CardDescription>
@@ -1112,7 +1211,7 @@ export default function ProjectDetailPage() {
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
           </TabsContent>
 
           <TabsContent value="boqs" className="space-y-4">
@@ -1158,6 +1257,39 @@ export default function ProjectDetailPage() {
                               {boq.status}
                             </Badge>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vendor-payments" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vendor Payments</CardTitle>
+                <CardDescription>Money paid to vendors</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {vendorPayments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <IndianRupee className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No vendor payments yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {vendorPayments.map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{payment.vendor_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(payment.payment_date)} • {payment.payment_stage} • {payment.reference_number}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-red-600">{formatCurrency(payment.amount)}</p>
                         </div>
                       </div>
                     ))}
@@ -1452,7 +1584,7 @@ const WarningExtraPendingReceipts = ({ estimation, payments }) => {
   const approvedReceipts = payments.filter(p => p.status === 'approved')
   if (pendingReceipts.length === 0) return null;
 
-  const estimationValue = parseFloat(estimation.final_value || 0) + parseFloat(estimation.gst_amount || 0);
+  const estimationValue = parseFloat(estimation.final_value || 0);
   const approvedTotal = approvedReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
   const pendingTotal = pendingReceipts.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
   const remainingPayable = estimationValue - approvedTotal;
@@ -1589,7 +1721,7 @@ const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         "payment_type": "CREDIT_NOTE",
-                        "estimation_id": estimation.id
+                        "project_id": estimation.project_id
                       })
                     });
                     if (res.ok) {

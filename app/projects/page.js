@@ -8,13 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   ArrowUpRight,
   Filter
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import KGPagination from '@/components/kg-pagination';
 
 export default function ProjectsPage() {
   const { data: session, status } = useSession();
@@ -22,8 +23,11 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [phaseFilter, setPhaseFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -33,17 +37,22 @@ export default function ProjectsPage() {
     }
   }, [status, router]);
 
+  // useEffect(() => {
+  //   fetchProjects();
+  // }, [searchTerm]);
+
   useEffect(() => {
-    filterProjects();
-  }, [searchTerm, phaseFilter, projects]);
+    fetchProjects();
+  }, [pageNo, pageSize]);
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/projects');
+      const res = await fetch(`/api/projects?page_size=${pageSize}&page_no=${pageNo}&filter=${searchTerm}`);
       if (res.ok) {
         const data = await res.json();
         setProjects(data.projects);
         setFilteredProjects(data.projects);
+        setTotalRecords(data.projects[0].total_records)
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -52,24 +61,6 @@ export default function ProjectsPage() {
     }
   };
 
-  const filterProjects = () => {
-    let filtered = projects;
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.project_code.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (phaseFilter !== 'all') {
-      filtered = filtered.filter((p) => p.stage === phaseFilter);
-    }
-
-    setFilteredProjects(filtered);
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -113,23 +104,13 @@ export default function ProjectsPage() {
                   placeholder="Search projects, customers, or project codes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter")
+                      fetchProjects() 
+                    }}
                   className="pl-10"
                 />
               </div>
-              <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by phase" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Phases</SelectItem>
-                  <SelectItem value="onboarding">Onboarding</SelectItem>
-                  <SelectItem value="2D">2D Design</SelectItem>
-                  <SelectItem value="3D">3D Design</SelectItem>
-                  <SelectItem value="execution">Execution</SelectItem>
-                  <SelectItem value="handover">Handover</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
@@ -140,11 +121,11 @@ export default function ProjectsPage() {
             <Card>
               <CardContent className="text-center py-12">
                 <p className="text-muted-foreground mb-4">
-                  {searchTerm || phaseFilter !== 'all'
+                  {searchTerm
                     ? 'No projects found matching your filters'
                     : 'No projects yet'}
                 </p>
-                {!searchTerm && phaseFilter === 'all' && (
+                {!searchTerm && (
                   <Link href="/projects/new">
                     <Button>Create Your First Project</Button>
                   </Link>
@@ -152,55 +133,66 @@ export default function ProjectsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredProjects.map((project) => (
-              <Card key={project.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold">{project.name}</h3>
-                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                              project.stage === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-                              project.stage === '2D' ? 'bg-purple-100 text-purple-700' :
-                              project.stage === '3D' ? 'bg-amber-100 text-amber-700' :
-                              project.stage === 'execution' ? 'bg-green-100 text-green-700' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
-                              {project.stage}
-                            </span>
-                          </div>
-                          <div className="grid md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Customer</p>
-                              <p className="font-medium">{project.customer_name || 'N/A'}</p>
+            <div className='flex flex-col space-y-4'>
+              {filteredProjects.map((project) => (
+                <Card key={project.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold">{project.name}</h3>
+                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${project.stage === 'onboarding' ? 'bg-blue-100 text-blue-700' :
+                                project.stage === '2D' ? 'bg-purple-100 text-purple-700' :
+                                  project.stage === '3D' ? 'bg-amber-100 text-amber-700' :
+                                    project.stage === 'execution' ? 'bg-green-100 text-green-700' :
+                                      'bg-slate-100 text-slate-700'
+                                }`}>
+                                {project.stage}
+                              </span>
                             </div>
-                            <div>
-                              <p className="text-muted-foreground">Location</p>
-                              <p className="font-medium">{project.location || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Estimated Value</p>
-                              <p className="font-medium text-green-700">
-                                {project.estimated_value_with_gst 
-                                  ? `₹${parseFloat(project.estimated_value_with_gst).toLocaleString('en-IN')}` 
-                                  : 'Not estimated'}
-                              </p>
+                            <div className="grid md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-muted-foreground">Customer</p>
+                                <p className="font-medium">{project.customer_name || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">KG Code</p>
+                                <p className="font-medium">{project.project_code || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Location</p>
+                                <p className="font-medium">{project.location || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Estimated Value</p>
+                                <p className="font-medium text-green-700">
+                                  {project.estimated_value_with_gst
+                                    ? `₹${parseFloat(project.estimated_value_with_gst).toLocaleString('en-IN')}`
+                                    : 'Not estimated'}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                      <Link href={`/projects/${project.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href={`/projects/${project.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              ))}
+              <KGPagination
+                totalRecords={totalRecords}
+                defaultPageSize={pageSize}
+                onChangeCallback={(pageNo, pageSize) => { setPageNo(pageNo) }}
+                className="justify-end"
+              />
+            </div>
           )}
         </div>
       </main>

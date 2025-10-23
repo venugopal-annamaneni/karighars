@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
   const projectId = params.id;
   const result = await query(`
           SELECT p.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
-                 u.name as created_by_name, bm.name as biz_model_name, bm.version as biz_model_version
+                 u.name as created_by_name, bm.name as biz_model_name
           FROM projects p
           LEFT JOIN customers c ON p.customer_id = c.id
           LEFT JOIN users u ON p.created_by = u.id
@@ -109,8 +109,6 @@ export async function PUT(request, { params }) {
     }
 
     values.push(projectId);
-
-    console.log(values);
 
     const result = await query(
       `UPDATE projects SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`,

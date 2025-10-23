@@ -37,7 +37,6 @@ export async function GET(request, { params }) {
 
 
 export async function POST(request, { params }) {
-  console.log("here");
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -45,9 +44,7 @@ export async function POST(request, { params }) {
   const body = await request.json();
 
   try {
-    console.log(`INSERT INTO documents (related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`);
-    console.log(body);     
+    
     const result = await query(
       `INSERT INTO documents (related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,

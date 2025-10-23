@@ -48,7 +48,6 @@ export async function POST(request, { params }) {
   }
 
   const body = await request.json();
-  console.log("hello");
   const isCreditNote = body.payment_type === 'CREDIT_NOTE';
 
   try {
@@ -59,14 +58,15 @@ export async function POST(request, { params }) {
 
     // 2️⃣ Handle Credit Note creation
     if (isCreditNote) {
-      const estimationId = body.estimation_id;
-
+      const projectId = body.project_id;
       const estRes = await query(`
-        SELECT e.*, p.customer_id, p.id as project_id
+        SELECT e.*, p.customer_id, p.id AS project_id
         FROM project_estimations e
         JOIN projects p ON e.project_id = p.id
-        WHERE e.id = $1
-      `, [estimationId]);
+        WHERE p.id = $1
+        ORDER BY e.version DESC
+        LIMIT 1
+      `, [projectId]);
 
       if (estRes.rows.length === 0) {
         return NextResponse.json({ error: 'Estimation not found' }, { status: 404 });
@@ -79,21 +79,20 @@ export async function POST(request, { params }) {
 
       const creditNoteResult = await query(`
         INSERT INTO customer_payments (
-          project_id, estimation_id, customer_id,
+          project_id, customer_id,
           payment_type, amount, payment_date, mode, reference_number,
           remarks, status, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `, [
         estimation.project_id,
-        estimationId,
         estimation.customer_id,
         'CREDIT_NOTE',
         -Math.abs(estimation.overpayment_amount),
         new Date(),
         'other',
-        `CREDIT-NOTE-${estimationId}`,
+        `CREDIT-NOTE-${projectId}`,
         `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
         'pending',
         session.user.id
@@ -106,6 +105,7 @@ export async function POST(request, { params }) {
       });
     }
 
+<<<<<<< HEAD
     // 3️⃣ Handle Normal Payment creation
     let actualPercentage = null;
     if (body.estimation_id) {
@@ -130,14 +130,24 @@ export async function POST(request, { params }) {
         document_url, status
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+=======
+    
+    const result = await query(
+      `INSERT INTO customer_payments (
+        project_id, customer_id, payment_type, milestone_id,
+        override_reason,
+        amount, pre_tax_amount, gst_amount, gst_percentage,
+        payment_date, mode, reference_number, remarks, created_by,
+        document_url, status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+>>>>>>> c9559a17bb320b213203133abe9887ab261defa3
       RETURNING *`,
       [
         body.project_id,
-        body.estimation_id,
         body.customer_id,
         body.payment_type || 'REGULAR',
         body.milestone_id || null,
-        actualPercentage,
         body.override_reason || null,
         body.amount,
         body.gst_amount || 0,
@@ -161,8 +171,7 @@ export async function POST(request, { params }) {
         result.rows[0].id,
         session.user.id,
         'payment_recorded',
-        `Payment recorded: ₹${body.amount}${actualPercentage ? ` (${actualPercentage.toFixed(1)}%)` : ''
-        } - Pending document upload`
+        `Payment recorded: ₹${body.amount} - Pending document upload`
       ]
     );
 

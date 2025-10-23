@@ -134,7 +134,6 @@ export default function EstimationPage() {
   };
 
   const updateItem = (index, field, value) => {
-    debugger;
     const newItems = [...items];
     newItems[index][field] = value;
     setItems(newItems);
@@ -266,7 +265,6 @@ export default function EstimationPage() {
   };
 
   const handleSubmit = async (e) => {
-    debugger;
     e.preventDefault();
     setSaving(true);
 
