@@ -65,7 +65,7 @@ export default function ProjectDetailPage() {
   const [stageUpdate, setStageUpdate] = useState({ stage: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
     milestone_id: '',
-    payment_type: 'advance_10',
+    payment_type: '',
     amount: '',
     mode: 'bank',
     reference_number: '',
@@ -238,7 +238,7 @@ export default function ProjectDetailPage() {
         setShowPaymentDialog(false);
         setPaymentData({
           milestone_id: '',
-          payment_type: 'advance_10',
+          payment_type: '',
           amount: '',
           woodwork_amount: '',
           misc_amount: '',

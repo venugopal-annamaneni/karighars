@@ -42,98 +42,64 @@ export async function GET(request, { params }) {
     }
 
     const milestone = milestoneRes.rows[0];
-    const isShoppingMilestone = milestone.milestone_code === 'SHOPPING_100';
-
-    if (isShoppingMilestone) {
-      // SHOPPING_100 milestone: Calculate from shopping_service items only
-      const itemsRes = await query(`
-        SELECT COALESCE(SUM(item_total), 0) as shopping_total
-        FROM estimation_items
-        WHERE estimation_id = $1 AND category = 'shopping_service'
-      `, [estimationId]);
-
-      
-      const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
-      const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
-      
-      // Calculate target amount for this milestone
-      const targetShoppingAmount = (shoppingTotal * shoppingPercentage) / 100;
-
-      // Get total collected for shopping payments (payment_type = 'SHOPPING_100')
-      const paymentsRes = await query(`
-        SELECT 
-          COALESCE(SUM(CASE WHEN payment_type = 'SHOPPING_100' THEN amount ELSE 0 END), 0) as collected_total
-        FROM customer_payments
-        WHERE project_id = $1 AND status = 'approved'
-      `, [projectId]);
-
-      const collectedTotal = paymentsRes.rows[0].collected_total || 0;
     
-      const remainingTotal = targetShoppingAmount - collectedTotal < 0 ? 0 : (targetShoppingAmount - collectedTotal);
-
-      return NextResponse.json({
-        milestone_type: 'shopping',
-        milestone_code: milestone.milestone_code,
-        milestone_name: milestone.milestone_name,
-        shopping_total: shoppingTotal,
-        target_shopping_percentage: shoppingPercentage,
-        target_shopping_amount: targetShoppingAmount,
-        target_total: targetShoppingAmount,
-        collected_total: collectedTotal,
-        expected_total: remainingTotal
-      });
-
-    } else {
-      // Regular milestone: Calculate from woodwork + misc items (exclude shopping)
-      const itemsRes = await query(`
+    const itemsRes = await query(`
         SELECT 
           COALESCE(SUM(CASE WHEN category = 'woodwork' THEN item_total ELSE 0 END), 0) as woodwork_total,
-          COALESCE(SUM(CASE WHEN category IN ('misc_internal', 'misc_external') THEN item_total ELSE 0 END), 0) as misc_total
+          COALESCE(SUM(CASE WHEN category IN ('misc_internal', 'misc_external') THEN item_total ELSE 0 END), 0) as misc_total,
+          COALESCE(SUM(CASE WHEN category IN ('shopping_service') THEN item_total ELSE 0 END), 0) as shopping_total
         FROM estimation_items
-        WHERE estimation_id = $1 AND category != 'shopping_service'
+        WHERE estimation_id = $1
       `, [estimationId]);
 
-      const woodworkTotal = parseFloat(itemsRes.rows[0].woodwork_total || 0);
-      const miscTotal = parseFloat(itemsRes.rows[0].misc_total || 0);
+    const woodworkTotal = parseFloat(itemsRes.rows[0].woodwork_total || 0);
+    const miscTotal = parseFloat(itemsRes.rows[0].misc_total || 0);
+    const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
 
-      const woodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
-      const miscPercentage = parseFloat(milestone.misc_percentage || 0);
+    const woodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
+    const miscPercentage = parseFloat(milestone.misc_percentage || 0);
+    const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
 
-      // Calculate target amounts for this milestone
-      const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
-      const targetMiscAmount = (miscTotal * miscPercentage) / 100;
-      const targetTotal = targetWoodworkAmount + targetMiscAmount;
+    // Calculate target amounts for this milestone
+    const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
+    const targetMiscAmount = (miscTotal * miscPercentage) / 100;
+    const targetShoppingAmount = (shoppingTotal * shoppingPercentage) / 100;
+    const targetTotal = targetWoodworkAmount + targetMiscAmount + targetShoppingAmount;
 
-      // Get total collected for regular payments (exclude SHOPPING_100)
-      const paymentsRes = await query(`
+    const paymentsRes = await query(`
         SELECT 
-          COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN amount ELSE 0 END), 0) as collected_total
+          COALESCE(SUM(amount), 0) as collected_total
         FROM customer_payments
         WHERE project_id = $1 
           AND status = 'approved'
-          AND payment_type != 'SHOPPING_100'
       `, [projectId]);
 
-      const collectedTotal = paymentsRes.rows[0].collected_total || 0;
-    
-      const remainingTotal = Math.max(0, targetTotal - collectedTotal);
+    const collectedTotal = paymentsRes.rows[0].collected_total || 0;
+    const remainingTotal = Math.max(0, targetTotal - collectedTotal);
 
 
-      return NextResponse.json({
-        milestone_type: 'regular',
-        milestone_code: milestone.milestone_code,
-        milestone_name: milestone.milestone_name,
-        woodwork_total: woodworkTotal,
-        misc_total: miscTotal,
-        target_woodwork_percentage: woodworkPercentage,
-        target_misc_percentage: miscPercentage,
-        target_woodwork_amount: targetWoodworkAmount,
-        target_misc_amount: targetMiscAmount,
-        target_total: targetTotal,
-        collected_total: collectedTotal,
-        expected_total: remainingTotal
-      });
-    }
+    return NextResponse.json({
+      milestone_type: 'regular',
+      milestone_code: milestone.milestone_code,
+      milestone_name: milestone.milestone_name,
+
+      woodwork_total: woodworkTotal,
+      target_woodwork_percentage: woodworkPercentage,
+      target_woodwork_amount: targetWoodworkAmount,
+
+      misc_total: miscTotal,
+      target_misc_percentage: miscPercentage,
+      target_misc_amount: targetMiscAmount,
+
+      shopping_total: shoppingTotal,
+      target_shopping_percentage: shoppingPercentage,
+      target_shopping_amount: targetShoppingAmount,
+
+      target_total: targetTotal,
+      collected_total: collectedTotal,
+      expected_total: remainingTotal
+    });
+
 
   } catch (error) {
     console.error('API Error:', error);
