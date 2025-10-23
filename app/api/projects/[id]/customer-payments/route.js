@@ -109,22 +109,18 @@ export async function POST(request, { params }) {
     const result = await query(
       `INSERT INTO customer_payments (
         project_id, customer_id, payment_type, milestone_id,
-        override_reason,
-        amount, gst_amount, gst_percentage,
+        amount,
         payment_date, mode, reference_number, remarks, created_by,
         document_url, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         body.project_id,
         body.customer_id,
         body.payment_type || 'REGULAR',
         body.milestone_id || null,
-        body.override_reason || null,
         body.amount,
-        body.gst_amount || 0,
-        body.gst_percentage || 0,
         body.payment_date || new Date(),
         body.mode || 'bank',
         body.reference_number,
