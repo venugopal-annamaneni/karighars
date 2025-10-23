@@ -13,8 +13,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
-import { Users, Shield, Edit } from 'lucide-react';
+import { Users, Shield, Edit, Search } from 'lucide-react';
 import Link from 'next/link';
+import KGPagination from '@/components/kg-pagination';
+import { Input } from '@/components/ui/input';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -23,6 +25,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -36,12 +42,17 @@ export default function SettingsPage() {
     }
   }, [status, router, session]);
 
+  useEffect(() => {
+    fetchUsers();
+  }, [pageNo, pageSize]);
+
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/users');
+      const res = await fetch(`/api/users?page_size=${pageSize}&page_no=${pageNo}&filter=${userSearchTerm}`);
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users);
+        setTotalRecords(data.users[0].total_records)
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -134,8 +145,26 @@ export default function SettingsPage() {
               Manage user roles and permissions
             </CardDescription>
           </CardHeader>
+
+
+
           <CardContent>
             <div className="space-y-3">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email or role"
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        fetchUsers()
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
               {users.map((user) => (
                 <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
@@ -166,6 +195,12 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               ))}
+              <KGPagination
+                totalRecords={totalRecords}
+                defaultPageSize={pageSize}
+                onChangeCallback={(pageNo, pageSize) => { setPageNo(pageNo) }}
+                className="justify-end"
+              />
             </div>
           </CardContent>
         </Card>
