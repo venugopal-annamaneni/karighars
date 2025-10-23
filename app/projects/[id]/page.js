@@ -278,27 +278,18 @@ export default function ProjectDetailPage() {
       }
 
       const data = await res.json();
-<<<<<<< HEAD
-
-      // Pre-fill with expected amount (total only)
-      const totalAmt = data.expected_payment.toFixed(2);
-=======
       // Pre-fill with expected amounts
       const woodworkAmt = data.target_woodwork_amount?.toFixed(2) || 0;
       const miscAmt = data.target_misc_amount?.toFixed(2) || 0;
       const shoppingAmt = data.target_shopping_amount?.toFixed(2) || 0;
       const totalAmt = data.expected_total.toFixed(2) || 0;
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
 
       setPaymentData(prev => ({
         ...prev,
         milestone_id: milestoneId,
-<<<<<<< HEAD
-=======
         woodwork_amount: woodworkAmt,
         misc_amount: miscAmt,
         shopping_amount: shoppingAmt,
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
         amount: totalAmt,
         expected_amount: totalAmt,
         calculation: data
@@ -790,18 +781,6 @@ export default function ProjectDetailPage() {
                           </div>
                         )}
                         {paymentData.calculation && (
-<<<<<<< HEAD
-                          <Card className="bg-blue-50 border-blue-200">
-                            <CardContent className="pt-4">
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-medium">Target Amount ({paymentData.calculation.target_percentage}%):</span>
-                                  <span className="font-semibold">₹{parseFloat(paymentData.calculation.target_amount).toLocaleString('en-IN')}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-medium">Already Collected:</span>
-                                  <span className="font-semibold">₹{parseFloat(paymentData.calculation.collected_amount).toLocaleString('en-IN')}</span>
-=======
                           <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
                             {/* Woodwork Breakdown */}
                             {paymentData.calculation.target_woodwork_amount > 0 && (
@@ -831,50 +810,19 @@ export default function ProjectDetailPage() {
                                 <div className="text-xs text-green-700 space-y-1 ml-3">
                                   <div>Total Value: ₹{parseFloat(paymentData.calculation.shopping_total).toLocaleString('en-IN')}</div>
                                   <div>Target: {paymentData.calculation.target_shopping_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_shopping_amount).toLocaleString('en-IN')}</div>
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                                 </div>
-                                <Separator />
-                                <div className="flex justify-between items-center">
-                                  <span className="font-bold">Remaining to Collect:</span>
-                                  <span className="text-xl font-bold text-green-600">₹{parseFloat(paymentData.calculation.remaining_amount).toLocaleString('en-IN')}</span>
-                                </div>
-                                
-                                {/* Display breakdown for user info (not stored in DB) */}
-                                {paymentData.calculation.display_breakdown && (
-                                  <div className="mt-4 p-3 bg-white rounded border border-blue-200">
-                                    <p className="text-xs font-semibold mb-2 text-blue-900">Breakdown (for reference):</p>
-                                    {paymentData.calculation.milestone_type === 'shopping' ? (
-                                      <div className="text-xs space-y-1">
-                                        <div>Shopping Service Total: ₹{parseFloat(paymentData.calculation.display_breakdown.shopping_service).toLocaleString('en-IN')}</div>
-                                        <div>Collecting: {paymentData.calculation.display_breakdown.shopping_percentage}%</div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-xs space-y-1">
-                                        <div>Woodwork ({paymentData.calculation.display_breakdown.woodwork_percentage}%): 
-                                          ₹{parseFloat(paymentData.calculation.display_breakdown.target_woodwork_amount).toLocaleString('en-IN')}
-                                        </div>
-                                        <div>Misc ({paymentData.calculation.display_breakdown.misc_percentage}%): 
-                                          ₹{parseFloat(paymentData.calculation.display_breakdown.target_misc_amount).toLocaleString('en-IN')}
-                                        </div>
-                                        <div className="text-muted-foreground mt-2 text-xs italic">
-                                          Note: Total amount is tracked, not category split
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {paymentData.calculation.remaining_amount === 0 && (
-                                  <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-                                    ⚠️ Target milestone percentage already collected. No additional payment expected.
-                                  </div>
-                                )}
                               </div>
-<<<<<<< HEAD
-                            </CardContent>
-                          </Card>
-=======
                             )}
+                                
+                                
+                              
+                            {paymentData.calculation.remaining_amount === 0 && (
+                              <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+                                ⚠️ Target milestone percentage already collected. No additional payment expected.
+                              </div>
+                            )}
+                              
+                            
                             <div className='grid grid-cols-3 md:grid-col-3 gap-3 bg-white p-4 rounded-lg'>
                               <div>
                                 <p className="text-sm font-medium text-green-900">💰 Target Receivable</p>
@@ -890,15 +838,12 @@ export default function ProjectDetailPage() {
                               </div>
                             </div>
                           </div>
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                         )}
 
                         {paymentData.milestone_id && !paymentData.calculation && (
                           <div className="text-sm text-muted-foreground">Loading calculation...</div>
                         )}
 
-<<<<<<< HEAD
-=======
                         {/* Amount to Collect - Prominent Display */}
                         {/* {paymentData.calculation && paymentData.calculation.expected_total > 0 && (
                           <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
@@ -928,7 +873,6 @@ export default function ProjectDetailPage() {
                           </div>
                         )} */}
 
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
                         {/* Input fields for actual amounts */}
                         <div className="border-t pt-4 space-y-3">
                           {/* <p className="text-sm font-semibold">Enter Actual Amount Collected:</p> */}

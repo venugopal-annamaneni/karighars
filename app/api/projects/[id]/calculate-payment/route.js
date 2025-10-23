@@ -56,13 +56,8 @@ export async function GET(request, { params }) {
       const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
       const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
       
-<<<<<<< HEAD
-      // Calculate target amount
-      const targetAmount = (shoppingTotal * shoppingPercentage) / 100;
-=======
       // Calculate target amount for this milestone
       const targetShoppingAmount = (shoppingTotal * shoppingPercentage) / 100;
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
 
       // Get total collected for shopping payments (payment_type = 'SHOPPING_100')
       const paymentsRes = await query(`
@@ -72,38 +67,20 @@ export async function GET(request, { params }) {
         WHERE project_id = $1 AND status = 'approved'
       `, [projectId]);
 
-<<<<<<< HEAD
-      const collectedAmount = parseFloat(paymentsRes.rows[0].collected || 0);
-      const remainingAmount = Math.max(0, targetAmount - collectedAmount);
-=======
       const collectedTotal = paymentsRes.rows[0].collected_total || 0;
     
       const remainingTotal = targetShoppingAmount - collectedTotal < 0 ? 0 : (targetShoppingAmount - collectedTotal);
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
 
       return NextResponse.json({
         milestone_type: 'shopping',
         milestone_code: milestone.milestone_code,
         milestone_name: milestone.milestone_name,
-<<<<<<< HEAD
-        target_percentage: shoppingPercentage,
-        target_amount: targetAmount,
-        collected_amount: collectedAmount,
-        remaining_amount: remainingAmount,
-        expected_payment: remainingAmount,
-        // Breakdown for UI display only (not stored in DB)
-        display_breakdown: {
-          shopping_service: shoppingTotal,
-          shopping_percentage: shoppingPercentage
-        }
-=======
         shopping_total: shoppingTotal,
         target_shopping_percentage: shoppingPercentage,
         target_shopping_amount: targetShoppingAmount,
         target_total: targetShoppingAmount,
         collected_total: collectedTotal,
         expected_total: remainingTotal
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
       });
 
     } else {
@@ -125,51 +102,27 @@ export async function GET(request, { params }) {
       // Calculate target amounts for this milestone
       const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
       const targetMiscAmount = (miscTotal * miscPercentage) / 100;
-      const targetAmount = targetWoodworkAmount + targetMiscAmount;
+      const targetTotal = targetWoodworkAmount + targetMiscAmount;
 
       // Get total collected for regular payments (exclude SHOPPING_100)
       const paymentsRes = await query(`
-<<<<<<< HEAD
-        SELECT COALESCE(SUM(amount), 0) as collected
-=======
         SELECT 
           COALESCE(SUM(CASE WHEN payment_type != 'SHOPPING_100' THEN amount ELSE 0 END), 0) as collected_total
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
         FROM customer_payments
         WHERE project_id = $1 
           AND status = 'approved'
           AND payment_type != 'SHOPPING_100'
       `, [projectId]);
 
-<<<<<<< HEAD
-      const collectedAmount = parseFloat(paymentsRes.rows[0].collected || 0);
-      const remainingAmount = Math.max(0, targetAmount - collectedAmount);
-=======
       const collectedTotal = paymentsRes.rows[0].collected_total || 0;
     
-      const remainingTotal = targetTotal - collectedTotal < 0 ? 0 : (targetTotal - collectedTotal);
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
+      const remainingTotal = Math.max(0, targetTotal - collectedTotal);
+
 
       return NextResponse.json({
         milestone_type: 'regular',
         milestone_code: milestone.milestone_code,
         milestone_name: milestone.milestone_name,
-<<<<<<< HEAD
-        target_percentage: Math.max(woodworkPercentage, miscPercentage),
-        target_amount: targetAmount,
-        collected_amount: collectedAmount,
-        remaining_amount: remainingAmount,
-        expected_payment: remainingAmount,
-        // Breakdown for UI display only (not stored in DB)
-        display_breakdown: {
-          woodwork_total: woodworkTotal,
-          misc_total: miscTotal,
-          woodwork_percentage: woodworkPercentage,
-          misc_percentage: miscPercentage,
-          target_woodwork_amount: targetWoodworkAmount,
-          target_misc_amount: targetMiscAmount
-        }
-=======
         woodwork_total: woodworkTotal,
         misc_total: miscTotal,
         target_woodwork_percentage: woodworkPercentage,
@@ -179,7 +132,6 @@ export async function GET(request, { params }) {
         target_total: targetTotal,
         collected_total: collectedTotal,
         expected_total: remainingTotal
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
       });
     }
 
