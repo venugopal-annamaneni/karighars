@@ -1,5 +1,5 @@
 -- KG Interiors Finance Management System - Database Schema
--- Generated: 2025-10-22T04:05:23.996Z
+-- Generated: 2025-10-23T15:31:42.466Z
 -- PostgreSQL 15+
 
 -- Drop existing tables if needed (for clean installation)
@@ -19,7 +19,6 @@
 -- DROP TABLE IF EXISTS payments_out CASCADE;
 -- DROP TABLE IF EXISTS project_collaborators CASCADE;
 -- DROP TABLE IF EXISTS project_estimations CASCADE;
--- DROP TABLE IF EXISTS project_financial_events CASCADE;
 -- DROP TABLE IF EXISTS project_ledger CASCADE;
 -- DROP TABLE IF EXISTS project_status_history CASCADE;
 -- DROP TABLE IF EXISTS projects CASCADE;
@@ -81,10 +80,10 @@ CREATE TABLE biz_model_milestones (
     description TEXT,
     is_mandatory BOOLEAN DEFAULT true,
     sequence_order INTEGER,
-    woodwork_percentage NUMERIC(20,2) DEFAULT 0,
-    misc_percentage NUMERIC(20,2) DEFAULT 0,
+    woodwork_percentage NUMERIC(9,4) DEFAULT 0,
+    misc_percentage NUMERIC(9,4) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now(),
-    shopping_percentage NUMERIC(20,2) DEFAULT 0,
+    shopping_percentage NUMERIC(5,2) DEFAULT 0,
     UNIQUE (biz_model_id, milestone_code),
     PRIMARY KEY (id),
     FOREIGN KEY (biz_model_id) REFERENCES biz_models(id) ON DELETE CASCADE,
@@ -112,14 +111,18 @@ CREATE TABLE biz_models (
     id INTEGER NOT NULL DEFAULT nextval('biz_models_id_seq'::regclass),
     code TEXT NOT NULL,
     name TEXT NOT NULL,
-    version TEXT NOT NULL,
     description TEXT,
-    service_charge_percentage NUMERIC(20,2) DEFAULT 0,
-    max_discount_percentage NUMERIC(20,2) DEFAULT 0,
+    service_charge_percentage NUMERIC(9,4) DEFAULT 0,
+    max_service_charge_discount_percentage NUMERIC(9,4) DEFAULT 0,
     status TEXT DEFAULT 'draft'::text,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
+    design_charge_percentage NUMERIC(9,4),
+    max_design_charge_discount_percentage NUMERIC(9,4),
+    shopping_charge_percentage NUMERIC(9,4),
+    max_shopping_charge_discount_percentage NUMERIC(9,4),
+    gst_percentage NUMERIC(9,4),
     UNIQUE (code),
     PRIMARY KEY (id),
     CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text])))
@@ -148,27 +151,17 @@ CREATE TABLE customer_kyc (
 
 CREATE TABLE customer_payments (
     id INTEGER NOT NULL DEFAULT nextval('customer_payments_in_id_seq'::regclass),
-    project_id INTEGER,
-    estimation_id INTEGER,
-    project_financial_event_id INTEGER,
-    customer_id INTEGER,
+    project_id INTEGER NOT NULL,
+    customer_id INTEGER NOT NULL,
     milestone_id INTEGER,
     payment_type TEXT NOT NULL,
     amount NUMERIC(20,2) NOT NULL,
-    woodwork_amount NUMERIC(20,2) DEFAULT 0,
-    misc_amount NUMERIC(20,2) DEFAULT 0,
-    pre_tax_amount NUMERIC(20,2) DEFAULT 0,
-    gst_amount NUMERIC(20,2) DEFAULT 0,
-    gst_percentage NUMERIC(20,2) DEFAULT 0,
     payment_date TIMESTAMPTZ DEFAULT now(),
-    mode TEXT DEFAULT 'bank'::text,
-    reference_number TEXT,
+    mode TEXT NOT NULL DEFAULT 'bank'::text,
+    reference_number TEXT NOT NULL,
     remarks TEXT,
     document_url TEXT,
-    credit_note_url TEXT,
     status TEXT DEFAULT 'pending'::text,
-    actual_percentage NUMERIC(20,2),
-    override_reason TEXT,
     approved_by INTEGER,
     approved_at TIMESTAMPTZ,
     created_by INTEGER,
@@ -179,19 +172,14 @@ CREATE TABLE customer_payments (
     FOREIGN KEY (approved_by) REFERENCES users(id),
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (estimation_id) REFERENCES project_estimations(id),
-    FOREIGN KEY (project_financial_event_id) REFERENCES project_financial_events(id),
     CHECK ((mode = ANY (ARRAY['cash'::text, 'bank'::text, 'cheque'::text, 'upi'::text, 'wallet'::text, 'other'::text]))),
     CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))),
     CHECK ((length(payment_type) > 0))
 );
 
-COMMENT ON COLUMN customer_payments.payment_type IS 'Payment type: milestone code from biz_model_milestones, MISC for ad-hoc payments, or credit_note_reversal for overpayment reversals';
-COMMENT ON COLUMN customer_payments.woodwork_amount IS 'Amount allocated to woodwork category';
-COMMENT ON COLUMN customer_payments.misc_amount IS 'Amount allocated to misc category';
-COMMENT ON COLUMN customer_payments.pre_tax_amount IS 'Amount before GST (back-calculated from total)';
-COMMENT ON COLUMN customer_payments.gst_amount IS 'GST amount (back-calculated from total using project GST%)';
-COMMENT ON COLUMN customer_payments.gst_percentage IS 'GST percentage used for this payment (from estimation)';
+COMMENT ON COLUMN customer_payments.milestone_id IS 'Reference to biz_model_milestone - used to determine payment category';
+COMMENT ON COLUMN customer_payments.payment_type IS 'Milestone code or ADHOC - used to filter shopping vs regular payments';
+COMMENT ON COLUMN customer_payments.amount IS 'Total payment amount (no category split stored)';
 COMMENT ON COLUMN customer_payments.document_url IS 'URL to uploaded payment receipt document';
 COMMENT ON COLUMN customer_payments.status IS 'Payment status: pending, approved, rejected';
 
@@ -203,7 +191,7 @@ CREATE TABLE customers (
     email TEXT,
     address TEXT,
     gst_number TEXT,
-    credit_limit NUMERIC(20,2) DEFAULT 0,
+    credit_limit NUMERIC(18,2) DEFAULT 0,
     kyc_type TEXT,
     business_type TEXT,
     bank_details JSONB DEFAULT '{}'::jsonb,
@@ -245,15 +233,15 @@ CREATE TABLE estimation_items (
     estimation_id INTEGER,
     category TEXT,
     description TEXT NOT NULL,
-    quantity NUMERIC(20,2) DEFAULT 1,
+    quantity NUMERIC(18,4) DEFAULT 1,
     unit TEXT,
-    unit_price NUMERIC(20,2) DEFAULT 0,
-    total NUMERIC(20,2),
+    unit_price NUMERIC(20,4) DEFAULT 0,
+    total NUMERIC(22,2),
     vendor_type TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
-    karighar_charges_percentage NUMERIC(20,2) DEFAULT 10,
-    discount_percentage NUMERIC(20,2) DEFAULT 0,
-    gst_percentage NUMERIC(20,2) DEFAULT 18,
+    karighar_charges_percentage NUMERIC(5,2) DEFAULT 10,
+    discount_percentage NUMERIC(5,2) DEFAULT 0,
+    gst_percentage NUMERIC(5,2) DEFAULT 18,
     subtotal NUMERIC(20,2) DEFAULT 0,
     karighar_charges_amount NUMERIC(20,2) DEFAULT 0,
     discount_amount NUMERIC(20,2) DEFAULT 0,
@@ -282,7 +270,7 @@ CREATE TABLE financial_event_definitions (
     name TEXT NOT NULL,
     description TEXT,
     direction TEXT NOT NULL,
-    default_percentage NUMERIC(20,2),
+    default_percentage NUMERIC(9,4),
     default_trigger_phase TEXT,
     applicable_to TEXT DEFAULT 'project'::text,
     is_active BOOLEAN DEFAULT true,
@@ -298,7 +286,6 @@ CREATE TABLE payments_out (
     vendor_id INTEGER,
     vendor_boq_id INTEGER,
     project_id INTEGER,
-    project_financial_event_id INTEGER,
     milestone_id INTEGER,
     payment_stage TEXT,
     amount NUMERIC(20,2) NOT NULL,
@@ -306,17 +293,16 @@ CREATE TABLE payments_out (
     mode TEXT,
     reference_number TEXT,
     remarks TEXT,
-    expected_percentage NUMERIC(20,2),
-    actual_percentage NUMERIC(20,2),
+    expected_percentage NUMERIC(9,4),
+    actual_percentage NUMERIC(9,4),
     created_by INTEGER,
     created_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (id),
     FOREIGN KEY (vendor_id) REFERENCES vendors(id),
     FOREIGN KEY (vendor_boq_id) REFERENCES vendor_boqs(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (project_financial_event_id) REFERENCES project_financial_events(id),
-    FOREIGN KEY (milestone_id) REFERENCES biz_model_milestones(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (milestone_id) REFERENCES biz_model_milestones(id),
     CHECK ((payment_stage = ANY (ARRAY['advance'::text, 'in_progress'::text, 'handover'::text, 'final'::text, 'other'::text])))
 );
 
@@ -343,7 +329,7 @@ CREATE TABLE project_estimations (
     misc_external_value NUMERIC(20,2) DEFAULT 0,
     shopping_service_value NUMERIC(20,2) DEFAULT 0,
     final_value NUMERIC(20,2) DEFAULT 0,
-    gst_amount NUMERIC(20,2) DEFAULT 0.00,
+    gst_amount NUMERIC(12,2) DEFAULT 0.00,
     status TEXT DEFAULT 'draft'::text,
     requires_approval BOOLEAN DEFAULT false,
     approval_status TEXT DEFAULT 'approved'::text,
@@ -370,40 +356,17 @@ COMMENT ON COLUMN project_estimations.gst_amount IS 'Calculated GST amount based
 COMMENT ON COLUMN project_estimations.has_overpayment IS 'True if this revision creates overpayment situation';
 COMMENT ON COLUMN project_estimations.overpayment_amount IS 'Amount of overpayment if estimation < collected';
 
-CREATE TABLE project_financial_events (
-    id INTEGER NOT NULL DEFAULT nextval('project_financial_events_id_seq'::regclass),
-    project_id INTEGER,
-    event_definition_id INTEGER,
-    related_entity TEXT,
-    related_id INTEGER,
-    expected_percentage NUMERIC(20,2),
-    expected_amount NUMERIC(20,2),
-    actual_amount NUMERIC(20,2),
-    triggered_by INTEGER,
-    triggered_at TIMESTAMPTZ,
-    remarks TEXT,
-    status TEXT DEFAULT 'pending'::text,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    PRIMARY KEY (id),
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (event_definition_id) REFERENCES financial_event_definitions(id),
-    FOREIGN KEY (triggered_by) REFERENCES users(id),
-    CHECK ((status = ANY (ARRAY['pending'::text, 'triggered'::text, 'completed'::text, 'cancelled'::text])))
-);
-
 CREATE TABLE project_ledger (
     id INTEGER NOT NULL DEFAULT nextval('project_ledger_id_seq'::regclass),
     project_id INTEGER,
     source_table TEXT,
     source_id INTEGER,
-    project_financial_event_id INTEGER,
     entry_type TEXT,
     amount NUMERIC(20,2) NOT NULL,
     entry_date TIMESTAMPTZ DEFAULT now(),
     remarks TEXT,
     PRIMARY KEY (id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (project_financial_event_id) REFERENCES project_financial_events(id),
     CHECK ((entry_type = ANY (ARRAY['credit'::text, 'debit'::text])))
 );
 
@@ -483,7 +446,7 @@ CREATE TABLE purchase_request_items (
     request_id INTEGER,
     estimation_item_id INTEGER,
     description TEXT,
-    quantity NUMERIC(20,2) DEFAULT 1,
+    quantity NUMERIC(18,4) DEFAULT 1,
     unit TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (id),
@@ -540,10 +503,10 @@ CREATE TABLE vendor_boq_items (
     boq_id INTEGER,
     estimation_item_id INTEGER,
     description TEXT,
-    quantity NUMERIC(20,2) DEFAULT 1,
+    quantity NUMERIC(18,4) DEFAULT 1,
     unit TEXT,
-    vendor_rate NUMERIC(20,2) DEFAULT 0,
-    total NUMERIC(20,2),
+    vendor_rate NUMERIC(20,4) DEFAULT 0,
+    total NUMERIC(22,2),
     created_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (id),
     FOREIGN KEY (boq_id) REFERENCES vendor_boqs(id) ON DELETE CASCADE,
@@ -571,7 +534,7 @@ CREATE TABLE vendor_boqs (
     boq_code TEXT,
     status TEXT DEFAULT 'draft'::text,
     total_value NUMERIC(20,2) DEFAULT 0,
-    margin_percentage NUMERIC(20,2),
+    margin_percentage NUMERIC(9,4),
     approval_required BOOLEAN DEFAULT false,
     approval_status TEXT DEFAULT 'pending'::text,
     approval_by INTEGER,
@@ -631,7 +594,6 @@ CREATE UNIQUE INDEX financial_event_definitions_code_key ON public.financial_eve
 CREATE INDEX idx_fin_event_def_code ON public.financial_event_definitions USING btree (code);
 CREATE UNIQUE INDEX project_collaborators_project_id_user_id_role_key ON public.project_collaborators USING btree (project_id, user_id, role);
 CREATE INDEX idx_estimations_project ON public.project_estimations USING btree (project_id);
-CREATE INDEX idx_project_fin_events_project ON public.project_financial_events USING btree (project_id);
 CREATE INDEX idx_project_ledger_project ON public.project_ledger USING btree (project_id);
 CREATE INDEX idx_projects_biz_model ON public.projects USING btree (biz_model_id);
 CREATE INDEX idx_projects_customer ON public.projects USING btree (customer_id);
