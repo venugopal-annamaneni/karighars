@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { PAYMENT_STATUS } from '@/lib/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -36,8 +37,8 @@ export async function GET(request, { params }) {
   const paymentsIn = await query(`
           SELECT COALESCE(SUM(amount), 0) as total
           FROM customer_payments
-          WHERE project_id = $1 AND status = 'approved'
-        `, [projectId]);
+          WHERE project_id = $1 AND status = $2
+        `, [projectId, PAYMENT_STATUS.APPROVED]);
 
   const paymentsOut = await query(`
           SELECT COALESCE(SUM(amount), 0) as total

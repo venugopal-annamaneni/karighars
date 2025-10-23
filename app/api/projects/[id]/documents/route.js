@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { bigint } from 'zod';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -11,17 +12,18 @@ export async function GET(request, { params }) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const projectId = params.id;
+    const groupId = searchParams.get("group_id");
+    const groupType = searchParams.get("group_type");
 
-    if (projectId) {
+    if (groupId && groupType) {
 
       const result = await query(`
               SELECT d.*, u.name as uploaded_by_name
               FROM documents d
               LEFT JOIN users u ON d.uploaded_by = u.id
-              WHERE d.project_id = $1
+              WHERE d.group_type = $1 and group_id = $2
               ORDER BY d.created_at DESC
-            `, [projectId]);
+            `, [groupType, groupId]);
 
       const documents = await Promise.all(
         result.rows.map(async (doc) => {
@@ -59,9 +61,9 @@ export async function POST(request, { params }) {
 
   try {
     const result = await query(
-      `INSERT INTO documents (project_id, related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-      [body.project_id, body.related_entity, body.related_id, body.document_type, body.document_url,
+      `INSERT INTO documents (group_type, group_id, related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [body.group_type, body.group_id, body.related_entity, body.related_id, body.document_type, body.document_url,
       body.file_name, body.file_size, body.mime_type, session.user.id,
       body.remarks || null]
     );

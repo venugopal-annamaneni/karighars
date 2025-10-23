@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { PAYMENT_STATUS, USER_ROLE } from '@/lib/constants';
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -26,7 +27,7 @@ export async function PUT(request, { params }) {
     const paymentId = params.paymentId;
 
     // Check if user is Finance or Admin
-    if (session.user.role !== 'finance' && session.user.role !== 'admin') {
+    if (session.user.role !== 'finance' && session.user.role !== USER_ROLE.ADMIN) {
       return NextResponse.json({ error: 'Only Finance team can approve payments' }, { status: 403 });
     }
 
@@ -43,7 +44,7 @@ export async function PUT(request, { params }) {
       updates.push(`status = $${paramCounter++}`);
       values.push(body.status);
 
-      if (body.status === 'approved') {
+      if (body.status === PAYMENT_STATUS.APPROVED) {
         updates.push(`approved_by = $${paramCounter++}`);
         values.push(session.user.id);
         updates.push(`approved_at = NOW()`);
@@ -57,7 +58,7 @@ export async function PUT(request, { params }) {
       values
     );
 
-    if (body.status === 'approved') {
+    if (body.status === PAYMENT_STATUS.APPROVED) {
       const payment = result.rows[0];
 
       // Determine ledger entry type
@@ -99,7 +100,7 @@ export async function PUT(request, { params }) {
         `SELECT COALESCE(SUM(amount), 0) as total_collected
           FROM customer_payments
           WHERE project_id = $1 AND status = $2`,
-        [payment.project_id, 'approved']
+        [payment.project_id, PAYMENT_STATUS.APPROVED]
       );
 
       const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);

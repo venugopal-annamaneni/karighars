@@ -25,15 +25,16 @@ import {
   Menu
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { USER_ROLE } from '@/lib/constants';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['all'] },
   { name: 'Projects', href: '/projects', icon: FolderKanban, roles: ['all'] },
-  { name: 'Customers', href: '/customers', icon: Users, roles: ['sales', 'finance', 'admin'] },
-  { name: 'Vendors', href: '/vendors', icon: Package, roles: ['project_manager', 'finance', 'admin'] },
-  { name: 'Payments', href: '/payments', icon: CreditCard, roles: ['finance', 'admin'] },
-  { name: 'Reports', href: '/reports', icon: FileText, roles: ['finance', 'admin'] },
-  { name: 'Settings', href: '/settings', icon: Settings, roles: ['admin'] },
+  { name: 'Customers', href: '/customers', icon: Users, roles: [USER_ROLE.SALES, USER_ROLE.FINANCE, USER_ROLE.ALL] },
+  { name: 'Vendors', href: '/vendors', icon: Package, roles: [USER_ROLE.PROJECTMANAGER, USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
+  { name: 'Payments', href: '/payments', icon: CreditCard, roles: [USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
+  { name: 'Reports', href: '/reports', icon: FileText, roles: [USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
+  { name: 'Settings', href: '/settings', icon: Settings, roles: [USER_ROLE.ADMIN] },
 ];
 
 export function Navbar() {
@@ -106,7 +107,7 @@ export function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {session.user.role === 'admin' && (
+                  {session.user.role === USER_ROLE.ADMIN && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/settings" className="cursor-pointer">

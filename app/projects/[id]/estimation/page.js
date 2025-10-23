@@ -15,7 +15,8 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, UIFriendly } from '@/lib/utils';
+import { ESTIMATION_CATEGORY, ESTIMATION_STATUS } from '@/lib/constants';
 
 export default function EstimationPage() {
   const { data: session, status } = useSession();
@@ -33,7 +34,7 @@ export default function EstimationPage() {
 
   const [formData, setFormData] = useState({
     remarks: '',
-    status: 'draft',
+    status: ESTIMATION_STATUS.DRAFT,
   });
 
   const [items, setItems] = useState([
@@ -109,7 +110,7 @@ export default function EstimationPage() {
     }
   };
 
-  const addItem = () => {    
+  const addItem = () => {
     setItems([...items, {
       category: '',
       description: '',
@@ -140,21 +141,21 @@ export default function EstimationPage() {
     const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
     const discountPerc = parseFloat(item.discount_percentage) || 0;
     const gstPerc = parseFloat(item.gst_percentage);
-    
+
     // Step 1: Calculate subtotal
     let subtotal = 0;
-    if(item.category === 'shopping_service')
+    if (item.category === 'shopping_service')
       subtotal = quantity * unitPrice;
     else
       subtotal = quantity * unitPrice;
-    
+
     // Step 2: Calculate karighar charges
     let karigharChargesAmount = 0;
-    if( item.category === 'shopping_service')
+    if (item.category === 'shopping_service')
       karigharChargesAmount = (subtotal * karigharChargesPerc) / 100;
     else
       karigharChargesAmount = subtotal * karigharChargesPerc / 100;
-    
+
     // Step 3: Calculate discount
     let discountAmount = 0;
     if (item.category === 'shopping_service') {
@@ -164,7 +165,7 @@ export default function EstimationPage() {
       //discountAmount = ((subtotal + karigharChargesAmount) * discountPerc) / 100;
       discountAmount = (subtotal * discountPerc) / 100;
     }
-    
+
     // Step 4: Calculate amount before GST
     let amountBeforeGst = 0;
     if (item.category === 'shopping_service') {
@@ -172,13 +173,13 @@ export default function EstimationPage() {
     } else {
       amountBeforeGst = subtotal + karigharChargesAmount - discountAmount;
     }
-    
+
     // Step 5: Calculate GST
     const gstAmount = (amountBeforeGst * gstPerc) / 100;
-    
+
     // Step 6: Final item total
     const itemTotal = amountBeforeGst + gstAmount;
-    
+
     return {
       subtotal,
       karighar_charges_amount: karigharChargesAmount,
@@ -211,43 +212,43 @@ export default function EstimationPage() {
     let shoppingDiscounts = 0;
 
     let totalGst = 0;
-    
+
     items.forEach(item => {
       const itemCalc = calculateItemTotal(item);
-      
-      if (item.category === 'woodwork') {
+
+      if (item.category === ESTIMATION_CATEGORY.WOODWORK) {
         woodworkSubtotal += itemCalc.subtotal;
-        woodworkKGCharges += itemCalc.karighar_charges_amount;        
+        woodworkKGCharges += itemCalc.karighar_charges_amount;
         woodworkDiscounts += itemCalc.discount_amount;
         woodworkTotal += itemCalc.item_total;
-      } else if (item.category === 'misc_internal') {
+      } else if (item.category === ESTIMATION_CATEGORY.MISC_INTERNAL) {
         miscInternalSubtotal += itemCalc.subtotal;
         miscInternalKGCharges += itemCalc.karighar_charges_amount;
         miscInternalDiscounts += itemCalc.discount_amount;
         miscInternalTotal += itemCalc.item_total;
-      } else if (item.category === 'misc_external') {
+      } else if (item.category === ESTIMATION_CATEGORY.MISC_EXTERNAL) {
         miscExternalSubtotal += itemCalc.subtotal;
         miscExternalKGCharges += itemCalc.karighar_charges_amount;
         miscExternalDiscounts += itemCalc.discount_amount;
         miscExternalTotal += itemCalc.item_total;
-      } else if (item.category === 'shopping_service') {
+      } else if (item.category === ESTIMATION_CATEGORY.SHOPPING_SERVICE) {
         // For shopping, the subTotal is paid to vendor's directly
         shoppingServiceSubtotal = itemCalc.subtotal;
         shoppingKGCharges += itemCalc.karighar_charges_amount;
         shoppingDiscounts += itemCalc.discount_amount;
         shoppingServiceTotal += itemCalc.item_total;
       }
-      
+
       totalGst += itemCalc.gst_amount;
     });
-    
-    
-    
+
+
+
     const serviceCharge = woodworkKGCharges + miscInternalKGCharges + miscExternalKGCharges + shoppingKGCharges;
     const discount = woodworkDiscounts + miscInternalDiscounts + miscExternalDiscounts + shoppingDiscounts;
     const grandTotal = woodworkTotal + miscInternalTotal + miscExternalTotal + shoppingServiceTotal;
-    
-    return { 
+
+    return {
       woodwork_value: woodworkSubtotal,
       misc_internal_value: miscInternalSubtotal,
       misc_external_value: miscExternalSubtotal,
@@ -283,7 +284,7 @@ export default function EstimationPage() {
         if (checkData.has_overpayment) {
           // Show modal and wait for user decision
           setOverpaymentData(checkData);
-          
+
           // Prepare items with calculated values
           const itemsWithCalcs = items
             .filter(item => item.description.trim() !== '')
@@ -299,7 +300,7 @@ export default function EstimationPage() {
                 item_total: calc.item_total
               };
             });
-          
+
           setPendingSubmitData({
             project_id: projectId,
             ...totals,
@@ -328,7 +329,7 @@ export default function EstimationPage() {
             item_total: calc.item_total
           };
         });
-      
+
       await saveEstimation({
         project_id: projectId,
         ...totals,
@@ -403,25 +404,25 @@ export default function EstimationPage() {
 
   const getDefaultCharges = (index) => {
     const itemCategory = items[index].category;
-    switch(itemCategory) {
-      case "woodwork":
+    switch (itemCategory) {
+      case ESTIMATION_CATEGORY.WOODWORK:
         return bizModel.design_charge_percentage;
-      case "misc_internal":
-      case "misc_external":
+      case ESTIMATION_CATEGORY.MISC_EXTERNAL:
+      case ESTIMATION_CATEGORY.MISC_INTERNAL:
         return bizModel.service_charge_percentage;
-      case "shopping_service":
+      case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
         return bizModel.shopping_charge_percentage;
     }
   }
   const getMaxDiscount = (index) => {
     const itemCategory = items[index].category;
-    switch(itemCategory) {
-      case "woodwork":
+    switch (itemCategory) {
+      case ESTIMATION_CATEGORY.WOODWORK:
         return bizModel.max_design_charge_discount_percentage;
-      case "misc_internal":
-      case "misc_external":
+      case ESTIMATION_CATEGORY.MISC_INTERNAL:
+      case ESTIMATION_CATEGORY.MISC_EXTERNAL:
         return bizModel.max_service_charge_discount_percentage;
-      case "shopping_service":
+      case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
         return bizModel.max_shopping_charge_discount_percentage;
     }
   }
@@ -443,7 +444,7 @@ export default function EstimationPage() {
         </div>
 
         {/* Totals Summary */}
-        <TotalsSummary totals={totals} formData={formData}/>
+        <TotalsSummary totals={totals} formData={formData} />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Line Items */}
@@ -490,10 +491,13 @@ export default function EstimationPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="woodwork">Woodwork</SelectItem>
-                            <SelectItem value="misc_internal">Misc Internal</SelectItem>
-                            <SelectItem value="misc_external">Misc External</SelectItem>
-                            <SelectItem value="shopping_service">Shopping Service</SelectItem>
+                            {Object.entries(ESTIMATION_CATEGORY).map(([key, value]) => (
+                              <SelectItem key={key} value={value}>
+                                {value
+                                  .replace('_', ' ')        // turn project_manager → project manager
+                                  .replace(/\b\w/g, c => c.toUpperCase())}  {/* capitalize words */}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -624,7 +628,7 @@ export default function EstimationPage() {
                     {/* Show breakdown for clarity */}
                     {item.category === 'shopping_service' && (
                       <div className="text-xs text-muted-foreground bg-amber-50 p-2 rounded">
-                        <strong>Note:</strong> For shopping service, customer pays {formatCurrency((item.quantity || 0) * (item.unit_price || 0))} directly to vendor. Only KG charges, discount & GST amount are considered for calculations.
+                        <strong>Note:</strong> For {ESTIMATION_CATEGORY.SHOPPING_SERVICE}, customer pays {formatCurrency((item.quantity || 0) * (item.unit_price || 0))} directly to vendor. Only KG charges, discount & GST amount are considered for calculations.
                       </div>
                     )}
                   </div>
@@ -648,9 +652,12 @@ export default function EstimationPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="finalized">Finalized</SelectItem>
-                        <SelectItem value="locked">Locked</SelectItem>
+                        {Object.entries(ESTIMATION_STATUS).map(([key, value]) => (
+                          <SelectItem key={key} value={value}>
+                            {value
+                              .replace(/\b\w/g, c => c.toUpperCase())}  {/* capitalize words */}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -794,12 +801,12 @@ export default function EstimationPage() {
   );
 }
 
-const TotalsSummary = ({totals, formData}) => {
+const TotalsSummary = ({ totals, formData }) => {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Woodwork</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{UIFriendly(ESTIMATION_CATEGORY.WOODWORK)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold">{formatCurrency(totals.woodwork_value)}</div>
@@ -807,7 +814,7 @@ const TotalsSummary = ({totals, formData}) => {
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Misc Internal</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold">{formatCurrency(totals.misc_internal_value)}</div>
@@ -815,7 +822,7 @@ const TotalsSummary = ({totals, formData}) => {
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Misc External</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold">{formatCurrency(totals.misc_external_value)}</div>
@@ -823,7 +830,7 @@ const TotalsSummary = ({totals, formData}) => {
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Shopping Service</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{UIFriendly(ESTIMATION_CATEGORY.SHOPPING_SERVICE)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold text-purple-600">{formatCurrency(totals.shopping_service_value)}</div>

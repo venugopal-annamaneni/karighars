@@ -16,6 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { PROJECT_STAGES } from '@/lib/constants';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -36,7 +37,7 @@ export default function DashboardPage() {
     try {
       const [statsRes, projectsRes] = await Promise.all([
         fetch('/api/dashboard?output=stats'),
-        fetch('/api/projects')
+        fetch('/api/projects?page_no=1&page_size=2')
       ]);
 
       if (statsRes.ok) {
@@ -191,10 +192,10 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className={`text-xs font-medium px-2 py-1 rounded-full inline-block ${
-                            project.stage === 'onboarding' ? 'bg-blue-100 text-blue-700' :
-                            project.stage === '2D' ? 'bg-purple-100 text-purple-700' :
-                            project.stage === '3D' ? 'bg-amber-100 text-amber-700' :
-                            project.stage === 'execution' ? 'bg-green-100 text-green-700' :
+                            project.stage === PROJECT_STAGES["ONBOARDING"] ? 'bg-blue-100 text-blue-700' :
+                            project.stage === PROJECT_STAGES['2D'] ? 'bg-purple-100 text-purple-700' :
+                            project.stage === PROJECT_STAGES['3D'] ? 'bg-amber-100 text-amber-700' :
+                            project.stage === PROJECT_STAGES.EXEC ? 'bg-green-100 text-green-700' :
                             'bg-slate-100 text-slate-700'
                           }`}>
                             {project.stage}
@@ -223,11 +224,11 @@ export default function DashboardPage() {
                 <PieChart>
                   <Pie
                     data={[
-                      { name: 'Onboarding', value: projects.filter(p => p.stage === 'onboarding').length, color: '#3b82f6' },
-                      { name: '2D Design', value: projects.filter(p => p.stage === '2D').length, color: '#8b5cf6' },
-                      { name: '3D Design', value: projects.filter(p => p.stage === '3D').length, color: '#f59e0b' },
-                      { name: 'Execution', value: projects.filter(p => p.stage === 'execution').length, color: '#10b981' },
-                      { name: 'Handover', value: projects.filter(p => p.stage === 'handover').length, color: '#64748b' },
+                      { name: 'Onboarding', value: projects.filter(p => p.stage === PROJECT_STAGES.ONBOARDING).length, color: '#3b82f6' },
+                      { name: '2D Design', value: projects.filter(p => p.stage === PROJECT_STAGES['2D']).length, color: '#8b5cf6' },
+                      { name: '3D Design', value: projects.filter(p => p.stage === PROJECT_STAGES['3D']).length, color: '#f59e0b' },
+                      { name: 'Execution', value: projects.filter(p => p.stage === PROJECT_STAGES.EXEC).length, color: '#10b981' },
+                      { name: 'Handover', value: projects.filter(p => p.stage === PROJECT_STAGES.HANDOVER).length, color: '#64748b' },
                     ].filter(item => item.value > 0)}
                     cx="50%"
                     cy="50%"
@@ -238,11 +239,11 @@ export default function DashboardPage() {
                     dataKey="value"
                   >
                     {[
-                      { name: 'Onboarding', value: projects.filter(p => p.stage === 'onboarding').length, color: '#3b82f6' },
-                      { name: '2D Design', value: projects.filter(p => p.stage === '2D').length, color: '#8b5cf6' },
-                      { name: '3D Design', value: projects.filter(p => p.stage === '3D').length, color: '#f59e0b' },
-                      { name: 'Execution', value: projects.filter(p => p.stage === 'execution').length, color: '#10b981' },
-                      { name: 'Handover', value: projects.filter(p => p.stage === 'handover').length, color: '#64748b' },
+                      { name: 'Onboarding', value: projects.filter(p => p.stage === PROJECT_STAGES.ONBOARDING).length, color: '#3b82f6' },
+                      { name: '2D Design', value: projects.filter(p => p.stage === PROJECT_STAGES['2D']).length, color: '#8b5cf6' },
+                      { name: '3D Design', value: projects.filter(p => p.stage === PROJECT_STAGES['DD']).length, color: '#f59e0b' },
+                      { name: 'Execution', value: projects.filter(p => p.stage === PROJECT_STAGES.EXEC).length, color: '#10b981' },
+                      { name: 'Handover', value: projects.filter(p => p.stage === PROJECT_STAGES.HANDOVER).length, color: '#64748b' },
                     ].filter(item => item.value > 0).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}

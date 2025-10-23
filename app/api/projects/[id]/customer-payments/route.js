@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { PAYMENT_STATUS, USER_ROLE } from '@/lib/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -52,7 +53,7 @@ export async function POST(request, { params }) {
 
   try {
     // 1️⃣ Permission check
-    if (isCreditNote && session.user.role !== 'admin' && session.user.role !== 'finance') {
+    if (isCreditNote && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.FINANCE) {
       return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
     }
 
@@ -94,12 +95,12 @@ export async function POST(request, { params }) {
         'other',
         `CREDIT-NOTE-${projectId}`,
         `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
-        'pending',
+        PAYMENT_STATUS.PENDING,
         session.user.id
       ]);
 
       return NextResponse.json({
-        message: 'Credit note created in pending state. Finance must upload document.',
+        message: `Credit note created in ${PAYMENT_STATUS.PENDING} state. Finance must upload document.`,
         credit_note: creditNoteResult.rows[0],
         overpayment_amount: estimation.overpayment_amount
       });
@@ -127,7 +128,7 @@ export async function POST(request, { params }) {
         body.remarks,
         session.user.id,
         body.document_url || null,
-        body.status || 'pending'
+        body.status || PAYMENT_STATUS.PENDING
       ]
     );
 

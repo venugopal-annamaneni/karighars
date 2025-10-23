@@ -4,10 +4,11 @@ import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
+import { USER_ROLE } from '@/lib/constants';
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'admin') {
+  if (!session || session.user.role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
   }
 

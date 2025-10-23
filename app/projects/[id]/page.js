@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Toaster } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { ESTIMATION_CATEGORY, PAYMENT_STATUS, PROJECT_STAGES, USER_ROLE } from '@/lib/constants';
+import { formatCurrency, formatDate, UIFriendly } from '@/lib/utils';
 import {
   Activity,
   AlertTriangle,
@@ -88,7 +89,7 @@ export default function ProjectDetailPage() {
         fetch(`/api/projects/${projectId}/vendor-payments`),
         fetch(`/api/projects/${projectId}/vendor-boqs`),
         fetch(`/api/projects/${projectId}/ledger`),
-        fetch(`/api/projects/${projectId}/documents`),
+        fetch(`/api/projects/${projectId}/documents?group_type=project&group_id=${projectId}`),
       ]);
 
       let projectData = null;
@@ -178,7 +179,6 @@ export default function ProjectDetailPage() {
   };
 
   const handleRecordPayment = async (e) => {
-    debugger;
     e.preventDefault();
     try {
       // Back-calculate pre-tax amount and GST amount from total
@@ -208,7 +208,7 @@ export default function ProjectDetailPage() {
           mode: paymentData.mode,
           reference_number: paymentData.reference_number,
           remarks: paymentData.remarks,
-          status: 'pending', // Payment starts as pending until receipt is uploaded
+          status: PAYMENT_STATUS.PENDING
         })
       });
 
@@ -283,7 +283,7 @@ export default function ProjectDetailPage() {
     if (!file) return;
 
     // Check if user is Finance role
-    if (session.user.role !== 'finance' && session.user.role !== 'admin') {
+    if (session.user.role !== 'finance' && session.user.role !== USER_ROLE.ADMIN) {
       toast.error('Only Finance team can upload invoices');
       return;
     }
@@ -380,7 +380,8 @@ export default function ProjectDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_id: projectId,
+          group_type: "project",
+          group_id: projectId,
           related_entity: 'customer_payments',
           related_id: paymentId,
           document_type: type,
@@ -423,11 +424,11 @@ export default function ProjectDetailPage() {
 
   const getStageColor = (stage) => {
     switch (stage) {
-      case 'onboarding': return 'bg-blue-100 text-blue-700';
-      case '2D': return 'bg-purple-100 text-purple-700';
-      case '3D': return 'bg-amber-100 text-amber-700';
-      case 'execution': return 'bg-green-100 text-green-700';
-      case 'handover': return 'bg-slate-100 text-slate-700';
+      case PROJECT_STAGES.ONBOARDING: return 'bg-blue-100 text-blue-700';
+      case PROJECT_STAGES['2D']: return 'bg-purple-100 text-purple-700';
+      case PROJECT_STAGES['3D']: return 'bg-amber-100 text-amber-700';
+      case PROJECT_STAGES.EXEC: return 'bg-green-100 text-green-700';
+      case PROJECT_STAGES.HANDOVER: return 'bg-slate-100 text-slate-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -562,7 +563,7 @@ export default function ProjectDetailPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    {(estimation && (estimation.created_by === session.user.id || session.user.role === 'admin') && (estimation.version > 1)) && (
+                    {(estimation && (estimation.created_by === session.user.id || session.user.role === USER_ROLE.ADMIN) && (estimation.version > 1)) && (
                       <Button
                         onClick={() => setShowCancelConfirmModal(true)}
                         variant="outline"
@@ -586,19 +587,19 @@ export default function ProjectDetailPage() {
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-4 gap-4">
                       <div className="bg-slate-50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Woodwork</p>
+                        <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.WOODWORK)}</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.woodwork_value)}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Misc Internal</p>
+                        <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_INTERNAL)}</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.misc_internal_value)}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Misc External</p>
+                        <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.misc_external_value)}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Shopping</p>
+                        <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.SHOPPING_SERVICE)}</p>
                         <p className="text-xl font-bold">{formatCurrency(estimation.shopping_service_value)}</p>
                       </div>
                     </div>
@@ -979,7 +980,7 @@ export default function ProjectDetailPage() {
 
                         <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-4">
                           <p className="text-sm text-amber-800">
-                            ℹ️ This payment will be marked as <strong>pending</strong> until Finance team uploads the receipt.
+                            ℹ️ This payment will be marked as <strong>{PAYMENT_STATUS.PENDING}</strong> until Finance team uploads the receipt.
                           </p>
                         </div>
 
@@ -1011,12 +1012,12 @@ export default function ProjectDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{payment.payment_type.toUpperCase()}</p>
-                            {payment.status === 'pending' && (
+                            {payment.status === PAYMENT_STATUS.PENDING && (
                               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
                                 Pending Approval
                               </Badge>
                             )}
-                            {payment.status === 'approved' && (
+                            {payment.status === PAYMENT_STATUS.APPROVED && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
                                 ✓ Approved
                               </Badge>
@@ -1025,7 +1026,7 @@ export default function ProjectDetailPage() {
                           <p className="text-sm text-muted-foreground">
                             {formatDate(payment.payment_date)} • {payment.mode} • {payment.reference_number}
                           </p>
-                          {payment.status === 'approved' && payment.approved_by_name && (
+                          {payment.status === PAYMENT_STATUS.APPROVED && payment.approved_by_name && (
                             <p className="text-xs text-green-600 mt-1">
                               Approved by {payment.approved_by_name}
                             </p>
@@ -1035,20 +1036,20 @@ export default function ProjectDetailPage() {
                           <div className="text-right">
                             <p className={`text-xl font-bold ${payment.amount < 0
                               ? 'text-red-600'
-                              : payment.status === 'approved'
+                              : payment.status === PAYMENT_STATUS.APPROVED
                                 ? 'text-green-600'
                                 : 'text-gray-400'
                               }`}>
                               {formatCurrency(payment.amount)}
                             </p>
-                            {payment.status === 'pending' && (
+                            {payment.status === PAYMENT_STATUS.PENDING && (
                               <p className="text-xs text-amber-600">Not counted</p>
                             )}
                             {payment.payment_type === 'CREDIT_NOTE' && (
                               <Badge className="bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800 text-xs mt-1">Credit Note</Badge>
                             )}
                           </div>
-                          {payment.status === 'pending' && (session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
+                          {payment.status === PAYMENT_STATUS.PENDING && (session?.user?.role === USER_ROLE.FINANCE || session?.user?.role === USER_ROLE.ADMIN) && (
                             <div className='flex flex-col items-end gap-2'>
                               <div>
                                 <input
@@ -1289,7 +1290,7 @@ export default function ProjectDetailPage() {
                     <CardTitle>Project Documents</CardTitle>
                     <CardDescription>View all documents related to this project</CardDescription>
                   </div>
-                  {(session?.user?.role === 'finance' || session?.user?.role === 'admin') && (
+                  {(session?.user?.role === 'finance' || session?.user?.role === USER_ROLE.ADMIN) && (
                     <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
                       <DialogTrigger asChild>
                         <Button size="sm" className="gap-2">
@@ -1496,8 +1497,8 @@ export default function ProjectDetailPage() {
 
 
 const WarningExtraPendingReceipts = ({ estimation, payments }) => {
-  const pendingReceipts = payments.filter(p => p.status === 'pending');
-  const approvedReceipts = payments.filter(p => p.status === 'approved')
+  const pendingReceipts = payments.filter(p => p.status === PAYMENT_STATUS.PENDING);
+  const approvedReceipts = payments.filter(p => p.status === PAYMENT_STATUS.APPROVED)
   if (pendingReceipts.length === 0) return null;
 
   const estimationValue = parseFloat(estimation.final_value || 0);
@@ -1621,14 +1622,14 @@ const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
             <p className="font-semibold">Required Actions:</p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
               <li>Admin must approve this overpayment</li>
-              <li>System will create credit note in Customer Payments (pending state)</li>
+              <li>System will create credit note in Customer Payments (${PAYMENT_STATUS.PENDING} state)</li>
               <li>Finance team uploads credit note document</li>
               <li>Credit note becomes approved and reflects in ledger</li>
               <li>Or creator can cancel and revert to previous version</li>
             </ol>
           </div>
           <div className="flex gap-3">
-            {session.user.role === 'admin' && (
+            {session.user.role === USER_ROLE.ADMIN && (
               <Button
                 onClick={async () => {
                   try {
@@ -1641,7 +1642,7 @@ const OverpaymentAlert = ({ estimation, session, fetchProjectData }) => {
                       })
                     });
                     if (res.ok) {
-                      toast.success('Overpayment approved! Credit note created in Customer Payments (pending document upload).');
+                      toast.success(`Overpayment approved! Credit note created in Customer Payments (pending document upload).`);
                       fetchProjectData();
                     } else {
                       const data = await res.json();

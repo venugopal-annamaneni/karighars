@@ -17,6 +17,7 @@ import { Users, Shield, Edit, Search } from 'lucide-react';
 import Link from 'next/link';
 import KGPagination from '@/components/kg-pagination';
 import { Input } from '@/components/ui/input';
+import { USER_ROLE } from '@/lib/constants';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -34,7 +35,7 @@ export default function SettingsPage() {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
-      if (session.user.role !== 'admin') {
+      if (session.user.role !== USER_ROLE.ADMIN) {
         router.push('/dashboard');
         return;
       }
@@ -105,16 +106,16 @@ export default function SettingsPage() {
     );
   }
 
-  if (!session || session.user.role !== 'admin') return null;
+  if (!session || session.user.role !== USER_ROLE.ADMIN) return null;
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-700';
-      case 'finance': return 'bg-green-100 text-green-700';
-      case 'sales': return 'bg-blue-100 text-blue-700';
-      case 'designer': return 'bg-purple-100 text-purple-700';
-      case 'project_manager': return 'bg-amber-100 text-amber-700';
-      case 'estimator': return 'bg-cyan-100 text-cyan-700';
+      case USER_ROLE.ADMIN: return 'bg-red-100 text-red-700';
+      case USER_ROLE.FINANCE: return 'bg-green-100 text-green-700';
+      case USER_ROLE.SALES: return 'bg-blue-100 text-blue-700';
+      case USER_ROLE.DESIGNER: return 'bg-purple-100 text-purple-700';
+      case USER_ROLE.PROJECT_MANAGER: return 'bg-amber-100 text-amber-700';
+      case USER_ROLE.ESTIMATOR: return 'bg-cyan-100 text-cyan-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -226,12 +227,18 @@ export default function SettingsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sales">Sales</SelectItem>
+                      {Object.entries(USER_ROLE).map(([key, value]) => (
+                        <SelectItem key={key} value={value}>
+                          {value
+                            .replace(/\b\w/g, c => c.toUpperCase())}  {/* capitalize words */}
+                        </SelectItem>
+                      ))}
+                      {/* <SelectItem value="sales">Sales</SelectItem>
                       <SelectItem value="designer">Designer</SelectItem>
                       <SelectItem value="estimator">Estimator</SelectItem>
                       <SelectItem value="project_manager">Project Manager</SelectItem>
                       <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -277,11 +284,11 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">Admins</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === USER_ROLE.ADMIN).length}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Finance Team</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.role === 'finance').length}</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === USER_ROLE.FINANCE).length}</p>
               </div>
             </div>
           </CardContent>
