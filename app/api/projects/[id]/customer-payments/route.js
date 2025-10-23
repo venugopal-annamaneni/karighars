@@ -105,43 +105,16 @@ export async function POST(request, { params }) {
       });
     }
 
-<<<<<<< HEAD
-    // 3️⃣ Handle Normal Payment creation
-    let actualPercentage = null;
-    if (body.estimation_id) {
-      const estRes = await query(
-        'SELECT final_value FROM project_estimations WHERE id = $1',
-        [body.estimation_id]
-      );
-      if (estRes.rows.length > 0) {
-        const total = parseFloat(estRes.rows[0].final_value);
-        if (total > 0) {
-          actualPercentage = (parseFloat(body.amount) / total) * 100;
-        }
-      }
-    }
-
-    const result = await query(
-      `INSERT INTO customer_payments (
-        project_id, estimation_id, customer_id, payment_type, milestone_id,
-        actual_percentage, override_reason,
-        amount, gst_amount, gst_percentage,
-        payment_date, mode, reference_number, remarks, created_by,
-        document_url, status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-=======
     
     const result = await query(
       `INSERT INTO customer_payments (
         project_id, customer_id, payment_type, milestone_id,
         override_reason,
-        amount, pre_tax_amount, gst_amount, gst_percentage,
+        amount, gst_amount, gst_percentage,
         payment_date, mode, reference_number, remarks, created_by,
         document_url, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
->>>>>>> c9559a17bb320b213203133abe9887ab261defa3
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
       [
         body.project_id,
