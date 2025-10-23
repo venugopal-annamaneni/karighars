@@ -65,12 +65,11 @@ export default function ProjectDetailPage() {
   const [stageUpdate, setStageUpdate] = useState({ stage: '', remarks: '' });
   const [paymentData, setPaymentData] = useState({
     milestone_id: '',
-    payment_type: 'advance_10',
+    payment_type: '',
     amount: '',
     mode: 'bank',
     reference_number: '',
     remarks: '',
-    override_reason: ''
   });
 
   useEffect(() => {
@@ -179,34 +178,21 @@ export default function ProjectDetailPage() {
   };
 
   const handleRecordPayment = async (e) => {
+    debugger;
     e.preventDefault();
     try {
-      // Get GST percentage from estimation (default 18% if not available)
-      const gstPercentage = parseFloat(estimation?.gst_percentage || 18);
-
       // Back-calculate pre-tax amount and GST amount from total
       const totalAmount = parseFloat(paymentData.amount || 0);
-      const preTaxAmount = totalAmount / (1 + gstPercentage / 100);
-      const gstAmount = totalAmount - preTaxAmount;
-
-      // Use direct woodwork and misc amounts entered by user
-      // These should also be GST-inclusive amounts
-      const woodworkAmount = parseFloat(paymentData.woodwork_amount || 0);
-      const miscAmount = parseFloat(paymentData.misc_amount || 0);
-
-      // Back-calculate pre-tax woodwork and misc
-      const preTaxWoodwork = woodworkAmount / (1 + gstPercentage / 100);
-      const preTaxMisc = miscAmount / (1 + gstPercentage / 100);
 
       // Get payment type from milestone or use default
       let paymentType = 'other';
-      let finalMilestoneId = null;
+      let milestoneId = null;
 
       if (paymentData.milestone_id) {
         const milestone = milestones.find(m => m.id === parseInt(paymentData.milestone_id));
         if (milestone) {
           paymentType = milestone.milestone_code;
-          finalMilestoneId = paymentData.milestone_id;
+          milestoneId = paymentData.milestone_id;
         }
       }
 
@@ -216,20 +202,13 @@ export default function ProjectDetailPage() {
         body: JSON.stringify({
           project_id: projectId,
           customer_id: project.customer_id,
-          // estimation_id: estimation?.id,
-          milestone_id: finalMilestoneId,
+          milestone_id: milestoneId,
           payment_type: paymentType,
           amount: totalAmount.toFixed(2),
-          pre_tax_amount: preTaxAmount.toFixed(2),
-          gst_amount: gstAmount.toFixed(2),
-          gst_percentage: gstPercentage,
           mode: paymentData.mode,
           reference_number: paymentData.reference_number,
           remarks: paymentData.remarks,
-          override_reason: paymentData.override_reason,
           status: 'pending', // Payment starts as pending until receipt is uploaded
-          woodwork_amount: preTaxWoodwork.toFixed(2),
-          misc_amount: preTaxMisc.toFixed(2)
         })
       });
 
@@ -238,14 +217,13 @@ export default function ProjectDetailPage() {
         setShowPaymentDialog(false);
         setPaymentData({
           milestone_id: '',
-          payment_type: 'advance_10',
+          payment_type: '',
           amount: '',
           woodwork_amount: '',
           misc_amount: '',
           mode: 'bank',
           reference_number: '',
-          remarks: '',
-          override_reason: ''
+          remarks: ''
         });
         fetchProjectData();
       } else {
@@ -476,10 +454,12 @@ export default function ProjectDetailPage() {
                 </Badge>
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {project.customer_name}
-                </span>
+                <Link href={`/customers/${project.customer_id}`}>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {project.customer_name}
+                  </span>
+                </Link>
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   {project.location}
@@ -767,7 +747,7 @@ export default function ProjectDetailPage() {
                                 <SelectItem value="none">No milestone</SelectItem>
                                 {milestones
                                   .filter(milestone => (milestone.stage_code === project.stage || milestone.stage_code === 'ANY'))
-                                  .map((milestone) => (                                    
+                                  .map((milestone) => (
                                     <SelectItem key={milestone.id} value={milestone.id.toString()}>
                                       {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}% S:${milestone.shopping_percentage}%`}
                                     </SelectItem>
@@ -813,16 +793,16 @@ export default function ProjectDetailPage() {
                                 </div>
                               </div>
                             )}
-                                
-                                
-                              
+
+
+
                             {paymentData.calculation.remaining_amount === 0 && (
                               <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
                                 ⚠️ Target milestone percentage already collected. No additional payment expected.
                               </div>
                             )}
-                              
-                            
+
+
                             <div className='grid grid-cols-3 md:grid-col-3 gap-3 bg-white p-4 rounded-lg'>
                               <div>
                                 <p className="text-sm font-medium text-green-900">💰 Target Receivable</p>
@@ -1048,11 +1028,6 @@ export default function ProjectDetailPage() {
                           {payment.status === 'approved' && payment.approved_by_name && (
                             <p className="text-xs text-green-600 mt-1">
                               Approved by {payment.approved_by_name}
-                            </p>
-                          )}
-                          {payment.gst_amount > 0 && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              GST: ₹{payment.gst_amount?.toLocaleString('en-IN')} ({payment.gst_percentage}%)
                             </p>
                           )}
                         </div>
@@ -1378,9 +1353,6 @@ export default function ProjectDetailPage() {
                         <div>
                           <p className="font-medium">{doc.file_name || 'Document'}</p>
                           <p className="text-sm text-muted-foreground">
-                            {doc.document_type === 'kyc_aadhar' && 'KYC - Aadhar Card'}
-                            {doc.document_type === 'kyc_pan' && 'KYC - PAN Card'}
-                            {doc.document_type === 'kyc_cheque' && 'KYC - Blank Cheque'}
                             {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
                             {doc.document_type === 'project_invoice' && 'Project Invoice'}
                             {doc.document_type === 'credit_note' && 'Credit Note'}

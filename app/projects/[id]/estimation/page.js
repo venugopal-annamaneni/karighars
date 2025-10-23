@@ -34,19 +34,18 @@ export default function EstimationPage() {
   const [formData, setFormData] = useState({
     remarks: '',
     status: 'draft',
-    gst_percentage: 18
   });
 
   const [items, setItems] = useState([
     {
-      category: 'woodwork',
+      category: '',
       description: '',
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
-      karighar_charges_percentage: 10,
-      discount_percentage: 0,
-      gst_percentage: 18,
+      karighar_charges_percentage: null,
+      discount_percentage: null,
+      gst_percentage: null,
       vendor_type: 'PI'
     }
   ]);
@@ -81,7 +80,6 @@ export default function EstimationPage() {
           setFormData({
             remarks: data.estimation.remarks || '',
             status: data.estimation.status,
-            gst_percentage: data.estimation.gst_percentage || 18
           });
 
           const itemsRes = await fetch(`/api/projects/${projectId}/estimations/${data.estimation.id}/items`);
@@ -96,7 +94,7 @@ export default function EstimationPage() {
                 unit_price: parseFloat(item.unit_price),
                 karighar_charges_percentage: parseFloat(item.karighar_charges_percentage || 10),
                 discount_percentage: parseFloat(item.discount_percentage || 0),
-                gst_percentage: parseFloat(item.gst_percentage || 18),
+                gst_percentage: parseFloat(item.gst_percentage),
                 vendor_type: item.vendor_type
               })));
             }
@@ -111,19 +109,16 @@ export default function EstimationPage() {
     }
   };
 
-  const addItem = () => {
-    // Get default karighar_charges_percentage from biz model
-    const defaultKarigharCharges = bizModel?.service_charge_percentage || 10;
-    
+  const addItem = () => {    
     setItems([...items, {
-      category: 'woodwork',
+      category: '',
       description: '',
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
-      karighar_charges_percentage: defaultKarigharCharges,
-      discount_percentage: 0,
-      gst_percentage: 18,
+      karighar_charges_percentage: null,
+      discount_percentage: null,
+      gst_percentage: null,
       vendor_type: 'PI'
     }]);
   };
@@ -144,7 +139,7 @@ export default function EstimationPage() {
     const unitPrice = parseFloat(item.unit_price) || 0;
     const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
     const discountPerc = parseFloat(item.discount_percentage) || 0;
-    const gstPerc = parseFloat(item.gst_percentage) || 0;
+    const gstPerc = parseFloat(item.gst_percentage);
     
     // Step 1: Calculate subtotal
     let subtotal = 0;
@@ -310,7 +305,6 @@ export default function EstimationPage() {
             ...totals,
             remarks: formData.remarks,
             status: formData.status,
-            gst_percentage: formData.gst_percentage,
             items: itemsWithCalcs
           });
           setShowOverpaymentModal(true);
@@ -340,7 +334,6 @@ export default function EstimationPage() {
         ...totals,
         remarks: formData.remarks,
         status: formData.status,
-        //gst_percentage: formData.gst_percentage,
         items: itemsWithCalcs
       });
 
@@ -407,6 +400,31 @@ export default function EstimationPage() {
       maximumFractionDigits: 0
     }).format(amount || 0);
   };
+
+  const getDefaultCharges = (index) => {
+    const itemCategory = items[index].category;
+    switch(itemCategory) {
+      case "woodwork":
+        return bizModel.design_charge_percentage;
+      case "misc_internal":
+      case "misc_external":
+        return bizModel.service_charge_percentage;
+      case "shopping_service":
+        return bizModel.shopping_charge_percentage;
+    }
+  }
+  const getMaxDiscount = (index) => {
+    const itemCategory = items[index].category;
+    switch(itemCategory) {
+      case "woodwork":
+        return bizModel.max_design_charge_discount_percentage;
+      case "misc_internal":
+      case "misc_external":
+        return bizModel.max_service_charge_discount_percentage;
+      case "shopping_service":
+        return bizModel.max_shopping_charge_discount_percentage;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -541,8 +559,8 @@ export default function EstimationPage() {
                           type="number"
                           step="0.01"
                           min="0"
-                          placeholder="10"
-                          value={item.karighar_charges_percentage}
+                          placeholder="Select category for standard charges"
+                          value={item.karighar_charges_percentage ? item.karighar_charges_percentage : getDefaultCharges(index)}
                           onChange={(e) => updateItem(index, 'karighar_charges_percentage', e.target.value)}
                           className="h-9"
                         />
@@ -560,16 +578,17 @@ export default function EstimationPage() {
                           onChange={(e) => updateItem(index, 'discount_percentage', e.target.value)}
                           className="h-9"
                         />
+                        <span className='text-xs text-amber-700 italic'>max discount allowed is {getMaxDiscount(index)}%</span>
                       </div>
 
                       <div className="space-y-2">
                         <Label className="text-xs">GST (%)</Label>
                         <Input
                           type="number"
-                          step="0.01"
+                          step="0.5"
                           min="0"
-                          placeholder="18"
-                          value={item.gst_percentage}
+                          placeholder="Enter GST%"
+                          value={item.gst_percentage ? item.gst_percentage : bizModel.gst_percentage}
                           onChange={(e) => updateItem(index, 'gst_percentage', e.target.value)}
                           className="h-9"
                         />
@@ -639,15 +658,16 @@ export default function EstimationPage() {
                   <div className="space-y-2">
                     <Label>Default GST (%)</Label>
                     <Input
+                      readOnly
+                      disabled
                       type="number"
                       step="0.01"
                       min="0"
                       max="100"
-                      placeholder="18"
-                      value={formData.gst_percentage}
-                      onChange={(e) => setFormData({ ...formData, gst_percentage: parseFloat(e.target.value) || 0 })}
+                      placeholder="Fetching GST% from Business Model..."
+                      value={bizModel.gst_percentage}
                     />
-                    <span className='text-xs text-gray-500'>This will be applied to new items</span>
+                    <span className='text-xs text-gray-500'>From the Business Model Configuration. Standard GST% added to all items.</span>
                   </div>
                 </div>
 

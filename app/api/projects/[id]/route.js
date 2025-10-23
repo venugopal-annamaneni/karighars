@@ -96,18 +96,7 @@ export async function PUT(request, { params }) {
       updates.push(`status = $${paramCounter++}`);
       values.push(body.status);
     }
-    if (body.invoice_url !== undefined) {
-      updates.push(`invoice_url = $${paramCounter++}`);
-      values.push(body.invoice_url);
-      if (body.invoice_url) {
-        updates.push(`invoice_uploaded_at = NOW()`);
-      }
-    }
-    if (body.revenue_realized !== undefined) {
-      updates.push(`revenue_realized = $${paramCounter++}`);
-      values.push(body.revenue_realized);
-    }
-
+    
     values.push(projectId);
 
     const result = await query(

@@ -182,7 +182,7 @@ export default function CustomerDetailPage() {
             <Link href="/customers">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                All Customers
               </Button>
             </Link>
             <div>
