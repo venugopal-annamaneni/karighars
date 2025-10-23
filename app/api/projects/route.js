@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
   const pageSize = Number(searchParams.get("page_size") || 20);
   const offset = (pageNo - 1) * pageSize;
 
-  const filter = searchParams.get("filter") || "";
+  const filter = searchParams.get("filter").trim() || "";
   const filterValue = `%${filter}%`;
 
 

@@ -9,11 +9,29 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const pageNo = Number(searchParams.get("page_no") || 1);
+  const pageSize = Number(searchParams.get("page_size") || 20);
+  const offset = (pageNo - 1) * pageSize;
+
+  const filter = searchParams.get("filter")?.trim() || "";
+  const filterValue = `%${filter}%`;
+
   try {
     const result = await query(`
-        SELECT * FROM customers
-        ORDER BY created_at DESC
-      `);
+        SELECT 
+        *,
+        COUNT(*) OVER() AS total_records
+        FROM customers c
+        WHERE 
+          ($1 = '' OR 
+          c.name ILIKE $2 OR 
+          c.email ILIKE $2 OR 
+          c.phone ILIKE $2)
+        ORDER BY c.name
+        LIMIT $3 OFFSET $4`,
+      [filter, filterValue, pageSize, offset]    
+    );
     return NextResponse.json({ customers: result.rows });
   } catch (error) {
     console.error('API Error:', error);

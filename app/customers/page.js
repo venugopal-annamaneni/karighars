@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { Plus, Search, Phone, Mail, MapPin } from 'lucide-react';
+import KGPagination from '@/components/kg-pagination';
 
 export default function CustomersPage() {
   const { data: session, status } = useSession();
@@ -23,7 +24,11 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+
   const [formData, setFormData] = useState({
     name: '',
     contact_person: '',
@@ -41,27 +46,19 @@ export default function CustomersPage() {
     }
   }, [status, router]);
 
+
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = customers.filter(
-        (c) =>
-          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
-    } else {
-      setFilteredCustomers(customers);
-    }
-  }, [searchTerm, customers]);
+    fetchCustomers();
+  }, [pageNo, pageSize]);
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch('/api/customers');
+      const res = await fetch(`/api/customers?page_size=${pageSize}&page_no=${pageNo}&filter=${searchTerm}`);
       if (res.ok) {
         const data = await res.json();
         setCustomers(data.customers);
         setFilteredCustomers(data.customers);
+        setTotalRecords(data.customers[0].total_records)
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -211,8 +208,11 @@ export default function CustomersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search customers by name, phone, or email..."
-                value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter")
+                    fetchCustomers()
+                }}
                 className="pl-10"
               />
             </div>
@@ -243,35 +243,41 @@ export default function CustomersPage() {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                  {customer.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      {customer.phone}
-                    </div>
-                  )}
-                  {customer.email && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      {customer.email}
-                    </div>
-                  )}
-                  {customer.address && (
-                    <div className="flex items-start gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4 mt-0.5" />
-                      <span className="text-xs">{customer.address}</span>
-                    </div>
-                  )}
-                  {customer.gst_number && (
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">GST: {customer.gst_number}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    {customer.phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        {customer.phone}
+                      </div>
+                    )}
+                    {customer.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        {customer.email}
+                      </div>
+                    )}
+                    {customer.address && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4 mt-0.5" />
+                        <span className="text-xs">{customer.address}</span>
+                      </div>
+                    )}
+                    {customer.gst_number && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground">GST: {customer.gst_number}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </Link>
             ))
           )}
         </div>
+        <KGPagination
+          totalRecords={totalRecords}
+          defaultPageSize={pageSize}
+          onChangeCallback={(pageNo, pageSize) => { setPageNo(pageNo) }}
+          className="justify-end"
+        />
       </main>
     </div>
   );
