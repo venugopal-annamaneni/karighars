@@ -31,6 +31,7 @@ export default function BizModelsPage() {
     code: '',
     name: '',
     description: '',
+    gst_percentage: 0,
     design_charge_percentage: 0,
     max_design_charge_discount_percentage: 0,
     service_charge_percentage: 0,
@@ -137,8 +138,8 @@ export default function BizModelsPage() {
   const handleCreateModel = async () => {
     try {
       const isEditing = editingModelId !== null;
-      const api = isEditing ? `/api/biz-models/${editingModelId}`: '/api/biz-models';
-      const method = isEditing ? 'PUT': 'POST'; 
+      const api = isEditing ? `/api/biz-models/${editingModelId}` : '/api/biz-models';
+      const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(api, {
         method: method,
@@ -163,6 +164,7 @@ export default function BizModelsPage() {
           code: '',
           name: '',
           description: '',
+          gst_percentage: 0,
           design_charge_percentage: 0,
           max_design_charge_discount_percentage: 0,
           service_charge_percentage: 0,
@@ -194,6 +196,7 @@ export default function BizModelsPage() {
           code: data.model.code,
           name: data.model.name,
           description: data.model.description,
+          gst_percentage: data.model.gst_percentage,
           design_charge_percentage: data.model.design_charge_percentage,
           max_design_charge_discount_percentage: data.model.max_design_charge_discount_percentage,
           service_charge_percentage: data.model.service_charge_percentage,
@@ -341,6 +344,15 @@ export default function BizModelsPage() {
                           placeholder="Describe this business model..."
                           value={newModel.description}
                           onChange={(e) => setNewModel({ ...newModel, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>GST %</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={newModel.gst_percentage}
+                          onChange={(e) => setNewModel({ ...newModel, gst_percentage: parseFloat(e.target.value) })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -598,7 +610,7 @@ export default function BizModelsPage() {
                     Cancel
                   </Button>
                   <Button onClick={handleCreateModel}>
-                    {editingModelId ? "Save Business Model": "Create Business Model"}
+                    {editingModelId ? "Save Business Model" : "Create Business Model"}
                   </Button>
                 </div>
               </DialogContent>
@@ -808,49 +820,53 @@ export default function BizModelsPage() {
                           {modelDetails.model.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">GST %</p>
+                        <p className="text-lg font-medium">{modelDetails.model.gst_percentage}</p>
+                      </div>
                     </div>
                     <div className="space-y-4">
                       <div className="p-4 border border-green-800 rounded-lg">
-                        <p className="text-sm text-green-700">Design Consultation Charges</p>
-                        <p className="text-2xl font-bold text-green-700">
+                        <p className="text-sm text-muted-foreground ">Design Consultation Charges</p>
+                        <p className="text-xl font-bold text-green-700">
                           {modelDetails.model.design_charge_percentage}%
                         </p>
-                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
-                        <p className="text-2xl font-bold text-amber-700">
+                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
+                        <p className="text-xl font-bold text-amber-700">
                           {modelDetails.model.max_design_charge_discount_percentage}%
                         </p>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="p-4 border border-blue-800 rounded-lg">
-                        <p className="text-sm text-blue-700">Service Charges</p>
-                        <p className="text-2xl font-bold text-blue-700">
+                        <p className="text-sm text-muted-foreground ">Service Charges</p>
+                        <p className="text-xl font-bold text-blue-700">
                           {modelDetails.model.service_charge_percentage}%
                         </p>
-                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
-                        <p className="text-2xl font-bold text-amber-700">
+                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
+                        <p className="text-xl font-bold text-amber-700">
                           {modelDetails.model.max_service_charge_discount_percentage}%
                         </p>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="p-4 border border-yellow-800 rounded-lg">
-                        <p className="text-sm text-yellow-700">Shopping Charges</p>
-                        <p className="text-2xl font-bold text-yellow-700">
+                        <p className="text-sm text-muted-foreground ">Shopping Charges</p>
+                        <p className="text-xl font-bold text-yellow-700">
                           {modelDetails.model.shopping_charge_percentage}%
                         </p>
-                        <p className="text-sm text-amber-700 mt-4">Maximum Discount</p>
-                        <p className="text-2xl font-bold text-amber-700">
+                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
+                        <p className="text-xl font-bold text-amber-700">
                           {modelDetails.model.max_shopping_charge_discount_percentage}%
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className='grid grid-cols-1 text-right mt-4 md:mt-0'>
-                    <p className="text-xs font-semibold text-red-700">
+                  <div className='grid grid-cols-1 text-right mt-4 md:mt-4'>
+                    <p className="text-xs font-semibold text-red-700 italic">
                       Added to all estimations by default
                     </p>
-                    <p className="text-xs font-semibold text-red-700">
+                    <p className="text-xs font-semibold text-red-700 italic">
                       Discounts above the maxium configured here require approval
                     </p>
                   </div>
