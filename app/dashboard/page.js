@@ -37,7 +37,7 @@ export default function DashboardPage() {
     try {
       const [statsRes, projectsRes] = await Promise.all([
         fetch('/api/dashboard?output=stats'),
-        fetch('/api/projects?page_no=1&page_size=2')
+        fetch('/api/projects?page_no=1&page_size=10')
       ]);
 
       if (statsRes.ok) {

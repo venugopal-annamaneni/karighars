@@ -71,6 +71,7 @@ export async function POST(request) {
   // Add estimation items with all calculated fields
   if (body.items && body.items.length > 0) {
     for (const item of body.items) {
+      console.log(item);
       await query(
         `INSERT INTO estimation_items (
           estimation_id, category, description, quantity, unit, unit_price,

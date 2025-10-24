@@ -15,7 +15,7 @@ import { FileText, Download, Printer, TrendingUp, TrendingDown, IndianRupee } fr
 export default function ReportsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(null);
   const [selectedProject, setSelectedProject] = useState('all');
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,19 +29,18 @@ export default function ReportsPage() {
   }, [status, router]);
 
   useEffect(() => {
-    if (projects.length > 0) {
-      generateReport();
-    }
+    generateReport();
   }, [selectedProject, projects]);
 
   const fetchData = async () => {
     try {
       const [projectsRes, statsRes, paymentsInRes, paymentsOutRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch('/api/dashboard/stats'),
-        fetch('/api/customer-payments'),
-        fetch('/api/vendor-payments')
+        fetch('/api/projects?page_no=1&page_size=10&filter=""'),
+        fetch('/api/dashboard?output=stats'),
+        fetch('/api/all-payments?type=customer'),
+        fetch('/api/all-payments?type=vendor')
       ]);
+
 
       if (projectsRes.ok) {
         const data = await projectsRes.json();
@@ -52,7 +51,7 @@ export default function ReportsPage() {
         const stats = await statsRes.json();
         const paymentsIn = await paymentsInRes.json();
         const paymentsOut = await paymentsOutRes.json();
-        
+
         setReportData({
           stats: stats.stats,
           paymentsIn: paymentsIn.payments,
@@ -67,6 +66,7 @@ export default function ReportsPage() {
   };
 
   const generateReport = () => {
+    debugger;
     if (!reportData) return;
 
     let filteredPaymentsIn = reportData.paymentsIn;
@@ -233,7 +233,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{formatCurrency(reportData.totalIn)}</div>
-              <p className="text-xs text-muted-foreground mt-1">{reportData.filteredPaymentsIn.length} transactions</p>
+              <p className="text-xs text-muted-foreground mt-1">{reportData.filteredPaymentsIn?.length} transactions</p>
             </CardContent>
           </Card>
           <Card>
@@ -245,7 +245,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">{formatCurrency(reportData.totalOut)}</div>
-              <p className="text-xs text-muted-foreground mt-1">{reportData.filteredPaymentsOut.length} transactions</p>
+              <p className="text-xs text-muted-foreground mt-1">{reportData.filteredPaymentsOut?.length} transactions</p>
             </CardContent>
           </Card>
           <Card>
@@ -380,41 +380,48 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="text-left p-3">Date</th>
-                        <th className="text-left p-3">Project</th>
-                        <th className="text-left p-3">Customer</th>
-                        <th className="text-left p-3">Type</th>
-                        <th className="text-right p-3">Amount</th>
-                        <th className="text-left p-3">Mode</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {reportData.filteredPaymentsIn.map((payment) => (
-                        <tr key={payment.id}>
-                          <td className="p-3">{formatDate(payment.payment_date)}</td>
-                          <td className="p-3">{payment.project_name}</td>
-                          <td className="p-3">{payment.customer_name}</td>
-                          <td className="p-3">
-                            <Badge variant="outline" className="capitalize">
-                              {payment.payment_type?.replace('_', ' ')}
-                            </Badge>
-                          </td>
-                          <td className="text-right p-3 font-medium text-green-600">
-                            {formatCurrency(payment.amount)}
-                          </td>
-                          <td className="p-3 capitalize">{payment.mode}</td>
+                  {!reportData.filteredPaymentsIn && (
+                    <div className='text-center p-4 text-muted-foreground'>No customer payments yet.</div>
+                  )}
+                  {reportData.filteredPaymentsIn && (
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-left p-3">Date</th>
+                          <th className="text-left p-3">Project</th>
+                          <th className="text-left p-3">Customer</th>
+                          <th className="text-left p-3">Type</th>
+                          <th className="text-right p-3">Amount</th>
+                          <th className="text-left p-3">Mode</th>
                         </tr>
-                      ))}
-                      <tr className="bg-slate-50 font-bold">
-                        <td colSpan="4" className="p-3 text-right">Total:</td>
-                        <td className="text-right p-3 text-green-600">{formatCurrency(reportData.totalIn)}</td>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y">
+                        {reportData.filteredPaymentsIn.map((payment) => (
+                          <tr key={payment.id}>
+                            <td className="p-3">{formatDate(payment.payment_date)}</td>
+                            <td className="p-3">{payment.project_name}</td>
+                            <td className="p-3">{payment.customer_name}</td>
+                            <td className="p-3">
+                              <Badge variant="outline" className="capitalize">
+                                {payment.payment_type?.replace('_', ' ')}
+                              </Badge>
+                            </td>
+                            <td className="text-right p-3 font-medium text-green-600">
+                              {formatCurrency(payment.amount)}
+                            </td>
+                            <td className="p-3 capitalize">{payment.mode}</td>
+                          </tr>
+                        ))}
+
+                        <tr className="bg-slate-50 font-bold">
+                          <td colSpan="4" className="p-3 text-right">Total:</td>
+                          <td className="text-right p-3 text-green-600">{formatCurrency(reportData.totalIn)}</td>
+                          <td></td>
+                        </tr>
+
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -436,48 +443,56 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="text-left p-3">Date</th>
-                        <th className="text-left p-3">Project</th>
-                        <th className="text-left p-3">Vendor</th>
-                        <th className="text-left p-3">Stage</th>
-                        <th className="text-right p-3">Amount</th>
-                        <th className="text-left p-3">Reference</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {reportData.filteredPaymentsOut.map((payment) => (
-                        <tr key={payment.id}>
-                          <td className="p-3">{formatDate(payment.payment_date)}</td>
-                          <td className="p-3">{payment.project_name}</td>
-                          <td className="p-3">{payment.vendor_name}</td>
-                          <td className="p-3">
-                            <Badge variant="outline" className="capitalize">
-                              {payment.payment_stage}
-                            </Badge>
-                          </td>
-                          <td className="text-right p-3 font-medium text-red-600">
-                            {formatCurrency(payment.amount)}
-                          </td>
-                          <td className="p-3">{payment.reference_number || '-'}</td>
+                  {!reportData.filteredPaymentsIn && (
+                    <div className='text-center p-4 text-muted-foreground'>No customer payments yet.</div>
+                  )}
+                  {reportData.filteredPaymentsOut && (
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-left p-3">Date</th>
+                          <th className="text-left p-3">Project</th>
+                          <th className="text-left p-3">Vendor</th>
+                          <th className="text-left p-3">Stage</th>
+                          <th className="text-right p-3">Amount</th>
+                          <th className="text-left p-3">Reference</th>
                         </tr>
-                      ))}
-                      <tr className="bg-slate-50 font-bold">
-                        <td colSpan="4" className="p-3 text-right">Total:</td>
-                        <td className="text-right p-3 text-red-600">{formatCurrency(reportData.totalOut)}</td>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y">
+                        {!reportData.filteredPaymentsOut && (
+                          <span className='text-muted-foreground'>No data to show</span>
+                        )}
+                        {reportData.filteredPaymentsOut.map((payment) => (
+                          <tr key={payment.id}>
+                            <td className="p-3">{formatDate(payment.payment_date)}</td>
+                            <td className="p-3">{payment.project_name}</td>
+                            <td className="p-3">{payment.vendor_name}</td>
+                            <td className="p-3">
+                              <Badge variant="outline" className="capitalize">
+                                {payment.payment_stage}
+                              </Badge>
+                            </td>
+                            <td className="text-right p-3 font-medium text-red-600">
+                              {formatCurrency(payment.amount)}
+                            </td>
+                            <td className="p-3">{payment.reference_number || '-'}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-slate-50 font-bold">
+                          <td colSpan="4" className="p-3 text-right">Total:</td>
+                          <td className="text-right p-3 text-red-600">{formatCurrency(reportData.totalOut)}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </main>
-      
+
       <style jsx global>{`
         @media print {
           .print\:hidden {

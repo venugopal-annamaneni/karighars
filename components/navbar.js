@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import logo from '@/app/assets/logo/logo.webp';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +15,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  LayoutDashboard, 
-  FolderKanban, 
-  Users, 
-  Package, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Users,
+  Package,
+  CreditCard,
   FileText,
   Settings,
   LogOut,
@@ -26,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { USER_ROLE } from '@/lib/constants';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['all'] },
@@ -41,8 +44,8 @@ export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  const filteredNav = navigation.filter(item => 
-    item.roles.includes('all') || 
+  const filteredNav = navigation.filter(item =>
+    item.roles.includes('all') ||
     (session?.user?.role && item.roles.includes(session.user.role))
   );
 
@@ -55,11 +58,10 @@ export function Navbar() {
           <Link
             key={item.name}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              isActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+              ? 'bg-primary text-primary-foreground md:bg-white md:text-black'
+              : 'text-muted-foreground md:text-muted hover:bg-accent hover:text-accent-foreground'
+              }`}
           >
             <Icon className="h-4 w-4" />
             {item.name}
@@ -70,24 +72,30 @@ export function Navbar() {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-black">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
-            <span className="font-bold text-lg">KG Interiors</span>
+            {/* <span className="font-bold text-lg">KG Interiors</span> */}
+            <Image
+              src={logo}
+              alt="Karighars"
+              width={60}
+              priority
+            />
           </Link>
           <nav className="hidden md:flex items-center space-x-1">
             <NavLinks />
           </nav>
         </div>
-        
+
         <div className="flex flex-1 items-center justify-end space-x-2">
           {session?.user && (
             <>
-              <span className="text-xs text-muted-foreground capitalize hidden md:inline">
+              <span className="text-xs text-white capitalize hidden md:inline">
                 {session.user.role?.replace('_', ' ')}
               </span>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -129,7 +137,7 @@ export function Navbar() {
               </DropdownMenu>
             </>
           )}
-          
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="md:hidden">

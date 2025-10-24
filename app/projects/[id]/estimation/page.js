@@ -30,7 +30,9 @@ export default function EstimationPage() {
   const [showOverpaymentModal, setShowOverpaymentModal] = useState(false);
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
-  const [bizModel, setBizModel] = useState(null);
+  const [bizModel, setBizModel] = useState({
+    gst_percentage: ''
+  });
 
   const [formData, setFormData] = useState({
     remarks: '',
@@ -44,10 +46,10 @@ export default function EstimationPage() {
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
-      karighar_charges_percentage: null,
-      discount_percentage: null,
-      gst_percentage: null,
-      vendor_type: 'PI'
+      karighar_charges_percentage: 0,
+      discount_percentage: 0,
+      gst_percentage: 0,
+      vendor_type: ''
     }
   ]);
 
@@ -93,8 +95,8 @@ export default function EstimationPage() {
                 quantity: parseFloat(item.quantity),
                 unit: item.unit,
                 unit_price: parseFloat(item.unit_price),
-                karighar_charges_percentage: parseFloat(item.karighar_charges_percentage || 10),
-                discount_percentage: parseFloat(item.discount_percentage || 0),
+                karighar_charges_percentage: parseFloat(item.karighar_charges_percentage),
+                discount_percentage: parseFloat(item.discount_percentage),
                 gst_percentage: parseFloat(item.gst_percentage),
                 vendor_type: item.vendor_type
               })));
@@ -117,10 +119,10 @@ export default function EstimationPage() {
       quantity: 1,
       unit: 'sqft',
       unit_price: 0,
-      karighar_charges_percentage: null,
-      discount_percentage: null,
-      gst_percentage: null,
-      vendor_type: 'PI'
+      karighar_charges_percentage: 0,
+      discount_percentage: 0,
+      gst_percentage: 0,
+      vendor_type: ''
     }]);
   };
 
@@ -130,17 +132,23 @@ export default function EstimationPage() {
   };
 
   const updateItem = (index, field, value) => {
+    debugger;
     const newItems = [...items];
     newItems[index][field] = value;
+    if( field === "category") {
+      newItems[index]["karighar_charges_percentage"] = getDefaultCharges(value)
+      newItems[index]["gst_percentage"] = newItems[index]["gst_percentage"].length > 0 ? newItems[index]["gst_percentage"] : bizModel.gst_percentage;
+    }
     setItems(newItems);
   };
 
   const calculateItemTotal = (item) => {
+    debugger;
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unit_price) || 0;
     const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
     const discountPerc = parseFloat(item.discount_percentage) || 0;
-    const gstPerc = parseFloat(item.gst_percentage);
+    const gstPerc = parseFloat(item.gst_percentage) || 0;
 
     // Step 1: Calculate subtotal
     let subtotal = 0;
@@ -261,6 +269,7 @@ export default function EstimationPage() {
   };
 
   const handleSubmit = async (e) => {
+    debugger;
     e.preventDefault();
     setSaving(true);
 
@@ -402,8 +411,7 @@ export default function EstimationPage() {
     }).format(amount || 0);
   };
 
-  const getDefaultCharges = (index) => {
-    const itemCategory = items[index].category;
+  const getDefaultCharges = (itemCategory) => {
     switch (itemCategory) {
       case ESTIMATION_CATEGORY.WOODWORK:
         return bizModel.design_charge_percentage;
@@ -412,6 +420,9 @@ export default function EstimationPage() {
         return bizModel.service_charge_percentage;
       case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
         return bizModel.shopping_charge_percentage;
+      default:
+        return 0;
+
     }
   }
   const getMaxDiscount = (index) => {
@@ -424,6 +435,8 @@ export default function EstimationPage() {
         return bizModel.max_service_charge_discount_percentage;
       case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
         return bizModel.max_shopping_charge_discount_percentage;
+      default:
+        return 0;  
     }
   }
 
@@ -564,10 +577,11 @@ export default function EstimationPage() {
                           step="0.01"
                           min="0"
                           placeholder="Select category for standard charges"
-                          value={item.karighar_charges_percentage ? item.karighar_charges_percentage : getDefaultCharges(index)}
+                          value={item.karighar_charges_percentage}
                           onChange={(e) => updateItem(index, 'karighar_charges_percentage', e.target.value)}
                           className="h-9"
                         />
+                        <span className='text-xs text-amber-700 italic'>Select category for standard charges</span>
                       </div>
 
                       <div className="space-y-2">
@@ -592,7 +606,7 @@ export default function EstimationPage() {
                           step="0.5"
                           min="0"
                           placeholder="Enter GST%"
-                          value={item.gst_percentage ? item.gst_percentage : bizModel.gst_percentage}
+                          value={item.gst_percentage}
                           onChange={(e) => updateItem(index, 'gst_percentage', e.target.value)}
                           className="h-9"
                         />
