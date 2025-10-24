@@ -132,8 +132,6 @@ export default function CustomerDetailPage() {
         return;
       }
 
-      debugger;
-
       const uploadData = await uploadRes.json();
 
       await fetch(`/api/documents`, {

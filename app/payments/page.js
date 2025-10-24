@@ -32,8 +32,8 @@ export default function PaymentsPage() {
   const fetchData = async () => {
     try {
       const [paymentsInRes, paymentsOutRes, projectsRes] = await Promise.all([
-        fetch('/api/customer-payments'),
-        fetch('/api/vendor-payments'),
+        fetch('/api/all-payments?type=customer'),
+        fetch('/api/all-payments?type=vendor'),
         fetch('/api/projects')
       ]);
 

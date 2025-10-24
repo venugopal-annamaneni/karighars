@@ -66,7 +66,6 @@ export default function ReportsPage() {
   };
 
   const generateReport = () => {
-    debugger;
     if (!reportData) return;
 
     let filteredPaymentsIn = reportData.paymentsIn;
