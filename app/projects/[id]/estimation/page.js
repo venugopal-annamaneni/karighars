@@ -529,8 +529,9 @@ export default function EstimationPage() {
 
                     <div className="grid md:grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs">Quantity</Label>
+                        <Label className="text-xs">Quantity<span className='text-red-500'>*</span></Label>
                         <Input
+                          required
                           type="number"
                           step="0.01"
                           placeholder="0"
@@ -541,8 +542,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Unit</Label>
+                        <Label className="text-xs">Unit<span className='text-red-500'>*</span></Label>
                         <Select
+                          required
                           value={item.unit}
                           onValueChange={(value) => updateItem(index, 'unit', value)}
                         >
@@ -559,8 +561,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Unit Price (₹)</Label>
+                        <Label className="text-xs">Unit Price (₹)<span className='text-red-500'>*</span></Label>
                         <Input
+                          required
                           type="number"
                           step="0.01"
                           placeholder="0"
@@ -571,8 +574,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">KG Charges (%)</Label>
+                        <Label className="text-xs">KG Charges (%)<span className='text-red-500'>*</span></Label>
                         <Input
+                          required
                           type="number"
                           step="0.01"
                           min="0"
@@ -585,8 +589,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Discount (%)</Label>
+                        <Label className="text-xs">Discount (%)<span className='text-red-500'>*</span></Label>
                         <Input
+                          required
                           type="number"
                           step="0.01"
                           min="0"
@@ -600,8 +605,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">GST (%)</Label>
+                        <Label className="text-xs">GST (%)<span className='text-red-500'>*</span></Label>
                         <Input
+                          required
                           type="number"
                           step="0.5"
                           min="0"
@@ -613,8 +619,9 @@ export default function EstimationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Vendor Type</Label>
+                        <Label className="text-xs">Vendor Type<span className='text-red-500'>*</span></Label>
                         <Select
+                          required
                           value={item.vendor_type}
                           onValueChange={(value) => updateItem(index, 'vendor_type', value)}
                         >
@@ -763,8 +770,9 @@ export default function EstimationPage() {
                     <p className="font-semibold text-amber-900 mb-2">⚠️ What happens if you proceed:</p>
                     <ol className="list-decimal list-inside space-y-2 text-sm text-amber-900 ml-2">
                       <li>A new estimation version (v{overpaymentData.next_version}) will be created</li>
-                      <li>Status will be set to <strong>Pending Admin Approval</strong></li>
-                      <li>Admin must review and approve the overpayment</li>
+                      {/* <li>Status will be set to <strong>Pending Admin Approval</strong></li>
+                      <li>Admin must review and approve the overpayment</li> */}
+                      <li>This project will be flagged in management dashboard under <strong>OverPayment Alerts</strong></li>
                       <li>System will create a credit reversal entry in payments</li>
                       <li>Finance team will upload credit note document</li>
                       <li>Ledger will reflect the adjustment</li>

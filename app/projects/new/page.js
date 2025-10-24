@@ -313,7 +313,7 @@ export default function NewProjectPage() {
                   <SelectContent>
                     {bizModels.map((model) => (
                       <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name} ({model.code}-{model.version})
+                        {model.name} ({model.code})
                       </SelectItem>
                     ))}
                   </SelectContent>
