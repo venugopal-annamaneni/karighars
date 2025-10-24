@@ -32,18 +32,18 @@ export default function ProjectDocumentsPage() {
   });
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
 
-  const { project, loading } = useProjectData();
+  const { project, loading, fetchProjectData } = useProjectData();
   const [docsLoading, setDocsLoading] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
-      fetchProjectData();
+      fetchProjectDocumentsData();
     }
   }, [status, router, projectId]);
 
-  const fetchProjectData = async () => {
+  const fetchProjectDocumentsData = async () => {
     try {
       setDocsLoading(true);
       const [docsRes] = await Promise.all([
@@ -83,13 +83,13 @@ export default function ProjectDocumentsPage() {
       if (res.ok) {
         const data = await res.json();
         setInvoiceData(prev => ({ ...prev, invoice_url: data.url }));
-        toast.success('Invoice uploaded successfully');
+        toast.success('Invoice document uploaded successfully');
       } else {
-        toast.error('Failed to upload invoice');
+        toast.error('Failed to upload invoice document');
       }
     } catch (error) {
-      console.error('Error uploading invoice:', error);
-      toast.error('Upload failed');
+      console.error('Error uploading invoice document:', error);
+      toast.error('Invoice document upload failed');
     } finally {
       setUploadingInvoice(false);
     }
@@ -127,7 +127,8 @@ export default function ProjectDocumentsPage() {
         toast.success('Invoice uploaded successfully');
         setShowInvoiceDialog(false);
         setInvoiceData({ invoice_url: null, revenue_realized: '' });
-        fetchProjectData();
+        //fetchProjectDocumentsData();
+        fetchProjectData(); // This causes the entire page to re-render due to ProjectDataContext , no need to call fetchProjectDocumentsData()
       } else {
         toast.error('Failed to save invoice');
       }
@@ -185,7 +186,7 @@ export default function ProjectDocumentsPage() {
                       disabled={uploadingInvoice}
                       required={!invoiceData.invoice_url}
                     />
-                    {invoiceData.invoice_url && <p className="text-xs text-green-600">✓ Invoice uploaded</p>}
+                    {invoiceData.invoice_url && <p className="text-xs text-green-600">✓ Enter Revenue and [Upload Invoice] to finish uploading</p>}
                     {uploadingInvoice && <p className="text-xs text-blue-600">Uploading...</p>}
                   </div>
                   <div className="space-y-2">
@@ -201,8 +202,11 @@ export default function ProjectDocumentsPage() {
                     />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setShowInvoiceDialog(false)}>Cancel</Button>
-                    <Button type="submit" disabled={uploadingInvoice || !invoiceData.invoice_url}>Upload Invoice</Button>
+                    <Button type="button" variant="outline" onClick={() => { 
+                      setInvoiceData({ invoice_url: null, revenue_realized: '' }); 
+                      setShowInvoiceDialog(false) 
+                    }}>Cancel</Button>
+                    <Button type="submit" disabled={uploadingInvoice || !invoiceData.invoice_url || !invoiceData.revenue_realized}>Upload Invoice</Button>
                   </div>
                 </form>
               </DialogContent>

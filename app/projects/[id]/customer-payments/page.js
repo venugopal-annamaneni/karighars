@@ -130,7 +130,6 @@ export default function CustomerPaymentsPage() {
           reference_number: '',
           remarks: ''
         });
-        fetchProjectData();
         fetchCustomerPaymentData();
 
       } else {
@@ -229,7 +228,8 @@ export default function CustomerPaymentsPage() {
           ? 'Receipt uploaded and payment approved!'
           : 'Credit note uploaded and approved!'
       );
-      fetchProjectData();
+      //fetchCustomerPaymentData();
+      fetchProjectData(); // <- This triggers the entire page rendering, so no need to fetchCustomerPaymentData
     } catch (error) {
       console.error(`Error uploading ${type}:`, error);
       toast.error(`Failed to upload ${type}`);

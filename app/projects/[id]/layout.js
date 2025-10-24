@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 import { ALERT_TYPE, PROJECT_STAGES } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ArrowLeft, Calendar, Edit, FileText, MapPin, Users } from 'lucide-react';
@@ -70,7 +70,6 @@ function ProjectLayoutInner({ children }) {
 
   useEffect(() => {
     if (project) {
-      console.log("here");
       fetchOtherData();
     }
   })
@@ -157,7 +156,6 @@ function ProjectLayoutInner({ children }) {
 
   if (!session || !project) return null;
 
-  console.log("render");
   return (
 
     <div className="min-h-screen bg-slate-50">

@@ -61,7 +61,7 @@ export default function ProjectEstimationPage() {
   }, [status, router, projectId]);
 
   useEffect(() => {
-    if(project && project.id)
+    if (project && project.id)
       fetchEstimationDetails();
   }, [loading])
 
@@ -362,15 +362,15 @@ export default function ProjectEstimationPage() {
       if (res.ok) {
         const responseData = await res.json();
 
-        // Check if overpayment was detected (shouldn't happen now, but keep for safety)
-        if (responseData.warning === 'overpayment_detected' && responseData.overpayment) {
-          toast.warning(
-            `⚠️ OVERPAYMENT DETECTED: ₹${responseData.overpayment.amount.toLocaleString('en-IN')}. Admin approval required.`,
-            { duration: 8000 }
-          );
-        } else {
-          toast.success('Estimation saved successfully!');
-        }
+        // // Check if overpayment was detected (shouldn't happen now, but keep for safety)
+        // if (responseData.warning === 'overpayment_detected' && responseData.overpayment) {
+        //   toast.warning(
+        //     `⚠️ OVERPAYMENT DETECTED: ₹${responseData.overpayment.amount.toLocaleString('en-IN')}. Admin approval required.`,
+        //     { duration: 8000 }
+        //   );
+        // } else {
+        //   toast.success('Estimation saved successfully!');
+        // }
         await fetchProjectData();
         router.push(`/projects/${projectId}`);
       } else {
@@ -665,6 +665,7 @@ export default function ProjectEstimationPage() {
 
                 <div className="space-y-2">
                   <Label>Default GST (%)</Label>
+
                   <Input
                     readOnly
                     disabled
@@ -673,8 +674,10 @@ export default function ProjectEstimationPage() {
                     min="0"
                     max="100"
                     placeholder="Fetching GST% from Business Model..."
-                    value={bizModel.gst_percentage}
+                    value={bizModel.gst_percentage || 0}
                   />
+
+
                   <span className='text-xs text-gray-500'>From the Business Model Configuration. Standard GST% added to all items.</span>
                 </div>
               </div>

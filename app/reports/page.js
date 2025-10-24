@@ -28,14 +28,20 @@ export default function ReportsPage() {
     }
   }, [status, router]);
 
+
   useEffect(() => {
+    if (!loading) {
+      generateReport();
+      return;
+    }
+    // For selectedProject change
     generateReport();
-  }, [selectedProject, projects]);
+  }, [selectedProject, loading]);
 
   const fetchData = async () => {
     try {
       const [projectsRes, statsRes, paymentsInRes, paymentsOutRes] = await Promise.all([
-        fetch('/api/projects?page_no=1&page_size=10&filter=""'),
+        fetch(`/api/projects?page_no=1&page_size=10&filter=${encodeURIComponent('')}`),
         fetch('/api/dashboard?output=stats'),
         fetch('/api/all-payments?type=customer'),
         fetch('/api/all-payments?type=vendor')
@@ -66,28 +72,34 @@ export default function ReportsPage() {
   };
 
   const generateReport = () => {
+
     if (!reportData) return;
+    try {
 
-    let filteredPaymentsIn = reportData.paymentsIn;
-    let filteredPaymentsOut = reportData.paymentsOut;
+      let filteredPaymentsIn = reportData.paymentsIn;
+      let filteredPaymentsOut = reportData.paymentsOut;
 
-    if (selectedProject !== 'all') {
-      const projectId = parseInt(selectedProject);
-      filteredPaymentsIn = reportData.paymentsIn.filter(p => p.project_id === projectId);
-      filteredPaymentsOut = reportData.paymentsOut.filter(p => p.project_id === projectId);
+      if (selectedProject !== 'all') {
+        const projectId = parseInt(selectedProject);
+        filteredPaymentsIn = reportData.paymentsIn.filter(p => p.project_id === projectId);
+        filteredPaymentsOut = reportData.paymentsOut.filter(p => p.project_id === projectId);
+      }
+
+      const totalIn = filteredPaymentsIn.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const totalOut = filteredPaymentsOut.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+
+      setReportData({
+        ...reportData,
+        filteredPaymentsIn,
+        filteredPaymentsOut,
+        totalIn,
+        totalOut,
+        netPosition: totalIn - totalOut
+      });
     }
-
-    const totalIn = filteredPaymentsIn.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-    const totalOut = filteredPaymentsOut.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-    setReportData({
-      ...reportData,
-      filteredPaymentsIn,
-      filteredPaymentsOut,
-      totalIn,
-      totalOut,
-      netPosition: totalIn - totalOut
-    });
+    catch (err) {
+      console.log("Error generating report");
+    }
   };
 
   const exportToCSV = (type) => {
@@ -210,7 +222,7 @@ export default function ReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map((project) => (
+                  {projects?.map((project) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.name}
                     </SelectItem>
@@ -266,6 +278,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Reports Tabs */}
+
         <Tabs defaultValue="summary" className="space-y-4">
           <TabsList className="print:hidden">
             <TabsTrigger value="summary">Summary</TabsTrigger>
@@ -379,10 +392,10 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="border rounded-lg overflow-hidden">
-                  {!reportData.filteredPaymentsIn && (
+                  {(reportData.filteredPaymentsIn?.length === 0) && (
                     <div className='text-center p-4 text-muted-foreground'>No customer payments yet.</div>
                   )}
-                  {reportData.filteredPaymentsIn && (
+                  {(reportData.filteredPaymentsIn?.length > 0) && (
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50">
                         <tr>
@@ -442,10 +455,10 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="border rounded-lg overflow-hidden">
-                  {!reportData.filteredPaymentsIn && (
-                    <div className='text-center p-4 text-muted-foreground'>No customer payments yet.</div>
+                  {(reportData.filteredPaymentsOut?.length === 0) && (
+                    <div className='text-center p-4 text-muted-foreground'>No vendor payments yet.</div>
                   )}
-                  {reportData.filteredPaymentsOut && (
+                  {(reportData.filteredPaymentsOut?.length > 0) && (
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50">
                         <tr>
@@ -458,9 +471,6 @@ export default function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {!reportData.filteredPaymentsOut && (
-                          <span className='text-muted-foreground'>No data to show</span>
-                        )}
                         {reportData.filteredPaymentsOut.map((payment) => (
                           <tr key={payment.id}>
                             <td className="p-3">{formatDate(payment.payment_date)}</td>
@@ -490,6 +500,7 @@ export default function ReportsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
       </main>
 
       <style jsx global>{`

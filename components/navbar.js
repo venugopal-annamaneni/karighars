@@ -34,8 +34,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['all'] },
   { name: 'Projects', href: '/projects', icon: FolderKanban, roles: ['all'] },
   { name: 'Customers', href: '/customers', icon: Users, roles: [USER_ROLE.SALES, USER_ROLE.FINANCE, USER_ROLE.ALL] },
-  { name: 'Vendors', href: '/vendors', icon: Package, roles: [USER_ROLE.PROJECTMANAGER, USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
-  { name: 'Payments', href: '/payments', icon: CreditCard, roles: [USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
+  { name: 'Vendors', href: '/vendors', icon: Package, roles: [USER_ROLE.PROJECT_MANAGER, USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
   { name: 'Reports', href: '/reports', icon: FileText, roles: [USER_ROLE.FINANCE, USER_ROLE.ADMIN] },
   { name: 'Settings', href: '/settings', icon: Settings, roles: [USER_ROLE.ADMIN] },
 ];
