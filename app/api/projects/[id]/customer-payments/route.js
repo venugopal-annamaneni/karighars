@@ -57,7 +57,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
     }
 
-    // 2️⃣ Handle Credit Note creation
+    // 2️⃣ Handle Receipt Reversal creation
     if (isCreditNote) {
       const projectId = body.project_id;
       const estRes = await query(`
