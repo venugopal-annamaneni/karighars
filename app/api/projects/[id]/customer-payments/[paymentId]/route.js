@@ -62,10 +62,10 @@ export async function PUT(request, { params }) {
       const payment = result.rows[0];
 
       // Determine ledger entry type
-      const entryType = body.document_type === 'credit_note' ? 'debit' : 'credit';
+      const entryType = body.document_type === 'receipt_reversal' ? 'debit' : 'credit';
       const remarks =
-        body.document_type === 'credit_note'
-          ? 'Credit note approved by Finance'
+        body.document_type === 'receipt_reversal'
+          ? 'Receipt reversal approved by Finance'
           : 'Payment approved by Finance';
 
 
