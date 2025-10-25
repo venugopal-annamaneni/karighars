@@ -581,8 +581,8 @@ export default function CustomerPaymentsPage() {
                   {payment.status === PAYMENT_STATUS.PENDING && (
                     <p className="text-xs text-amber-600">Not counted</p>
                   )}
-                  {payment.payment_type === 'CREDIT_NOTE' && (
-                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800 text-xs mt-1">Credit Note</Badge>
+                  {payment.payment_type === 'RECEIPT_REVERSAL' && (
+                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800 text-xs mt-1">Receipt Reversal</Badge>
                   )}
                 </div>
                 {payment.status === PAYMENT_STATUS.PENDING && (session?.user?.role === USER_ROLE.FINANCE || session?.user?.role === USER_ROLE.ADMIN) && (
