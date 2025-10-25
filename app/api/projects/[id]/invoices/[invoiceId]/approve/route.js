@@ -51,6 +51,27 @@ export async function POST(request, { params }) {
       WHERE id = $2
     `, [invoice.invoice_amount, projectId]);
 
+    // Insert document into documents table (for both invoices and credit notes)
+    if (invoice.invoice_document_url) {
+      const documentType = parseFloat(invoice.invoice_amount) < 0 ? 'credit_note' : 'invoice';
+      await query(`
+        INSERT INTO documents (
+          project_id, document_type, document_url, document_name,
+          source_table, source_id, uploaded_by, uploaded_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        ON CONFLICT DO NOTHING
+      `, [
+        projectId,
+        documentType,
+        invoice.invoice_document_url,
+        invoice.invoice_number || (documentType === 'credit_note' ? 'Credit Note' : 'Invoice'),
+        'project_invoices',
+        invoiceId,
+        session.user.id
+      ]);
+    }
+
     // Log activity
     await query(`
       INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
