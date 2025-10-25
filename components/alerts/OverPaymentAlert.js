@@ -56,7 +56,7 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
                       })
                     });
                     if (res.ok) {
-                      toast.success(`Overpayment approved! Credit note created in Customer Payments (pending document upload).`);
+                      toast.success(`Overpayment approved! Receipt reversal created in Customer Payments (pending document upload).`);
                       setTimeout(() => {fetchProjectData()}, 2000);
                     } else {
                       const data = await res.json();
