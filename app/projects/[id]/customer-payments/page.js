@@ -624,7 +624,7 @@ export default function CustomerPaymentsPage() {
                   </div>
                 )}
                 {payment.document_url && (
-                  <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'CREDIT_NOTE' ? "text-red-600" : ""}>
+                  <Button size="sm" variant="ghost" asChild className={payment.payment_type === 'RECEIPT_REVERSAL' ? "text-red-600" : ""}>
                     <a href={payment.document_url} target="_blank" rel="noopener noreferrer">
                       <FileText className="h-4 w-4" />
                     </a>
