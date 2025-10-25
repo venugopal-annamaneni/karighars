@@ -255,6 +255,11 @@ export default function InvoicesPage() {
   const canApprove = session?.user?.role === 'admin';
   const canCancel = session?.user?.role === 'admin' || session?.user?.role === 'finance';
 
+  // Calculate available amount to invoice
+  const paymentsReceived = parseFloat(project?.payments_received || 0);
+  const invoicedAmount = parseFloat(project?.invoiced_amount || 0);
+  const availableToInvoice = paymentsReceived - invoicedAmount;
+
   if (loading) {
     return <div className="p-6">Loading invoices...</div>;
   }
