@@ -619,7 +619,7 @@ export default function CustomerPaymentsPage() {
                       variant="destructive"
                       onClick={() => { }}
                     >
-                      {payment.payment_type === 'CREDIT_NOTE' ? 'Cancel Credit Note' : 'Cancel Payment'}
+                      {payment.payment_type === 'RECEIPT_REVERSAL' ? 'Cancel Receipt Reversal' : 'Cancel Payment'}
                     </Button>
                   </div>
                 )}
