@@ -127,6 +127,22 @@ export default function InvoicesPage() {
       return;
     }
 
+    // Validate invoice amount against available amount
+    if (project) {
+      const paymentsReceived = parseFloat(project.payments_received || 0);
+      const invoicedAmount = parseFloat(project.invoiced_amount || 0);
+      const availableToInvoice = paymentsReceived - invoicedAmount;
+      const requestedAmount = parseFloat(formData.invoice_amount);
+
+      if (requestedAmount > availableToInvoice) {
+        toast.error(
+          `Invoice amount ₹${requestedAmount.toLocaleString('en-IN')} cannot exceed available amount ₹${availableToInvoice.toLocaleString('en-IN')}. ` +
+          `Received: ₹${paymentsReceived.toLocaleString('en-IN')}, Already Invoiced: ₹${invoicedAmount.toLocaleString('en-IN')}`
+        );
+        return;
+      }
+    }
+
     try {
       setUploading(true);
       const res = await fetch(`/api/projects/${projectId}/invoices`, {
@@ -145,6 +161,7 @@ export default function InvoicesPage() {
           remarks: ''
         });
         fetchInvoices();
+        fetchProject(); // Refresh project data
       } else {
         const error = await res.json();
         toast.error(error.error || 'Failed to upload invoice');
