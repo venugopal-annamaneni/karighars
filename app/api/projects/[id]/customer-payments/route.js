@@ -58,7 +58,7 @@ export async function POST(request, { params }) {
     }
 
     // 2️⃣ Handle Receipt Reversal creation
-    if (isCreditNote) {
+    if (isReceiptReversal) {
       const projectId = body.project_id;
       const estRes = await query(`
         SELECT e.*, p.customer_id, p.id AS project_id
@@ -89,19 +89,19 @@ export async function POST(request, { params }) {
       `, [
         estimation.project_id,
         estimation.customer_id,
-        'CREDIT_NOTE',
+        'RECEIPT_REVERSAL',
         -Math.abs(estimation.overpayment_amount),
         new Date(),
         'other',
-        `CREDIT-NOTE-${projectId}`,
-        `Credit note for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
+        `RECEIPT-REVERSAL-${projectId}`,
+        `Receipt reversal for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
         PAYMENT_STATUS.PENDING,
         session.user.id
       ]);
 
       return NextResponse.json({
-        message: `Credit note created in ${PAYMENT_STATUS.PENDING} state. Finance must upload document.`,
-        credit_note: creditNoteResult.rows[0],
+        message: `Receipt reversal created in ${PAYMENT_STATUS.PENDING} state. Finance must upload document.`,
+        receipt_reversal: creditNoteResult.rows[0],
         overpayment_amount: estimation.overpayment_amount
       });
     }
