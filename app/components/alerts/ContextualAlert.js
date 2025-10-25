@@ -8,10 +8,10 @@ export default function ContextualAlert() {
   if (!alert.visible) return null;
   const data = alert.data;
   if (alert.type === ALERT_TYPE.OVERPAYMENT_ALERT)
-    return <OverpaymentAlert estimation={data.estimation} userRole={data.userRole} fetchProjectData={data.fetchProjectData}  />;
+    return <OverpaymentAlert estimation={data.estimation} userRole={data.userRole} onClose={hideAlert}  />;
   
   if (alert.type === ALERT_TYPE.OVER_INVOICED_ALERT)
-    return <OverInvoicedAlert data={data} onClose={hideAlert} />;
+    return <OverInvoicedAlert data={data} userRole={data.userRole} onClose={hideAlert}/>;
 
   return null;
 }

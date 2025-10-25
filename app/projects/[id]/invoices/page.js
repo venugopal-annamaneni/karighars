@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { INVOICE_RECORD_TYPE } from '@/app/constants';
+import { useProjectData } from '@/app/context/ProjectDataContext';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -17,36 +15,30 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { FileText, Check, X, Eye, Upload } from 'lucide-react';
-import { toast } from 'sonner';
-import { useProjectData } from '@/app/context/ProjectDataContext';
+import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { FileText, Upload } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function InvoicesPage() {
   const { data: session } = useSession();
   const params = useParams();
-  const router = useRouter();
   const projectId = params.id;
 
   const [invoices, setInvoices] = useState([]);
-
   const [invoicesLoading, setInvoicesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
-    invoice_number: '',
-    invoice_amount: '',
-    invoice_date: new Date().toISOString().split('T')[0],
-    invoice_document_url: '',
-    remarks: ''
+    document_number: '',
+    amount: '',
+    document_date: new Date().toISOString().split('T')[0],
+    document_url: '',
+    remarks: '',
+    record_type: INVOICE_RECORD_TYPE.INVOICE
   });
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -91,7 +83,13 @@ export default function InvoicesPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setFormData(prev => ({ ...prev, invoice_document_url: data.url }));
+        setFormData(prev => ({ 
+          ...prev, 
+          document_url: data.url,
+          file_name: data.fileName,
+          file_size: data.size,
+          mime_type: data.type
+        }));
         toast.success('Document uploaded successfully');
       } else {
         toast.error('Failed to upload document');
@@ -105,14 +103,15 @@ export default function InvoicesPage() {
   };
 
   const handleSubmit = async (e) => {
+    
     e.preventDefault();
 
-    if (!formData.invoice_amount || parseFloat(formData.invoice_amount) <= 0) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error('Please enter a valid invoice amount');
       return;
     }
 
-    if (!formData.invoice_document_url) {
+    if (!formData.document_url) {
       toast.error('Please upload invoice document');
       return;
     }
@@ -122,7 +121,7 @@ export default function InvoicesPage() {
       const paymentsReceived = parseFloat(project.payments_received || 0);
       const invoicedAmount = parseFloat(project.invoiced_amount || 0);
       const availableToInvoice = paymentsReceived - invoicedAmount;
-      const requestedAmount = parseFloat(formData.invoice_amount);
+      const requestedAmount = parseFloat(formData.amount);
 
       if (requestedAmount > availableToInvoice) {
         toast.error(
@@ -144,11 +143,12 @@ export default function InvoicesPage() {
       if (res.ok) {
         toast.success('Invoice uploaded successfully');
         setFormData({
-          invoice_number: '',
-          invoice_amount: '',
-          invoice_date: new Date().toISOString().split('T')[0],
-          invoice_document_url: '',
-          remarks: ''
+          document_number: '',
+          amount: '',
+          document_date: new Date().toISOString().split('T')[0],
+          document_url: '',
+          remarks: '',
+          record_type: INVOICE_RECORD_TYPE.INVOICE
         });
         //fetchInvoices();
         fetchProjectData(); // Refresh project data renders the page again, triggers fetchInvoices
@@ -164,63 +164,63 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleApprove = async () => {
-    if (!selectedInvoice) return;
+  // const handleApprove = async () => {
+  //   if (!selectedInvoice) return;
 
-    try {
-      setProcessing(true);
-      const res = await fetch(`/api/projects/${projectId}/invoices/${selectedInvoice.id}/approve`, {
-        method: 'POST'
-      });
+  //   try {
+  //     setProcessing(true);
+  //     const res = await fetch(`/api/projects/${projectId}/invoices/${selectedInvoice.id}/approve`, {
+  //       method: 'POST'
+  //     });
 
-      if (res.ok) {
-        toast.success('Invoice approved successfully');
-        setShowApproveDialog(false);
-        setSelectedInvoice(null);
-        fetchInvoices();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || 'Failed to approve invoice');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error approving invoice');
-    } finally {
-      setProcessing(false);
-    }
-  };
+  //     if (res.ok) {
+  //       toast.success('Invoice approved successfully');
+  //       setShowApproveDialog(false);
+  //       setSelectedInvoice(null);
+  //       fetchInvoices();
+  //     } else {
+  //       const error = await res.json();
+  //       toast.error(error.error || 'Failed to approve invoice');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error:', error);
+  //     toast.error('Error approving invoice');
+  //   } finally {
+  //     setProcessing(false);
+  //   }
+  // };
 
-  const handleCancel = async () => {
-    if (!selectedInvoice || !cancellationReason.trim()) {
-      toast.error('Please enter cancellation reason');
-      return;
-    }
+  // const handleCancel = async () => {
+  //   if (!selectedInvoice || !cancellationReason.trim()) {
+  //     toast.error('Please enter cancellation reason');
+  //     return;
+  //   }
 
-    try {
-      setProcessing(true);
-      const res = await fetch(`/api/projects/${projectId}/invoices/${selectedInvoice.id}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancellation_reason: cancellationReason })
-      });
+  //   try {
+  //     setProcessing(true);
+  //     const res = await fetch(`/api/projects/${projectId}/invoices/${selectedInvoice.id}/cancel`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ cancellation_reason: cancellationReason })
+  //     });
 
-      if (res.ok) {
-        toast.success('Invoice cancelled successfully');
-        setShowCancelDialog(false);
-        setSelectedInvoice(null);
-        setCancellationReason('');
-        fetchInvoices();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || 'Failed to cancel invoice');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error cancelling invoice');
-    } finally {
-      setProcessing(false);
-    }
-  };
+  //     if (res.ok) {
+  //       toast.success('Invoice cancelled successfully');
+  //       setShowCancelDialog(false);
+  //       setSelectedInvoice(null);
+  //       setCancellationReason('');
+  //       fetchInvoices();
+  //     } else {
+  //       const error = await res.json();
+  //       toast.error(error.error || 'Failed to cancel invoice');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error:', error);
+  //     toast.error('Error cancelling invoice');
+  //   } finally {
+  //     setProcessing(false);
+  //   }
+  // };
 
 
   const getStatusBadge = (status) => {
@@ -253,7 +253,7 @@ export default function InvoicesPage() {
   if (!session || !project) return null;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Upload Invoice Form */}
       {canUpload && (
         <Card>
@@ -287,8 +287,8 @@ export default function InvoicesPage() {
                   <Label>Invoice Number</Label>
                   <Input
                     placeholder="INV-001"
-                    value={formData.invoice_number}
-                    onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                    value={formData.document_number}
+                    onChange={(e) => setFormData({ ...formData, document_number: e.target.value })}
                   />
                 </div>
 
@@ -298,8 +298,8 @@ export default function InvoicesPage() {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.invoice_amount}
-                    onChange={(e) => setFormData({ ...formData, invoice_amount: e.target.value })}
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                     required
                   />
                 </div>
@@ -308,8 +308,8 @@ export default function InvoicesPage() {
                   <Label>Invoice Date</Label>
                   <Input
                     type="date"
-                    value={formData.invoice_date}
-                    onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                    value={formData.document_date}
+                    onChange={(e) => setFormData({ ...formData, document_date: e.target.value })}
                   />
                 </div>
 
@@ -321,7 +321,7 @@ export default function InvoicesPage() {
                     onChange={handleFileUpload}
                     disabled={uploading}
                   />
-                  {formData.invoice_document_url && (
+                  {formData.document_url && (
                     <p className="text-xs text-green-600">✓ Document uploaded</p>
                   )}
                 </div>
@@ -370,64 +370,63 @@ export default function InvoicesPage() {
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => {
-                  const isCreditNote = parseFloat(invoice.invoice_amount) < 0;
+                  const isCreditNote = invoice.record_type === INVOICE_RECORD_TYPE.CREDIT_NOTE;
                   return (
                     <TableRow key={invoice.id} className={isCreditNote ? 'bg-red-50' : ''}>
                       <TableCell className="font-medium">
-                        {invoice.invoice_number || '-'}
+                        {invoice.document_number || '-'}
                         {isCreditNote && (
                           <Badge variant="outline" className="ml-2 bg-red-100 text-red-700 border-red-300 text-xs">
                             CREDIT NOTE
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>{formatDate(invoice.invoice_date)}</TableCell>
-                      <TableCell className={`font-semibold ${isCreditNote ? 'text-red-600' : ''}`}>
-                        {formatCurrency(invoice.invoice_amount)}
+                      <TableCell>{formatDate(invoice.document_date)}</TableCell>
+                      <TableCell className={`font-bold ${isCreditNote ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatCurrency(invoice.amount)}
                       </TableCell>
                       <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell>{invoice.uploaded_by_name}</TableCell>
+                      <TableCell>{invoice.created_by_name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {invoice.invoice_document_url && (
+                          {invoice.document_url && (
                             <Button
-                              variant="ghost"
+                              variant="default"
                               size="sm"
-                              onClick={() => window.open(invoice.invoice_document_url, '_blank')}
+                              onClick={() => window.open(invoice.document_url, '_blank')}
                             >
-                              <Eye className="w-4 h-4" />
+                              View
                             </Button>
                           )}
-
-                          {invoice.status === 'pending' && canApprove && (
+                          {/* {invoice.status === 'pending' && canApprove && (
                             <Button
-                              variant="ghost"
+                              variant="destructive"
                               size="sm"
-                              className="text-green-600 hover:text-green-700"
+                              className="text-white"
                               onClick={() => {
                                 setSelectedInvoice(invoice);
                                 setShowApproveDialog(true);
                               }}
                             >
-                              <Check className="w-4 h-4" />
+                              Approve
                             </Button>
                           )}
 
                           {invoice.status === 'pending' && canCancel && (
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-700"
                               onClick={() => {
                                 setSelectedInvoice(invoice);
                                 setShowCancelDialog(true);
                               }}
                             >
-                              <X className="w-4 h-4" />
+                              Cancel
                             </Button>
-                          )}
+                          )} */}
 
-                          {invoice.status === 'approved' && (
+                          {/* {invoice.status === 'approved' && (
                             <span className="text-xs text-green-600">
                               ✓ by {invoice.approved_by_name}
                             </span>
@@ -437,7 +436,7 @@ export default function InvoicesPage() {
                             <span className="text-xs text-red-600">
                               ✗ by {invoice.cancelled_by_name}
                             </span>
-                          )}
+                          )} */}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -450,7 +449,7 @@ export default function InvoicesPage() {
       </Card>
 
       {/* Approve Dialog */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+      {/* <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Invoice</DialogTitle>
@@ -460,8 +459,8 @@ export default function InvoicesPage() {
           </DialogHeader>
           {selectedInvoice && (
             <div className="space-y-2 py-4">
-              <p><strong>Invoice:</strong> {selectedInvoice.invoice_number || 'N/A'}</p>
-              <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.invoice_amount)}</p>
+              <p><strong>Invoice:</strong> {selectedinvoice.document_number || 'N/A'}</p>
+              <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.amount)}</p>
               <p className="text-sm text-muted-foreground">
                 This will increase the project's realized revenue.
               </p>
@@ -478,7 +477,7 @@ export default function InvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Cancel Dialog */}
+      
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent>
           <DialogHeader>
@@ -489,8 +488,8 @@ export default function InvoicesPage() {
           </DialogHeader>
           {selectedInvoice && (
             <div className="space-y-4 py-4">
-              <p><strong>Invoice:</strong> {selectedInvoice.invoice_number || 'N/A'}</p>
-              <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.invoice_amount)}</p>
+              <p><strong>Invoice:</strong> {selectedinvoice.document_number || 'N/A'}</p>
+              <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.amount)}</p>
 
               <div className="space-y-2">
                 <Label>Cancellation Reason *</Label>
@@ -519,7 +518,7 @@ export default function InvoicesPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 }

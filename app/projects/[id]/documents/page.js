@@ -27,7 +27,7 @@ export default function ProjectDocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [invoiceData, setInvoiceData] = useState({
-    invoice_url: null,
+    document_url: null,
     revenue_realized: ''
   });
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
@@ -82,7 +82,7 @@ export default function ProjectDocumentsPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setInvoiceData(prev => ({ ...prev, invoice_url: data.url }));
+        setInvoiceData(prev => ({ ...prev, docment_url: data.url }));
         toast.success('Invoice document uploaded successfully');
       } else {
         toast.error('Failed to upload invoice document');
@@ -102,14 +102,14 @@ export default function ProjectDocumentsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          invoice_url: invoiceData.invoice_url,
+          document_url: invoiceData.document_url,
           revenue_realized: invoiceData.revenue_realized
         })
       });
 
       if (res.ok) {
         // Create document record
-        if (invoiceData.invoice_url) {
+        if (invoiceData.document_url) {
           await fetch('/api/documents', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -117,7 +117,7 @@ export default function ProjectDocumentsPage() {
               related_entity: 'project',
               related_id: projectId,
               document_type: 'project_invoice',
-              document_url: invoiceData.invoice_url,
+              document_url: invoiceData.document_url,
               file_name: 'Project Invoice',
               remarks: `Invoice for revenue realized: ₹${invoiceData.revenue_realized}`
             })
@@ -126,7 +126,7 @@ export default function ProjectDocumentsPage() {
 
         toast.success('Invoice uploaded successfully');
         setShowInvoiceDialog(false);
-        setInvoiceData({ invoice_url: null, revenue_realized: '' });
+        setInvoiceData({ document_url: null, revenue_realized: '' });
         //fetchProjectDocumentsData();
         fetchProjectData(); // This causes the entire page to re-render due to ProjectDataContext , no need to call fetchProjectDocumentsData()
       } else {
@@ -184,9 +184,9 @@ export default function ProjectDocumentsPage() {
                       accept="image/*,.pdf"
                       onChange={(e) => handleInvoiceUpload(e.target.files[0])}
                       disabled={uploadingInvoice}
-                      required={!invoiceData.invoice_url}
+                      required={!invoiceData.document_url}
                     />
-                    {invoiceData.invoice_url && <p className="text-xs text-green-600">✓ Enter Revenue and [Upload Invoice] to finish uploading</p>}
+                    {invoiceData.document_url && <p className="text-xs text-green-600">✓ Enter Revenue and [Upload Invoice] to finish uploading</p>}
                     {uploadingInvoice && <p className="text-xs text-blue-600">Uploading...</p>}
                   </div>
                   <div className="space-y-2">
@@ -202,11 +202,11 @@ export default function ProjectDocumentsPage() {
                     />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => { 
-                      setInvoiceData({ invoice_url: null, revenue_realized: '' }); 
-                      setShowInvoiceDialog(false) 
+                    <Button type="button" variant="outline" onClick={() => {
+                      setInvoiceData({ document_url: null, revenue_realized: '' });
+                      setShowInvoiceDialog(false)
                     }}>Cancel</Button>
-                    <Button type="submit" disabled={uploadingInvoice || !invoiceData.invoice_url || !invoiceData.revenue_realized}>Upload Invoice</Button>
+                    <Button type="submit" disabled={uploadingInvoice || !invoiceData.document_url || !invoiceData.revenue_realized}>Upload Invoice</Button>
                   </div>
                 </form>
               </DialogContent>
@@ -222,18 +222,23 @@ export default function ProjectDocumentsPage() {
               <p className="text-muted-foreground mb-4">No documents uploaded yet</p>
             </div>
           ) : (
-            documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
+            documents.map((doc) => {
+              return <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
                 <div>
-                  <p className="font-medium">{doc.file_name || 'Document'}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm font-bold text-muted-foreground">
                     {doc.document_type}
                     {doc.related_entity === 'customer_payments' && (
                       <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
                         ({formatCurrency(doc.related_info.amount)})
                       </span>
                     )}
+                    {doc.related_entity === 'project_invoices' && (
+                      <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
+                        ({formatCurrency(doc.related_info.amount)})
+                      </span>
+                    )}
                   </p>
+                  <p className="text-xs text-muted-foreground text-blue-500">{doc.file_name}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Uploaded by {doc.uploaded_by_name || 'N/A'} on {formatDate(doc.created_at)}
                   </p>
@@ -245,7 +250,7 @@ export default function ProjectDocumentsPage() {
                   </a>
                 </Button>
               </div>
-            ))
+            })
           )}
         </div>
       </CardContent>

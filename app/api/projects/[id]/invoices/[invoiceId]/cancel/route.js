@@ -60,7 +60,7 @@ export async function POST(request, { params }) {
       invoiceId,
       session.user.id,
       'invoice_cancelled',
-      `Invoice cancelled: ${invoice.invoice_number || 'N/A'} - Reason: ${body.cancellation_reason}`
+      `Invoice cancelled: ${invoice.document_number || 'N/A'} - Reason: ${body.cancellation_reason}`
     ]);
 
     return NextResponse.json({ 

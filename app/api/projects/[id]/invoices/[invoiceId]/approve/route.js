@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { INVOICE_RECORD_TYPE } from '@/app/constants';
 
 // POST - Approve invoice
 export async function POST(request, { params }) {
@@ -49,11 +50,11 @@ export async function POST(request, { params }) {
       UPDATE projects
       SET invoiced_amount = COALESCE(invoiced_amount, 0) + $1
       WHERE id = $2
-    `, [invoice.invoice_amount, projectId]);
+    `, [invoice.amount, projectId]);
 
     // Insert document into documents table (for both invoices and credit notes)
-    if (invoice.invoice_document_url) {
-      const documentType = parseFloat(invoice.invoice_amount) < 0 ? 'credit_note' : 'invoice';
+    if (invoice.document_url) {
+      const documentType = parseFloat(invoice.amount) < 0 ? INVOICE_RECORD_TYPE.CREDIT_NOTE : INVOICE_RECORD_TYPE.INVOICE;
       await query(`
         INSERT INTO documents (
           project_id, document_type, document_url, document_name,
@@ -64,8 +65,8 @@ export async function POST(request, { params }) {
       `, [
         projectId,
         documentType,
-        invoice.invoice_document_url,
-        invoice.invoice_number || (documentType === 'credit_note' ? 'Credit Note' : 'Invoice'),
+        invoice.document_url,
+        invoice.document_number || (documentType === 'credit_note' ? 'Credit Note' : 'Invoice'),
         'project_invoices',
         invoiceId,
         session.user.id
@@ -82,7 +83,7 @@ export async function POST(request, { params }) {
       invoiceId,
       session.user.id,
       'invoice_approved',
-      `Invoice approved: ${invoice.invoice_number || 'N/A'} - ₹${invoice.invoice_amount}`
+      `Invoice approved: ${invoice.document_number || 'N/A'} - ₹${invoice.amount}`
     ]);
 
     return NextResponse.json({ 

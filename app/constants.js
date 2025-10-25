@@ -13,6 +13,11 @@ export const PAYMENT_STATUS = {
   REJECTED: 'rejected',
 };
 
+export const INVOICE_STATUS = {
+  APPROVED: 'approved',
+  PENDING: 'pending'
+};
+
 export const LEDGER_ENTRY_TYPE = {
   CREDIT: 'Credit',
   DEBIT: 'Debit'
@@ -62,3 +67,7 @@ export const ALERT_TYPE = {
 
 // All other payment types in customer_payments.payment_type come from biz_model.milestones.milestone_code
 export const REVERSAL_PAYMENT_TYPE = "PAYMENT_RECEIPT_REVERSAL"
+export const INVOICE_RECORD_TYPE = {
+  INVOICE: "Invoice",
+  CREDIT_NOTE: "Credit Node"
+}

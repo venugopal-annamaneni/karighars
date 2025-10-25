@@ -36,6 +36,18 @@ export async function GET(request, { params }) {
             );
             relatedInfo = rows[0];
           }
+          if (doc.related_entity === 'project_invoices') {
+            const { rows } = await query(
+              `SELECT 
+                id,
+                document_number,
+                amount
+              FROM project_invoices
+              WHERE id = $1`,
+              [doc.related_id]
+            );
+            relatedInfo = rows[0];
+          }
           return { ...doc, related_info: relatedInfo };
         })
       );

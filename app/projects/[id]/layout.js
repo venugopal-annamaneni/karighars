@@ -75,12 +75,12 @@ function ProjectLayoutInner({ children }) {
   })
 
   useEffect(() => {
+    debugger;
     if (estimation?.has_overpayment) {
       alert.showAlert(
         {
           estimation,
           userRole: session?.user?.role,
-          fetchProjectData,
         },
         ALERT_TYPE.OVERPAYMENT_ALERT
       );
@@ -97,7 +97,9 @@ function ProjectLayoutInner({ children }) {
             estimation_id: estimation.id,
             final_value: finalValue,
             invoiced_amount: invoicedAmount,
-            over_invoiced_amount: overInvoicedAmount
+            over_invoiced_amount: overInvoicedAmount,
+            userRole: session?.user?.role,
+            fetchProjectData: fetchProjectData
           },
           ALERT_TYPE.OVER_INVOICED_ALERT
         );
