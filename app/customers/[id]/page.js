@@ -56,7 +56,7 @@ export default function CustomerDetailPage() {
     try {
       const [customerRes, docsRes] = await Promise.all([
         fetch(`/api/customers/${customerId}`),
-        fetch(`/api/documents/customer/${customerId}`)
+        fetch(`/api/documents?group_type=customer&group_id=${customerId}`)
       ]);
 
       if (customerRes.ok) {
@@ -134,19 +134,21 @@ export default function CustomerDetailPage() {
 
       const uploadData = await uploadRes.json();
 
-      // Create document record
-      await fetch('/api/documents', {
+      await fetch(`/api/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          group_type: "customer",
+          group_id: customerId,
           related_entity: 'customer',
           related_id: customerId,
           document_type: docType,
           document_url: uploadData.url,
           file_name: uploadData.fileName,
           file_size: uploadData.size,
-          mime_type: uploadData.type
-        })
+          mime_type: uploadData.type,
+          uploaded_by: session.user.id
+        }),
       });
 
       toast.success('Document uploaded successfully');

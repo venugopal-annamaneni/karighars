@@ -26,7 +26,7 @@ export async function POST(request) {
     // Generate unique filename
     const fileExtension = file.name.split('.').pop();
     const uniqueName = `${randomBytes(16).toString('hex')}-${Date.now()}.${fileExtension}`;
-    const uploadPath = path.join(process.cwd(), 'uploads', uniqueName);
+    const uploadPath = path.join(process.cwd(), 'public/uploads', uniqueName);
 
     // Save file
     await writeFile(uploadPath, buffer);

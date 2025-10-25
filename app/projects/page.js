@@ -33,13 +33,9 @@ export default function ProjectsPage() {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
-      fetchProjects();
+      // fetchProjects();
     }
   }, [status, router]);
-
-  // useEffect(() => {
-  //   fetchProjects();
-  // }, [searchTerm]);
 
   useEffect(() => {
     fetchProjects();

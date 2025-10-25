@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
   const pageSize = Number(searchParams.get("page_size") || 20);
   const offset = (pageNo - 1) * pageSize;
 
-  const filter = searchParams.get("filter").trim() || "";
+  const filter = searchParams.get("filter")?.trim() || "";
   const filterValue = `%${filter}%`;
 
 
@@ -39,13 +39,13 @@ export async function GET(request, { params }) {
           ) e ON TRUE 
            WHERE 
           ($3 = '' OR 
-            p.project_code ILIKE $3 OR 
-            c.name ILIKE $3 OR 
-            p.location ILIKE $3
+            p.project_code ILIKE $4 OR 
+            c.name ILIKE $4 OR 
+            p.location ILIKE $4
           )
           ORDER BY p.created_at DESC
           LIMIT $1 OFFSET $2
-        `, [pageSize, offset,filterValue]);
+        `, [pageSize, offset,filter, filterValue]);
   return NextResponse.json({ projects: result.rows });
 }
 

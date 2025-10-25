@@ -2,11 +2,20 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+
 export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading...</div>}>
+      <SignInContent />
+    </Suspense>
+  );
+}
+
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [isLoading, setIsLoading] = useState(false);

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { BIZMODEL_STATUS, USER_ROLE } from '@/lib/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -33,14 +34,14 @@ export async function POST(request, { params }) {
   const body = await request.json();
 
   try {
-    if (session.user.role !== 'admin') {
+    if (session.user.role !== USER_ROLE.ADMIN) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const result = await query(
       `INSERT INTO biz_models (code, name, description, service_charge_percentage, max_service_charge_discount_percentage,design_charge_percentage,max_design_charge_discount_percentage,shopping_charge_percentage,max_shopping_charge_discount_percentage, is_active, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [body.code, body.name, body.description, body.service_charge_percentage, body.max_service_charge_discount_percentage, body.design_charge_percentage, body.max_design_charge_discount_percentage, body.shopping_charge_percentage, body.max_shopping_charge_discount_percentage, body.is_active, body.status || 'draft']
+      [body.code, body.name, body.description, body.service_charge_percentage, body.max_service_charge_discount_percentage, body.design_charge_percentage, body.max_design_charge_discount_percentage, body.shopping_charge_percentage, body.max_shopping_charge_discount_percentage, body.is_active, body.status || BIZMODEL_STATUS.DRAFT]
     );
 
     // Add stages if provided

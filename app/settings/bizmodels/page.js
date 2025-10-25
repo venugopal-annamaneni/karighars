@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { Settings, Briefcase, TrendingUp, TrendingDown, Plus, Trash2, Edit } from 'lucide-react';
+import { BIZMODEL_STATUS, USER_ROLE } from '@/lib/constants';
 
 export default function BizModelsPage() {
   const { data: session, status } = useSession();
@@ -297,7 +298,7 @@ export default function BizModelsPage() {
               Manage project workflows, stages, and payment milestones
             </p>
           </div>
-          {session.user.role === 'admin' && (
+          {session.user.role === USER_ROLE.ADMIN && (
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={() => setEditingModelId(null)}>
@@ -643,9 +644,9 @@ export default function BizModelsPage() {
                       <Badge variant="outline" className="font-mono text-xs">
                         {model.code}
                       </Badge>
-                      <Badge variant={model.status === 'published' ? 'default' : 'secondary'}
-                        className={model.status === 'published' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
-                        {model.status === 'published' ? '✓ Published' : 'Draft'}
+                      <Badge variant={model.status === BIZMODEL_STATUS.PUBLISHED ? 'default' : 'secondary'}
+                        className={model.status === BIZMODEL_STATUS.PUBLISHED ? 'bg-green-50 text-green-700 border-green-300' : 'bg-amber-50 text-amber-700 border-amber-300'}>
+                        {model.status === BIZMODEL_STATUS.PUBLISHED ? `✓ ${BIZMODEL_STATUS.PUBLISHED}` : BIZMODEL_STATUS.DRAFT}
                       </Badge>
                     </div>
                     <h3 className="font-semibold mb-1">{model.name}</h3>
@@ -656,7 +657,7 @@ export default function BizModelsPage() {
                       size="sm"
                       variant="outline"
                       className="gap-1 h-7 px-2"
-                      disabled={model.status === 'published'}
+                      disabled={model.status === BIZMODEL_STATUS.PUBLISHED}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditModel(model.id);
@@ -665,14 +666,14 @@ export default function BizModelsPage() {
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
-                    {session.user.role === 'admin' && (
+                    {session.user.role === USER_ROLE.ADMIN && (
                       <Button
                         size="sm"
-                        variant={model.status === 'published' ? 'secondary' : 'default'}
+                        variant={model.status === BIZMODEL_STATUS.PUBLISHED ? 'secondary' : 'default'}
                         className="gap-1 h-7 px-2"
                         onClick={(e) => handleToggleStatus(model.id, e)}
                       >
-                        {model.status === 'published' ? 'Unpublish' : 'Publish'}
+                        {model.status === BIZMODEL_STATUS.PUBLISHED ? 'Unpublish' : 'Publish'}
                       </Button>
                     )}
                   </div>
@@ -684,7 +685,7 @@ export default function BizModelsPage() {
 
         {/* Model Details */}
         {modelDetails && (
-          <Tabs defaultValue="stages" className="space-y-4">
+          <Tabs defaultValue="config" className="space-y-4">
             <TabsList>
               <TabsTrigger value="config">Configuration</TabsTrigger>
               <TabsTrigger value="stages">Project Stages</TabsTrigger>
@@ -756,6 +757,8 @@ export default function BizModelsPage() {
                               <Badge className="bg-green-600">{milestone.woodwork_percentage}%</Badge>
                               <span className="text-muted-foreground">Misc:</span>
                               <Badge className="bg-blue-600">{milestone.misc_percentage}%</Badge>
+                              <span className="text-muted-foreground">Misc:</span>
+                              <Badge className="bg-blue-600">{milestone.shopping_percentage}%</Badge>
                             </div>
                           </div>
                         ))}

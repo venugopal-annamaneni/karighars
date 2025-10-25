@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { USER_ROLE } from '@/lib/constants';
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -37,7 +38,7 @@ export async function PUT(request, { params }) {
     const estimation = estRes.rows[0];
 
     // Check if user is the creator
-    if (estimation.created_by !== session.user.id && session.user.role !== 'admin') {
+    if (estimation.created_by !== session.user.id && session.user.role !== USER_ROLE.ADMIN) {
       return NextResponse.json({ error: 'Only the creator or admin can cancel this estimation' }, { status: 403 });
     }
 

@@ -5,8 +5,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import { Suspense } from 'react';
 
 export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading...</div>}>
+      <AuthErrorContent />
+    </Suspense>
+  );
+}
+
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
 

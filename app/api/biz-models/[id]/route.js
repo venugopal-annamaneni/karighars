@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { BIZMODEL_STATUS, USER_ROLE } from '@/lib/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -40,7 +41,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "admin") {
+  if (session.user.role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -74,7 +75,7 @@ export async function PUT(request, { params }) {
       } 
 
       const currentStatus = currentModel.rows[0].status;
-      const newStatus = currentStatus === 'draft' ? 'published' : 'draft';
+      const newStatus = currentStatus === BIZMODEL_STATUS.DRAFT ? BIZMODEL_STATUS.PUBLISHED : BIZMODEL_STATUS.DRAFT;
 
       // Update status
       const result = await query(
@@ -118,7 +119,7 @@ export async function PUT(request, { params }) {
         body.shopping_charge_percentage,
         body.max_shopping_charge_discount_percentage,
         body.is_active,
-        body.status || "draft",
+        body.status || BIZMODEL_STATUS.DRAFT,
         bizModelId,
       ]
     );
