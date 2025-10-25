@@ -69,7 +69,7 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
                 }}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Create Credit Note
+                Create Receipt Reversal
               </Button>
             )}
           </div>
