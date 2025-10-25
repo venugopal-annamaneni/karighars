@@ -229,7 +229,7 @@ export default function ProjectDocumentsPage() {
                   <p className="text-sm text-muted-foreground">
                     {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
                     {doc.document_type === 'project_invoice' && 'Project Invoice'}
-                    {doc.document_type === 'credit_note' && 'Credit Note'}
+                    {doc.document_type === 'receipt_reversal' && 'Receipt Reversal'}
                     {doc.related_entity === 'customer_payments' && (
                       <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
                         ({formatCurrency(doc.related_info.amount)})
