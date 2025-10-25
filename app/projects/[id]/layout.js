@@ -1,6 +1,6 @@
 "use client";
 import { AlertProvider, useAlert } from '@/app/context/AlertContext';
-import ContextualAlert from '@/components/alerts/ContextualAlert';
+import ContextualAlert from '@/app/components/alerts/ContextualAlert';
 import { Navbar } from '@/components/navbar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ function ProjectLayoutInner({ children }) {
 
   const pathname = usePathname();
   const last_segment = pathname.split("/").pop();
-  const activeTabs = ["estimation", "customer-payments", "vendor-boqs", "vendor-payments", "ledger", "invoice", "documents", "details"];
+  const activeTabs = ["estimation", "customer-payments", "vendor-boqs", "vendor-payments", "ledger", "invoices", "documents", "details"];
   const activeTab = activeTabs.indexOf(last_segment) !== -1 ? last_segment : "estimation";
 
 
@@ -270,7 +270,7 @@ function ProjectLayoutInner({ children }) {
             <TabsTrigger value="vendor-boqs">Vendor BOQs</TabsTrigger>
             <TabsTrigger value="vendor-payments">Vendor Payments</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
-            <TabsTrigger value="invoice">Invoices</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
