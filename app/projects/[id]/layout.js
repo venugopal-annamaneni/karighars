@@ -270,6 +270,7 @@ function ProjectLayoutInner({ children }) {
             <TabsTrigger value="vendor-boqs">Vendor BOQs</TabsTrigger>
             <TabsTrigger value="vendor-payments">Vendor Payments</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
+            <TabsTrigger value="invoice">Invoices</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
