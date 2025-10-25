@@ -76,6 +76,23 @@ export async function POST(request, { params }) {
       session.user.id
     ]);
 
+    // Insert document into documents table
+    await query(`
+      INSERT INTO documents (
+        project_id, document_type, document_url, document_name,
+        source_table, source_id, uploaded_by, uploaded_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    `, [
+      projectId,
+      'invoice',
+      body.invoice_document_url,
+      body.invoice_number || 'Invoice',
+      'project_invoices',
+      result.rows[0].id,
+      session.user.id
+    ]);
+
     // Log activity
     await query(`
       INSERT INTO activity_logs (project_id, related_entity, related_id, actor_id, action, comment)
