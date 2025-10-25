@@ -608,7 +608,7 @@ export default function CustomerPaymentsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => document.getElementById(`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`).click()}
+                        onClick={() => document.getElementById(`${payment.payment_type === 'RECEIPT_REVERSAL' ? 'receipt-reversal' : 'receipt'}-${payment.id}`).click()}
                         disabled={uploadingReceipt[payment.id]}
                       >
                         {uploadingReceipt[payment.id] ? 'Uploading...' : payment.payment_type === 'CREDIT_NOTE' ? 'Upload Credit Note' : 'Upload Receipt'}
