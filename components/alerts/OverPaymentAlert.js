@@ -36,9 +36,9 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
             <p className="font-semibold">Required Actions:</p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
               <li>Admin must approve this overpayment</li>
-              <li>System will create credit note. record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
-              <li>Finance team uploads credit note document</li>
-              <li>Credit note becomes approved and reflects in ledger</li>
+              <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
+              <li>Finance team uploads receipt reversal document</li>
+              <li>Receipt reversal becomes approved and reflects in ledger</li>
               <li>Or creator can cancel and revert to previous version</li>
             </ol>
           </div>
