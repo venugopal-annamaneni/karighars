@@ -54,8 +54,21 @@ export default function InvoicesPage() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
+    fetchProject();
     fetchInvoices();
   }, [projectId]);
+
+  const fetchProject = async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProject(data.project);
+      }
+    } catch (error) {
+      console.error('Error fetching project:', error);
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
