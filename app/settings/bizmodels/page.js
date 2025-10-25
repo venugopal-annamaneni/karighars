@@ -685,7 +685,7 @@ export default function BizModelsPage() {
 
         {/* Model Details */}
         {modelDetails && (
-          <Tabs defaultValue="stages" className="space-y-4">
+          <Tabs defaultValue="config" className="space-y-4">
             <TabsList>
               <TabsTrigger value="config">Configuration</TabsTrigger>
               <TabsTrigger value="stages">Project Stages</TabsTrigger>
@@ -757,6 +757,8 @@ export default function BizModelsPage() {
                               <Badge className="bg-green-600">{milestone.woodwork_percentage}%</Badge>
                               <span className="text-muted-foreground">Misc:</span>
                               <Badge className="bg-blue-600">{milestone.misc_percentage}%</Badge>
+                              <span className="text-muted-foreground">Misc:</span>
+                              <Badge className="bg-blue-600">{milestone.shopping_percentage}%</Badge>
                             </div>
                           </div>
                         ))}
