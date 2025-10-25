@@ -381,13 +381,20 @@ export default function InvoicesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                {invoices.map((invoice) => {
+                  const isCreditNote = parseFloat(invoice.invoice_amount) < 0;
+                  return (
+                  <TableRow key={invoice.id} className={isCreditNote ? 'bg-red-50' : ''}>
                     <TableCell className="font-medium">
                       {invoice.invoice_number || '-'}
+                      {isCreditNote && (
+                        <Badge variant="outline" className="ml-2 bg-red-100 text-red-700 border-red-300 text-xs">
+                          CREDIT NOTE
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>{formatDate(invoice.invoice_date)}</TableCell>
-                    <TableCell className="font-semibold">
+                    <TableCell className={`font-semibold ${isCreditNote ? 'text-red-600' : ''}`}>
                       {formatCurrency(invoice.invoice_amount)}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
