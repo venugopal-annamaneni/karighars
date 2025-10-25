@@ -51,7 +51,7 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        "payment_type": "CREDIT_NOTE",
+                        "payment_type": "RECEIPT_REVERSAL",
                         "project_id": estimation.project_id
                       })
                     });
