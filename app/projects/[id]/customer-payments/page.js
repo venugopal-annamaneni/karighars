@@ -596,8 +596,8 @@ export default function CustomerPaymentsPage() {
                         onChange={(e) => {
                           const file = e.target.files[0];
                           if (file) {
-                            if (payment.payment_type === 'CREDIT_NOTE') {
-                              handleDocumentUpload(payment.id, file, 'credit_note', session.user.id);
+                            if (payment.payment_type === 'RECEIPT_REVERSAL') {
+                              handleDocumentUpload(payment.id, file, 'receipt_reversal', session.user.id);
                             } else {
                               handleDocumentUpload(payment.id, file, 'payment_receipt', session.user.id);
                             }
