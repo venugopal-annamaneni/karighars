@@ -675,7 +675,7 @@ const WarningExtraPendingReceipts = ({ estimation, payments }) => {
           <strong className="text-amber-900">{formatCurrency(overPendingAmount)}</strong>.
         </p>
         <p className="text-sm text-amber-800">
-          You may choose to <strong>cancel some/all pending approval</strong> payments to avoid future issuance of credit notes.
+          You may choose to <strong>cancel some/all pending approval</strong> payments to avoid future issuance of receipt reversals.
         </p>
       </div>
     </div>
