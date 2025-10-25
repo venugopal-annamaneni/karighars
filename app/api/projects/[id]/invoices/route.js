@@ -51,8 +51,8 @@ export async function POST(request, { params }) {
     const body = await request.json();
 
     // Validation
-    if (!body.invoice_amount || parseFloat(body.invoice_amount) <= 0) {
-      return NextResponse.json({ error: 'Invoice amount must be greater than 0' }, { status: 400 });
+    if (!body.invoice_amount || parseFloat(body.invoice_amount) === 0) {
+      return NextResponse.json({ error: 'Invoice amount cannot be zero' }, { status: 400 });
     }
 
     if (!body.invoice_document_url) {
