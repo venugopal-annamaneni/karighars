@@ -1,9 +1,9 @@
 <analysis>
-The AI engineer iteratively enhanced the KG Interiors finance application, primarily focusing on database setup, financial logic, and UX improvements. Initial challenges involved securing a PostgreSQL connection to AWS RDS and resolving SSL issues. Significant effort was dedicated to refining the overpayment workflow, including accurate calculation, UI modal implementation, and backend logic for credit note generation (initially immediate, then adjusted to occur post-admin approval). Key areas addressed included fixing  schema/UI, renaming  to  across the application, implementing dynamic milestone filtering, and debugging login and calculation errors. The work also involved extensive cleanup of SQL and documentation files, aiming for a streamlined codebase and clearer setup instructions. The immediate work involves finalizing this documentation cleanup.
+The trajectory details the AI engineer's work on the KG Interiors finance application, starting with an overview of previous development. The initial tasks involved resolving database connection issues, confirming and then removing a  column check constraint in the  table, and deleting redundant documentation files. A significant portion of the work focused on revamping the estimation calculation logic to include item-level discounts, D&C charges, and separate service charges for different categories (woodwork, misc, shopping_service). This necessitated extensive changes to the  schema, estimation page UI, and backend calculation APIs. Following this, the payment calculation logic was simplified to only track total amounts for milestones, removing category-specific splits from . Most recently, a comprehensive Invoice Management feature was implemented, involving new database tables (), dedicated API endpoints, a new frontend page (), and integration into the project layout. This also introduced an Over-Invoiced alert and functionality to create credit notes from it. The current work involves finalizing the  component, specifically addressing closing tags.
 </analysis>
 
 <product_requirements>
-KG Interiors requires a finance management platform to replace Excel, offering real-time cash flow, commissions, and project financial health. The platform needs to support various workflows (Sales, Design, Shopping, Civil Vendor) and include a Finance Dashboard, Project Ledger, Reports, and role-based access.
+KG Interiors requires a finance management platform to replace Excel, providing real-time cash flow, commissions, and project financial health. The platform supports various workflows (Sales, Design, Shopping, Civil Vendor) and includes a Finance Dashboard, Project Ledger, Reports, and role-based access.
 
 **Key implemented features include:**
 *   Google OAuth for user authentication.
@@ -12,12 +12,14 @@ KG Interiors requires a finance management platform to replace Excel, offering r
 *   Project Ledger, Dashboard with charts, User/BizModel management UIs.
 
 **Recent and ongoing work explicitly requested by the user and implemented:**
-1.  **Customer KYC & GST:** Initial schema updates. GST calculation moved to estimator level (always applicable).
-2.  **Document Management:** Upload Payment Receipts and Project Invoices, display all documents within project tabs (specifically for credit notes).
+1.  **Customer KYC & GST:** Initial schema updates. GST calculation moved to estimator level.
+2.  **Document Management:** Upload Payment Receipts and Project Invoices, display all documents within project tabs.
 3.  **Payment Workflow Refinement:** Payments active after Finance uploads a receipt.
-4.  **Milestone-based Payments:** Auto-calculate receivables based on BizModel milestones, cumulative logic considering woodwork/misc item percentages, and ad-hoc payments (renamed to ADHOC). Milestones filtered by project stage.
+4.  **Milestone-based Payments:** Auto-calculate receivables based on BizModel milestones. Milestones filtered by project stage, with a new  milestone.
 5.  **BizModel Versioning:** Automatic version upgrades, draft models not selectable, status toggle.  removed.
-6.  **Overpayment Handling:** Detect overpayment on estimation revision, requires admin approval, generates reversal entries (credit notes in ), allows Finance to upload credit note document, reflects in ledger. Implemented with pre-save modal warning and scrollability. Approver names now shown.
+6.  **Overpayment Handling:** Detect overpayment on estimation revision, requires admin approval, generates reversal entries ( in ), allows Finance to upload document, reflects in ledger.
+7.  **Advanced Item-Level Calculations:** Introduced item-level discounts, Design & Consultation (D&C) charges on woodwork, and Service charges on misc/shopping, with discounts on these charges. Shopping items now only track KG's service charge.
+8.  **Invoice Management:** New feature to upload project invoices, manage their status (pending/approved/cancelled), track  in projects, and generate Credit Notes for over-invoiced scenarios.
 </product_requirements>
 
 <key_technical_concepts>
@@ -37,61 +39,95 @@ The application uses a Next.js full-stack framework with a PostgreSQL database.
 
 
 -   ****: Centralized API handler.
-    -   **Summary:** Manages CRUD operations and complex financial logic.
-    -   **Changes:**
-        -   Updated  fields;  fields (GST, overpayment status, credit note URL) were added, removed, and then re-added for the refined overpayment flow.
-        -   Fixed  calculation logic.
-        -   Implemented  and  endpoints.
-        -   Re-implemented  and  endpoints for estimation revisions and credit note creation post-admin approval.
-        -   Fixed  constraint issue (mode changed from 'adjustment' to 'other').
-        -   Updated queries to include approver names for ledger and payments.
-        -   Updated project creation to auto-select initial stage from BizModel and project PUT to reflect stage.
+    -   **Summary:** Was the monolithic API handler.
+    -   **Changes:** Refactored and its functionality distributed into granular, REST-style API files (e.g., ).
 -   ****: Project estimation form.
-    -   **Summary:** Allows creating/modifying estimations.
-    -   **Changes:**
-        -   Updated  and  for .
-        -   Implemented pre-save overpayment check with a custom scrollable modal.
-        -   Fixed  and  data passing from frontend to backend.
+    -   **Summary:** Critical for creating/modifying project estimations and their detailed financial calculations.
+    -   **Changes:** Complete rewrite of calculation logic to support item-level discounts, Design & Consultation (D&C) charges on woodwork, Service Charges on misc/shopping, and discounts on these charges. UI updated to include new input fields and display.
 -   ****: Project detail page.
-    -   **Summary:** Displays project info, estimations, ledger, and customer payments.
-    -   **Changes:**
-        -   Payment dialog refined, MISC renamed to ADHOC.
-        -   Overpayment alert banner and Approve/Cancel buttons were removed and then restored to align with revised overpayment approval flow.
-        -   Implemented a scrollable modal for cancel confirmation.
-        -   Milestone payment selection filtered by current project stage.
-        -   Added document upload for pending credit notes.
-        -   Display of negative payment amounts in red.
-        -   Ledger:  fixed to , inflow for credit notes changed to outflow, and approver names added.
--   ****: New project creation form.
-    -   **Summary:** Allows creating new projects.
-    -   **Changes:** Removed UI field for Initial phase; backend now automatically assigns the first stage from the selected BizModel.
+    -   **Summary:** Displays project information, estimations, ledger, and customer payments.
+    -   **Changes:** Payment dialog updated to simplify payment collection (total amount only, no category split). Financial Summary card updated to display .
+-   ****: Project-specific layout with navigation tabs.
+    -   **Summary:** Provides the common layout and navigation for project-related pages.
+    -   **Changes:** Added a new Invoices tab. Integrated  detection logic.
 -   ****: BizModel management UI.
     -   **Summary:** Manages BizModels.
-    -   **Changes:** Removed  from UI. Changed placeholder onboarding to 2D.
--   ** (previously )**: Main database schema.
-    -   **Summary:** Defines PostgreSQL schema.
+    -   **Changes:** Removed  from UI in previous cycles.
+-   ****: Main database schema.
+    -   **Summary:** Defines PostgreSQL schema and reflects all database structure changes.
     -   **Changes:**
-        -   Removed  from .
-        -   Renamed  to .
-        -   Added .
-        -   Added/restored  columns (, , ).
-        -   Consolidated all schema changes into one file.
+        -   Removed  constraint from .
+        -   Added , , , , , , , , ,  to .
+        -   Updated  CHECK constraint to include .
+        -   Removed , ,  from .
+        -   Created new table  with columns: uid=0(root) gid=0(root) groups=0(root), , , , , , , , , , , , , , .
+        -   Added  column to .
 -   ****: Environment variables.
-    -   **Summary:** Stores sensitive configurations like  and Google OAuth keys.
-    -   **Changes:** Updated  for PostgreSQL connection, including various attempts to configure SSL and hostnames, and finally added  for local testing SSL bypass.
+    -   **Summary:** Stores sensitive configurations.
+    -   **Changes:** Debugged and confirmed  for PostgreSQL connection.
+-   ****: API for project estimations.
+    -   **Summary:** Handles CRUD for project estimations and their item details.
+    -   **Changes:** Rewritten POST/PUT handlers to process and store new item-level calculation fields (item discounts, D&C, service charges).
+-   ****: API for calculating milestone payments.
+    -   **Summary:** Calculates the expected payment for a given milestone.
+    -   **Changes:** Completely rewritten to work with new item-level totals, correctly distinguishing between  milestone (only shopping service items) and regular milestones (woodwork/misc, excluding shopping). Returns simplified  and detailed  for UI.
+-   ****: API for customer payments.
+    -   **Summary:** Manages customer payment records.
+    -   **Changes:** Updated POST route to only store  (total payment), removing category-specific splits (, ). Renamed  payment type to .
+-   ****: API for single customer payment.
+    -   **Summary:** Handles operations for individual customer payment records.
+    -   **Changes:** Renamed  references to .
+-   ****: UI for customer payments.
+    -   **Summary:** Displays and allows management of customer payments.
+    -   **Changes:** Renamed  references to .
+-   ****: UI for project documents.
+    -   **Summary:** Displays project documents.
+    -   **Changes:** Removed invoice upload section (functionality moved to new  page). Renamed  references to .
+-   ****: Alert component for overpayment.
+    -   **Summary:** Displays an alert when overpayment is detected.
+    -   **Changes:** Renamed  references to .
+-   ** (NEW, renamed from )**: Main page for invoice management.
+    -   **Summary:** Allows Finance to upload, view, approve, and cancel project invoices. Also supports creation of credit notes for over-invoiced scenarios.
+    -   **Changes:** Implemented invoice upload form with validation (invoice amount cannot exceed ). Displays a list of invoices with status and actions. Handles credit note document uploads.
+-   ** (NEW)**: API for project invoices.
+    -   **Summary:** Handles fetching and creating project invoices.
+    -   **Changes:** Implements GET (fetch all invoices for project) and POST (upload new invoice, insert document into  table).
+-   ** (NEW)**: API for approving invoices.
+    -   **Summary:** Endpoint for approving a specific project invoice.
+    -   **Changes:** Updates invoice status to 'approved', increments , and inserts credit note documents into  table if applicable.
+-   ** (NEW)**: API for cancelling invoices.
+    -   **Summary:** Endpoint for cancelling a specific project invoice.
+    -   **Changes:** Updates invoice status to 'cancelled'.
+-   ** (NEW)**: Alert component for over-invoicing.
+    -   **Summary:** Displays a critical alert when the  exceeds . Includes functionality to create a credit note.
+    -   **Changes:** New component created.
+-   ****: Central alert display component.
+    -   **Summary:** Displays different types of alerts based on context.
+    -   **Changes:** Registered the new  type.
+-   ****: Application constants.
+    -   **Summary:** Stores various constant values like alert types.
+    -   **Changes:** Added  constant.
+-   **Deleted files**: , , , , , , , , , .
 </code_architecture>
 
 <pending_tasks>
 -   Complete customer detail/edit page UI () to display and update KYC and bank details.
--   Implement UI for Finance team to upload Invoices for project-level revenue realization.
--   Display all uploaded documents (Payment receipts and Invoices) within the project tab's Documents section (beyond just receipts/credit notes).
--   Finalize the deletion of redundant  files (, ).
+-   Implement UI for Finance team to display all uploaded documents (Payment receipts and Invoices) within the project tab's Documents section (beyond just receipts/credit notes).
+-   Finalize the implementation of the  component by resolving the closing tags issue.
+-   Implement the logic for creating a credit note from the Over-Invoiced alert window to update the project's .
+-   Ensure the document upload functionality for credit notes (from over-invoiced alert) is fully integrated into the  table.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was engaged in streamlining the project's documentation. Following a comprehensive analysis of the various  files present in the codebase, the user and AI engineer decided to consolidate and remove redundant documentation. The AI engineer previously deleted several outdated implementation notes and status tracking files, keeping only the essential setup, integration, and architecture documentation. The current task is to complete this cleanup by deleting two additional  files:  and . These files have been identified as redundant because their content has been integrated into the  and  files, respectively. The user explicitly requested to continue this deletion.
+Immediately before this summary request, the AI engineer was implementing the Invoice Management feature and related Over-Invoiced Alerts. The implementation covered:
+1.  **Invoice Amount Validation**: Added logic to  to ensure the uploaded invoice amount does not exceed . UI was updated to display .
+2.  **Document Storage**: Updated the POST handler in  to also insert invoice documents into the  table. The  route () was also updated to store credit note documents.
+3.  **Over-Invoiced Alert**: A new component, , was created. This alert is triggered from  when  exceeds . The alert type  was registered in  and defined in .
+4.  **Credit Note Handling**: The  was updated to visually distinguish credit notes (negative invoices) in the list.
+
+The very last action in the trajectory () indicates the AI engineer is currently addressing an issue with closing tags in the  file, which is part of the UI implementation for the new invoice management features. This suggests the  and its integration with the invoice listing is still being finalized.
 </current_work>
 
 <optional_next_step>
-Delete the redundant  and  files.
+Fix the closing tags issue in  and ensure the  and invoice listing UI are correctly rendered.
 </optional_next_step>
