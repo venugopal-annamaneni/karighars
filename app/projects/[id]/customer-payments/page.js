@@ -226,7 +226,7 @@ export default function CustomerPaymentsPage() {
       toast.success(
         type === 'receipt'
           ? 'Receipt uploaded and payment approved!'
-          : 'Credit note uploaded and approved!'
+          : 'Receipt reversal uploaded and approved!'
       );
       //fetchCustomerPaymentData();
       fetchProjectData(); // <- This triggers the entire page rendering, so no need to fetchCustomerPaymentData
