@@ -286,7 +286,7 @@ function ProjectLayoutInner({ children }) {
 
 const FinancialSummary = ({ project, estimation }) => {
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-5">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Estimated Value (with GST)</CardTitle>
@@ -305,6 +305,17 @@ const FinancialSummary = ({ project, estimation }) => {
           <div className="text-2xl font-bold text-green-600">
             {formatCurrency(project.payments_received)}
           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Invoiced Value</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-purple-600">
+            {formatCurrency(parseFloat(project.invoiced_amount || 0))}
+          </div>
+          <p className="text-xs text-muted-foreground">Realized Revenue</p>
         </CardContent>
       </Card>
       <Card>
