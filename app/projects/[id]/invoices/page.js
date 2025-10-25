@@ -276,6 +276,23 @@ export default function InvoicesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Available Amount Display */}
+            {project && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">Available to Invoice:</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Received: {formatCurrency(paymentsReceived)} - Already Invoiced: {formatCurrency(invoicedAmount)}
+                    </p>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-700">
+                    {formatCurrency(availableToInvoice)}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
