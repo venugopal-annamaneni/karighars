@@ -1,5 +1,5 @@
 import { useAlert } from "@/app/context/AlertContext";
-import { ALERT_TYPE } from "@/lib/constants";
+import { ALERT_TYPE } from "@/app/constants";
 import OverpaymentAlert from "./OverPaymentAlert";
 import OverInvoicedAlert from "./OverInvoicedAlert";
 

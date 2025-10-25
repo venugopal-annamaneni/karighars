@@ -87,7 +87,7 @@ export async function POST(request, { params }) {
       projectId,
       'invoice',
       body.invoice_document_url,
-      body.invoice_number || 'Invoice',
+      body.invoice_number,
       'project_invoices',
       result.rows[0].id,
       session.user.id

@@ -1,4 +1,4 @@
-import { PAYMENT_STATUS, USER_ROLE } from "@/lib/constants";
+import { PAYMENT_STATUS, REVERSAL_PAYMENT_TYPE, USER_ROLE } from "@/app/constants";
 import { Button } from "../../../components/ui/button";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
               <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
               <li>Finance team uploads receipt reversal document</li>
               <li>Receipt reversal becomes approved and reflects in ledger</li>
-              <li>Or creator can cancel and revert to previous version</li>
+              <li>If this is due to estimation changes, estimator can revert to its previous version</li>
             </ol>
           </div>
           <div className="flex gap-3">
@@ -47,11 +47,12 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
               <Button
                 onClick={async () => {
                   try {
+                    debugger;
                     const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        "payment_type": "RECEIPT_REVERSAL",
+                        "payment_type": REVERSAL_PAYMENT_TYPE,
                         "project_id": estimation.project_id
                       })
                     });

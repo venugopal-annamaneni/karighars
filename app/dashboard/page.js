@@ -16,7 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { PROJECT_STAGES } from '@/lib/constants';
+import { PROJECT_STAGES } from '@/app/constants';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();

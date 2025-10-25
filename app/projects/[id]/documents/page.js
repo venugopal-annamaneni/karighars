@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PROJECT_STAGES, USER_ROLE } from '@/lib/constants';
+import { DOCUMENT_TYPE, PROJECT_STAGES, USER_ROLE } from '@/app/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   FileText,
@@ -227,9 +227,7 @@ export default function ProjectDocumentsPage() {
                 <div>
                   <p className="font-medium">{doc.file_name || 'Document'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {doc.document_type === 'payment_receipt' && 'Payment Receipt'}
-                    {doc.document_type === 'project_invoice' && 'Project Invoice'}
-                    {doc.document_type === 'receipt_reversal' && 'Receipt Reversal'}
+                    {doc.document_type}
                     {doc.related_entity === 'customer_payments' && (
                       <span className="text-xs font-bold text-muted-foreground mt-1 ml-1">
                         ({formatCurrency(doc.related_info.amount)})

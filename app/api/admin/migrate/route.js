@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
-import { USER_ROLE } from '@/lib/constants';
+import { USER_ROLE } from '@/app/constants';
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);

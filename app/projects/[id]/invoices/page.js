@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/dialog';
 import { FileText, Check, X, Eye, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { useProjectData } from '@/app/context/ProjectDataContext';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function InvoicesPage() {
   const { data: session } = useSession();
@@ -35,10 +37,10 @@ export default function InvoicesPage() {
   const projectId = params.id;
 
   const [invoices, setInvoices] = useState([]);
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     invoice_number: '',
     invoice_amount: '',
@@ -52,23 +54,11 @@ export default function InvoicesPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const { fetchProjectData, project, loading } = useProjectData();
 
   useEffect(() => {
-    fetchProject();
     fetchInvoices();
   }, [projectId]);
-
-  const fetchProject = async () => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProject(data.project);
-      }
-    } catch (error) {
-      console.error('Error fetching project:', error);
-    }
-  };
 
   const fetchInvoices = async () => {
     try {
@@ -81,7 +71,7 @@ export default function InvoicesPage() {
       console.error('Error fetching invoices:', error);
       toast.error('Failed to load invoices');
     } finally {
-      setLoading(false);
+      setInvoicesLoading(false);
     }
   };
 
@@ -160,8 +150,8 @@ export default function InvoicesPage() {
           invoice_document_url: '',
           remarks: ''
         });
-        fetchInvoices();
-        fetchProject(); // Refresh project data
+        //fetchInvoices();
+        fetchProjectData(); // Refresh project data renders the page again, triggers fetchInvoices
       } else {
         const error = await res.json();
         toast.error(error.error || 'Failed to upload invoice');
@@ -232,17 +222,6 @@ export default function InvoicesPage() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN');
-  };
 
   const getStatusBadge = (status) => {
     if (status === 'pending') return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>;
@@ -260,9 +239,18 @@ export default function InvoicesPage() {
   const invoicedAmount = parseFloat(project?.invoiced_amount || 0);
   const availableToInvoice = paymentsReceived - invoicedAmount;
 
-  if (loading) {
-    return <div className="p-6">Loading invoices...</div>;
+  if (status === 'loading' || loading || invoicesLoading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-start justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!session || !project) return null;
 
   return (
     <div className="p-6 space-y-6">
@@ -384,75 +372,75 @@ export default function InvoicesPage() {
                 {invoices.map((invoice) => {
                   const isCreditNote = parseFloat(invoice.invoice_amount) < 0;
                   return (
-                  <TableRow key={invoice.id} className={isCreditNote ? 'bg-red-50' : ''}>
-                    <TableCell className="font-medium">
-                      {invoice.invoice_number || '-'}
-                      {isCreditNote && (
-                        <Badge variant="outline" className="ml-2 bg-red-100 text-red-700 border-red-300 text-xs">
-                          CREDIT NOTE
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(invoice.invoice_date)}</TableCell>
-                    <TableCell className={`font-semibold ${isCreditNote ? 'text-red-600' : ''}`}>
-                      {formatCurrency(invoice.invoice_amount)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                    <TableCell>{invoice.uploaded_by_name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {invoice.invoice_document_url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(invoice.invoice_document_url, '_blank')}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                    <TableRow key={invoice.id} className={isCreditNote ? 'bg-red-50' : ''}>
+                      <TableCell className="font-medium">
+                        {invoice.invoice_number || '-'}
+                        {isCreditNote && (
+                          <Badge variant="outline" className="ml-2 bg-red-100 text-red-700 border-red-300 text-xs">
+                            CREDIT NOTE
+                          </Badge>
                         )}
-                        
-                        {invoice.status === 'pending' && canApprove && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600 hover:text-green-700"
-                            onClick={() => {
-                              setSelectedInvoice(invoice);
-                              setShowApproveDialog(true);
-                            }}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        )}
-                        
-                        {invoice.status === 'pending' && canCancel && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => {
-                              setSelectedInvoice(invoice);
-                              setShowCancelDialog(true);
-                            }}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(invoice.invoice_date)}</TableCell>
+                      <TableCell className={`font-semibold ${isCreditNote ? 'text-red-600' : ''}`}>
+                        {formatCurrency(invoice.invoice_amount)}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                      <TableCell>{invoice.uploaded_by_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {invoice.invoice_document_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(invoice.invoice_document_url, '_blank')}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
 
-                        {invoice.status === 'approved' && (
-                          <span className="text-xs text-green-600">
-                            ✓ by {invoice.approved_by_name}
-                          </span>
-                        )}
+                          {invoice.status === 'pending' && canApprove && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-600 hover:text-green-700"
+                              onClick={() => {
+                                setSelectedInvoice(invoice);
+                                setShowApproveDialog(true);
+                              }}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                          )}
 
-                        {invoice.status === 'cancelled' && (
-                          <span className="text-xs text-red-600">
-                            ✗ by {invoice.cancelled_by_name}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          {invoice.status === 'pending' && canCancel && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => {
+                                setSelectedInvoice(invoice);
+                                setShowCancelDialog(true);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+
+                          {invoice.status === 'approved' && (
+                            <span className="text-xs text-green-600">
+                              ✓ by {invoice.approved_by_name}
+                            </span>
+                          )}
+
+                          {invoice.status === 'cancelled' && (
+                            <span className="text-xs text-red-600">
+                              ✗ by {invoice.cancelled_by_name}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>
@@ -503,7 +491,7 @@ export default function InvoicesPage() {
             <div className="space-y-4 py-4">
               <p><strong>Invoice:</strong> {selectedInvoice.invoice_number || 'N/A'}</p>
               <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.invoice_amount)}</p>
-              
+
               <div className="space-y-2">
                 <Label>Cancellation Reason *</Label>
                 <Textarea
@@ -522,9 +510,9 @@ export default function InvoicesPage() {
             }}>
               Close
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleCancel} 
+            <Button
+              variant="destructive"
+              onClick={handleCancel}
               disabled={processing || !cancellationReason.trim()}
             >
               {processing ? 'Cancelling...' : 'Cancel Invoice'}

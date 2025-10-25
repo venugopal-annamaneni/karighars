@@ -17,7 +17,7 @@ import { Users, Shield, Edit, Search } from 'lucide-react';
 import Link from 'next/link';
 import KGPagination from '@/components/kg-pagination';
 import { Input } from '@/components/ui/input';
-import { USER_ROLE } from '@/lib/constants';
+import { USER_ROLE } from '@/app/constants';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();

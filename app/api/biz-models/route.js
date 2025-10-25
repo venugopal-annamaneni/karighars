@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
-import { BIZMODEL_STATUS, USER_ROLE } from '@/lib/constants';
+import { BIZMODEL_STATUS, USER_ROLE } from '@/app/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);

@@ -3,7 +3,7 @@
 import { useProjectData } from '@/app/context/ProjectDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PROJECT_STAGES } from '@/lib/constants';
+import { PROJECT_STAGES } from '@/app/constants';
 import { formatDate } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
