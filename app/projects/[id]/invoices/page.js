@@ -35,6 +35,7 @@ export default function InvoicesPage() {
   const projectId = params.id;
 
   const [invoices, setInvoices] = useState([]);
+  const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   
