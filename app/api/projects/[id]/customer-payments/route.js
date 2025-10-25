@@ -49,7 +49,7 @@ export async function POST(request, { params }) {
   }
 
   const body = await request.json();
-  const isCreditNote = body.payment_type === 'CREDIT_NOTE';
+  const isReceiptReversal = body.payment_type === 'RECEIPT_REVERSAL';
 
   try {
     // 1️⃣ Permission check
