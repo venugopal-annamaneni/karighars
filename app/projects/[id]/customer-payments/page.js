@@ -590,7 +590,7 @@ export default function CustomerPaymentsPage() {
                     <div>
                       <input
                         type="file"
-                        id={`${payment.payment_type === 'CREDIT_NOTE' ? 'credit-note' : 'receipt'}-${payment.id}`}
+                        id={`${payment.payment_type === 'RECEIPT_REVERSAL' ? 'receipt-reversal' : 'receipt'}-${payment.id}`}
                         accept="image/*,.pdf"
                         className="hidden"
                         onChange={(e) => {
