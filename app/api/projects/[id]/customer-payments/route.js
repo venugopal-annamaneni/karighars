@@ -53,7 +53,7 @@ export async function POST(request, { params }) {
 
   try {
     // 1️⃣ Permission check
-    if (isCreditNote && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.FINANCE) {
+    if (isReceiptReversal && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.FINANCE) {
       return NextResponse.json({ error: 'Forbidden - Admin/Finance only' }, { status: 403 });
     }
 
