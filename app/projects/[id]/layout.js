@@ -84,10 +84,30 @@ function ProjectLayoutInner({ children }) {
         },
         ALERT_TYPE.OVERPAYMENT_ALERT
       );
+    } else if (estimation?.final_value && project?.invoiced_amount) {
+      // Check for over-invoicing
+      const finalValue = parseFloat(estimation.final_value);
+      const invoicedAmount = parseFloat(project.invoiced_amount);
+      
+      if (invoicedAmount > finalValue) {
+        const overInvoicedAmount = invoicedAmount - finalValue;
+        alert.showAlert(
+          {
+            project_id: project.id,
+            estimation_id: estimation.id,
+            final_value: finalValue,
+            invoiced_amount: invoicedAmount,
+            over_invoiced_amount: overInvoicedAmount
+          },
+          ALERT_TYPE.OVER_INVOICED_ALERT
+        );
+      } else {
+        alert.hideAlert();
+      }
     } else {
       alert.hideAlert();
     }
-  }, [estimation]);
+  }, [estimation, project]);
 
   const fetchOtherData = async () => {
     if (project && project.biz_model_id && stages.length === 0) {
