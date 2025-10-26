@@ -434,97 +434,69 @@ export default function ProjectEstimationsPage() {
               )}
 
               {estimationItems.length > 0 && (
-                <div className="space-y-6">
-                  {Object.entries(sortedGroupedItems()).map(([roomName, categories]) => (
-                    <div key={roomName} className="border rounded-lg overflow-hidden">
-                      <div className="bg-blue-100 px-4 py-3">
-                        <h3 className="font-bold text-blue-900 text-lg">📍 {roomName}</h3>
+                <div className="space-y-4">
+                  {/* Export Button */}
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={onExportCSV} 
+                      variant="outline" 
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export to CSV
+                    </Button>
+                  </div>
+
+                  {/* AG-Grid */}
+                  <div className="ag-theme-alpine" style={{ height: 600, width: '100%' }}>
+                    <AgGridReact
+                      ref={gridRef}
+                      rowData={estimationItems}
+                      columnDefs={columnDefs}
+                      defaultColDef={defaultColDef}
+                      autoGroupColumnDef={autoGroupColumnDef}
+                      groupDefaultExpanded={1}
+                      animateRows={true}
+                      enableRangeSelection={true}
+                      suppressAggFuncInHeader={true}
+                      grandTotalRow="bottom"
+                    />
+                  </div>
+
+                  {/* Grand Totals Summary */}
+                  <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Subtotal</p>
+                        <p className="text-lg font-bold">
+                          {formatCurrency(
+                            parseFloat(estimation.woodwork_value || 0) + 
+                            parseFloat(estimation.misc_internal_value || 0) + 
+                            parseFloat(estimation.misc_external_value || 0) + 
+                            parseFloat(estimation.shopping_service_value || 0)
+                          )}
+                        </p>
                       </div>
-
-                      {Object.entries(categories).map(([category, items]) => (
-                        <div key={category} className="border-t">
-                          <div className="bg-slate-100 px-4 py-2">
-                            <h4 className="font-semibold text-slate-700">
-                              {category.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                            </h4>
-                          </div>
-                          
-                          <table className="w-full text-sm">
-                            <thead className="bg-slate-50">
-                              <tr>
-                                <th className="text-left p-3">Description</th>
-                                <th className="text-right p-3">Unit</th>
-                                <th className="text-right p-3">Width</th>
-                                <th className="text-right p-3">Height</th>
-                                <th className="text-right p-3">Quantity</th>
-                                <th className="text-right p-3">Unit Price</th>
-                                <th className="text-right p-3">Subtotal</th>
-                                <th className="text-right p-3">Consultation/Srv</th>
-                                <th className="text-right p-3">Discount</th>
-                                <th className="text-right p-3">GST%</th>
-                                <th className="text-right p-3">Item Total</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {items.map((item) => (
-                                <tr key={item.id}>
-                                  <td className="p-3">{item.description}</td>
-                                  <td className="text-right p-3 capitalize">{item.unit}</td>
-                                  <td className="text-right p-3">
-                                    {item.unit === 'sqft' && item.width ? parseFloat(item.width).toFixed(2) : '-'}
-                                  </td>
-                                  <td className="text-right p-3">
-                                    {item.unit === 'sqft' && item.height ? parseFloat(item.height).toFixed(2) : '-'}
-                                  </td>
-                                  <td className="text-right p-3 font-medium">
-                                    {parseFloat(item.quantity).toFixed(2)}
-                                    {item.unit === 'sqft' && item.width && item.height && (
-                                      <div className="text-xs text-blue-600">({item.width} × {item.height})</div>
-                                    )}
-                                  </td>
-                                  <td className="text-right p-3">{formatCurrency(item.unit_price)}</td>
-                                  <td className="text-right p-3 font-medium">{formatCurrency(item.subtotal)}</td>
-                                  <td className="text-right p-3">
-                                    {formatCurrency(item.karighar_charges_amount)}
-                                    <div className='text-xs text-red-500'>({item.karighar_charges_percentage}%)</div>
-                                  </td>
-                                  <td className="text-right p-3">
-                                    {formatCurrency(item.discount_amount)}
-                                    <div className='text-xs text-red-500'>({item.discount_percentage}%)</div>
-                                  </td>
-                                  <td className="text-right p-3">{item.gst_percentage}%</td>
-                                  <td className="text-right p-3 font-bold">{formatCurrency(item.item_total)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
+                      <div>
+                        <p className="text-sm text-muted-foreground">Service Charges</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {formatCurrency(parseFloat(estimation.service_charge || 0))}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Discounts</p>
+                        <p className="text-lg font-bold text-red-600">
+                          {formatCurrency(parseFloat(estimation.discount || 0))}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Grand Total</p>
+                        <p className="text-xl font-bold text-green-700">
+                          {formatCurrency(estimation.final_value)}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-
-                  {/* Grand totals */}
-                  <div className="border rounded-lg overflow-hidden bg-slate-50">
-                    <table className="w-full text-sm">
-                      <tbody>
-                        <tr>
-                          <td className="text-right p-3 font-bold" colSpan={6}>Total Subtotal:</td>
-                          <td className="text-right p-3 font-bold">
-                            {formatCurrency(parseFloat(estimation.woodwork_value || 0) + parseFloat(estimation.misc_internal_value || 0) + parseFloat(estimation.misc_external_value || 0) + parseFloat(estimation.shopping_service_value || 0))}
-                          </td>
-                          <td className="text-right p-3 font-bold">
-                            {formatCurrency(parseFloat(estimation.service_charge || 0))}
-                          </td>
-                          <td className="text-right p-3 font-bold">
-                            {formatCurrency(parseFloat(estimation.discount || 0))}
-                          </td>
-                          <td className="text-right p-3"></td>
-                          <td className="text-right p-3 font-bold text-green-700 text-lg">
-                            {formatCurrency(estimation.final_value)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
                   </div>
                 </div>
               )}
