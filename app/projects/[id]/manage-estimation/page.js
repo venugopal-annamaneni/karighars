@@ -493,7 +493,18 @@ export default function ProjectEstimationPage() {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs">Category</Label>
+                      <Label className="text-xs">Room/Section Name<span className='text-red-500'>*</span></Label>
+                      <Input
+                        placeholder="e.g., Living Room, Kitchen"
+                        value={item.room_name}
+                        onChange={(e) => updateItem(index, 'room_name', e.target.value)}
+                        className="h-9"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Category<span className='text-red-500'>*</span></Label>
                       <Select
                         value={item.category}
                         onValueChange={(value) => updateItem(index, 'category', value)}
@@ -513,8 +524,8 @@ export default function ProjectEstimationPage() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="text-xs">Description</Label>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Description<span className='text-red-500'>*</span></Label>
                       <Input
                         placeholder="e.g., Modular Kitchen"
                         value={item.description}
@@ -527,19 +538,6 @@ export default function ProjectEstimationPage() {
 
                   <div className="grid md:grid-cols-4 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs">Quantity<span className='text-red-500'>*</span></Label>
-                      <Input
-                        required
-                        type="number"
-                        step="0.01"
-                        placeholder="0"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
                       <Label className="text-xs">Unit<span className='text-red-500'>*</span></Label>
                       <Select
                         required
@@ -550,13 +548,71 @@ export default function ProjectEstimationPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="sqft">Sqft</SelectItem>
-                          <SelectItem value="rft">Rft</SelectItem>
-                          <SelectItem value="nos">Nos</SelectItem>
+                          <SelectItem value="sqft">Sq.ft</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
                           <SelectItem value="lumpsum">Lumpsum</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Conditional rendering based on unit type */}
+                    {item.unit === 'sqft' ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Width<span className='text-red-500'>*</span></Label>
+                          <Input
+                            required
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            value={item.width}
+                            onChange={(e) => updateItem(index, 'width', e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs">Height<span className='text-red-500'>*</span></Label>
+                          <Input
+                            required
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            value={item.height}
+                            onChange={(e) => updateItem(index, 'height', e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs">Quantity (W × H)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="Auto-calculated"
+                            value={item.quantity}
+                            disabled
+                            className="h-9 bg-slate-100"
+                          />
+                          <span className="text-xs text-blue-600">
+                            {item.width && item.height ? `${item.width} × ${item.height} = ${item.quantity}` : 'Enter width & height'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Quantity<span className='text-red-500'>*</span></Label>
+                        <Input
+                          required
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label className="text-xs">Unit Price (₹)<span className='text-red-500'>*</span></Label>
