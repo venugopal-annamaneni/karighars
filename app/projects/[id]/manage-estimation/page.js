@@ -8,13 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ESTIMATION_CATEGORY, ESTIMATION_STATUS } from '@/app/constants';
-import { AlertTriangle, Plus, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, Save, Trash2, Copy } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useProjectData } from "@/app/context/ProjectDataContext";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+  createColumnHelper,
+} from '@tanstack/react-table';
 
 
 
