@@ -12,10 +12,6 @@ TRUNCATE TABLE activity_logs CASCADE;
 -- Truncate project invoices and related data
 TRUNCATE TABLE project_invoices CASCADE;
 
--- Truncate vendor related tables (if they exist)
-TRUNCATE TABLE IF EXISTS vendor_payments CASCADE;
-TRUNCATE TABLE IF EXISTS vendor_boqs CASCADE;
-
 -- Truncate customer payments
 TRUNCATE TABLE customer_payments CASCADE;
 
