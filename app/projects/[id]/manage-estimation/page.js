@@ -541,8 +541,8 @@ export default function ProjectEstimationPage() {
                       <Label className="text-xs">Description<span className='text-red-500'>*</span></Label>
                       <Input
                         placeholder="e.g., Modular Kitchen"
-                        value={item.item_name}
-                        onChange={(e) => updateItem(index, 'item_name', e.target.value)}
+                        value={item.description}
+                        onChange={(e) => updateItem(index, 'description', e.target.value)}
                         className="h-9"
                         required
                       />
