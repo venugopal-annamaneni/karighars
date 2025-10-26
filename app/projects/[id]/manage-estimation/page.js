@@ -120,10 +120,13 @@ export default function ProjectEstimationPage() {
 
   const addItem = () => {
     setItems([...items, {
+      room_name: '',
       category: '',
       description: '',
-      quantity: 1,
       unit: 'sqft',
+      width: '',
+      height: '',
+      quantity: 1,
       unit_price: 0,
       karighar_charges_percentage: 0,
       discount_percentage: 0,
