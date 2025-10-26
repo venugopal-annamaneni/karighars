@@ -310,22 +310,6 @@ export default function ProjectEstimationsPage() {
                   </div>
                 </div>
               )}
-                        <td>
-                          &nbsp;
-                        </td>
-                        <td className="text-right p-3 font-bold" colSpan={1}>
-                          {formatCurrency(parseFloat(estimation.final_value || 0))}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  {estimationItems.length > 5 && (
-                    <div className="p-3 bg-slate-50 text-center text-sm text-muted-foreground">
-                      +{estimationItems.length - 5} more items
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           ) : (
             <div className="text-center py-12">
