@@ -351,12 +351,13 @@ export default function ProjectEstimationPage() {
       }
 
       // No overpayment, proceed normally
-      const itemsWithCalcs = items
-        .filter(item => item.item_name.trim() !== '')
+      const itemsWithCalcs = data
+        .filter(item => item.description.trim() !== '')
         .map(item => {
           const calc = calculateItemTotal(item);
           return {
             ...item,
+            item_name: item.description,
             subtotal: calc.subtotal,
             karighar_charges_amount: calc.karighar_charges_amount,
             discount_amount: calc.discount_amount,
