@@ -402,20 +402,111 @@ export default function ProjectEstimationsPage() {
                     </Button>
                   </div>
 
-                  {/* AG-Grid */}
-                  <div className="ag-theme-alpine" style={{ height: 600, width: '100%' }}>
-                    <AgGridReact
-                      ref={gridRef}
-                      rowData={estimationItems}
-                      columnDefs={columnDefs}
-                      defaultColDef={defaultColDef}
-                      autoGroupColumnDef={autoGroupColumnDef}
-                      groupDefaultExpanded={1}
-                      animateRows={true}
-                      enableRangeSelection={true}
-                      suppressAggFuncInHeader={true}
-                      grandTotalRow="bottom"
-                    />
+                  {/* TanStack Table */}
+                  <div className="border rounded-lg overflow-auto" style={{ maxHeight: '600px' }}>
+                    <table className="w-full text-sm border-collapse">
+                      <thead className="sticky top-0 bg-slate-100 z-10">
+                        {table.getHeaderGroups().map(headerGroup => (
+                          <tr key={headerGroup.id}>
+                            {headerGroup.headers.map(header => (
+                              <th 
+                                key={header.id} 
+                                className="p-3 text-left font-semibold border-b-2 border-slate-300"
+                                style={{ minWidth: header.column.id === 'description' ? '200px' : '100px' }}
+                              >
+                                {header.isPlaceholder ? null : (
+                                  <div 
+                                    className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                                    onClick={header.column.getToggleSortingHandler()}
+                                  >
+                                    {flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                                    {{
+                                      asc: ' 🔼',
+                                      desc: ' 🔽',
+                                    }[header.column.getIsSorted()] ?? null}
+                                  </div>
+                                )}
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                      </thead>
+                      <tbody>
+                        {table.getRowModel().rows.map(row => {
+                          // Determine row styling based on grouping level
+                          let rowClassName = '';
+                          let isGroupRow = row.getIsGrouped();
+                          
+                          if (isGroupRow) {
+                            const depth = row.depth;
+                            if (depth === 0) {
+                              // Room level
+                              rowClassName = 'bg-blue-100 font-bold text-blue-900';
+                            } else if (depth === 1) {
+                              // Category level
+                              rowClassName = 'bg-slate-100 font-semibold text-slate-700';
+                            }
+                          }
+                          
+                          return (
+                            <tr key={row.id} className={`border-b hover:bg-slate-50 ${rowClassName}`}>
+                              {row.getVisibleCells().map((cell, cellIndex) => {
+                                const isFirstCell = cellIndex === 0;
+                                const paddingLeft = `${row.depth * 20 + 12}px`;
+                                
+                                return (
+                                  <td 
+                                    key={cell.id} 
+                                    className="p-3"
+                                    style={isFirstCell ? { paddingLeft } : {}}
+                                  >
+                                    {isFirstCell && row.getCanExpand() && (
+                                      <button
+                                        onClick={row.getToggleExpandedHandler()}
+                                        className="inline-flex items-center mr-2"
+                                      >
+                                        {row.getIsExpanded() ? (
+                                          <ChevronDown className="h-4 w-4" />
+                                        ) : (
+                                          <ChevronRight className="h-4 w-4" />
+                                        )}
+                                      </button>
+                                    )}
+                                    {cell.getIsGrouped() ? (
+                                      // Render group cell
+                                      <>
+                                        {flexRender(
+                                          cell.column.columnDef.cell,
+                                          cell.getContext()
+                                        )}{' '}
+                                        <span className="text-xs text-muted-foreground">
+                                          ({row.subRows.length})
+                                        </span>
+                                      </>
+                                    ) : cell.getIsAggregated() ? (
+                                      // Render aggregated cell
+                                      flexRender(
+                                        cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
+                                        cell.getContext()
+                                      )
+                                    ) : cell.getIsPlaceholder() ? null : (
+                                      // Render regular cell
+                                      flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext()
+                                      )
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Grand Totals Summary */}
