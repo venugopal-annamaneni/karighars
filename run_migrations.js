@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 
 async function executeMigrations() {
+  // Set environment variable to ignore SSL certificate validation
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: {
