@@ -37,20 +37,12 @@ export default function ProjectEstimationPage() {
   const [showOverpaymentModal, setShowOverpaymentModal] = useState(false);
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
-  const [bizModel, setBizModel] = useState({
-    gst_percentage: ''
-  });
-
-  const [formData, setFormData] = useState({
-    remarks: '',
-    status: ESTIMATION_STATUS.DRAFT,
-  });
-
-  const [items, setItems] = useState([
+  const [data, setData] = useState([
     {
+      id: Date.now(),
       room_name: '',
       category: '',
-      item_name: '',
+      description: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -62,7 +54,17 @@ export default function ProjectEstimationPage() {
       vendor_type: ''
     }
   ]);
+  const [bizModel, setBizModel] = useState({
+    gst_percentage: ''
+  });
+
+  const [formData, setFormData] = useState({
+    remarks: '',
+    status: ESTIMATION_STATUS.DRAFT,
+  });
+
   const { fetchProjectData, project, estimation, loading } = useProjectData();
+  const tableContainerRef = useRef(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
