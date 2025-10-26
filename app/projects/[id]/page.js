@@ -39,7 +39,7 @@ export default function ProjectEstimationsPage() {
   const projectId = params.id;
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
-  const [grouping, setGrouping] = useState(['room_name', 'category']);
+  const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
@@ -104,10 +104,10 @@ export default function ProjectEstimationsPage() {
       },
     },
     {
-      accessorKey: 'description',
-      header: 'Description',
+      accessorKey: 'item_name',
+      header: 'Item',
       enableGrouping: false,
-      cell: ({ getValue }) => <div className="min-w-[150px]">{getValue()}</div>,
+      cell: ({ getValue }) => <div className="min-w-[100px]">{getValue()}</div>,
     },
     {
       accessorKey: 'unit',
@@ -145,7 +145,7 @@ export default function ProjectEstimationsPage() {
         const qty = parseFloat(row.original.quantity).toFixed(2);
         if (row.original.unit === 'sqft' && row.original.width && row.original.height) {
           return (
-            <div>
+            <div className='min-w-[100px]'>
               <div className="font-medium">{qty}</div>
               <div className="text-xs text-blue-600">
                 ({row.original.width} × {row.original.height})
@@ -267,12 +267,12 @@ export default function ProjectEstimationsPage() {
       width: item.width || '-',
       height: item.height || '-',
       quantity: item.quantity,
-      unit_price: `₹${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
-      subtotal: `₹${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
-      karighar_charges_amount: `₹${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
-      discount_amount: `₹${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
+      unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
+      subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
+      karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
+      discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
       gst_percentage: item.gst_percentage,
-      item_total: `₹${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
+      item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
     }));
 
     const csv = generateCsv(csvConfig)(csvData);
@@ -510,7 +510,7 @@ export default function ProjectEstimationsPage() {
                   </div>
 
                   {/* Grand Totals Summary */}
-                  <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
+                  {/* <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Total Subtotal</p>
@@ -542,7 +542,7 @@ export default function ProjectEstimationsPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>
