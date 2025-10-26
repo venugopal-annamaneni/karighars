@@ -12,16 +12,25 @@ import {
   FileText,
   Plus,
   StepBackIcon,
-  Download
+  Download,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getExpandedRowModel,
+  getGroupedRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from '@tanstack/react-table';
+import { mkConfig, generateCsv, download } from 'export-to-csv';
 
 export default function ProjectEstimationsPage() {
   const { data: session, status } = useSession();
@@ -30,7 +39,8 @@ export default function ProjectEstimationsPage() {
   const projectId = params.id;
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
-  const gridRef = useRef();
+  const [grouping, setGrouping] = useState(['room_name', 'category']);
+  const [expanded, setExpanded] = useState({});
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const { fetchProjectData, project, estimation, loading } = useProjectData();
