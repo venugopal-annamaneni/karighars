@@ -152,22 +152,22 @@ export default function ProjectEstimationPage() {
   };
 
   const updateItem = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index][field] = value;
+    const newData = [...data];
+    newData[index][field] = value;
     
     // Auto-calculate quantity for sqft unit
     if (field === 'width' || field === 'height' || field === 'unit') {
-      const item = newItems[index];
+      const item = newData[index];
       if (item.unit === 'sqft' && item.width && item.height) {
         item.quantity = parseFloat(item.width) * parseFloat(item.height);
       }
     }
     
     if (field === "category") {
-      newItems[index]["karighar_charges_percentage"] = getDefaultCharges(value)
-      newItems[index]["gst_percentage"] = newItems[index]["gst_percentage"].length > 0 ? newItems[index]["gst_percentage"] : bizModel.gst_percentage;
+      newData[index]["karighar_charges_percentage"] = getDefaultCharges(value)
+      newData[index]["gst_percentage"] = newData[index]["gst_percentage"].length > 0 ? newData[index]["gst_percentage"] : bizModel.gst_percentage;
     }
-    setItems(newItems);
+    setData(newData);
   };
 
   const calculateItemTotal = (item) => {
