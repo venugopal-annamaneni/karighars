@@ -65,6 +65,229 @@ export default function ProjectEstimationsPage() {
     }
   };
 
+  // AG-Grid Column Definitions
+  const columnDefs = useMemo(() => [
+    {
+      field: 'room_name',
+      headerName: 'Room/Section',
+      rowGroup: true,
+      hide: true,
+      sortable: true,
+    },
+    {
+      field: 'category',
+      headerName: 'Category',
+      rowGroup: true,
+      hide: true,
+      sortable: true,
+      comparator: (valueA, valueB) => {
+        const categoryOrder = {
+          'woodwork': 1,
+          'misc_internal': 2,
+          'misc_external': 3,
+          'shopping_service': 4
+        };
+        return (categoryOrder[valueA] || 999) - (categoryOrder[valueB] || 999);
+      }
+    },
+    {
+      field: 'description',
+      headerName: 'Description',
+      flex: 2,
+      sortable: true,
+      filter: true,
+    },
+    {
+      field: 'unit',
+      headerName: 'Unit',
+      width: 100,
+      cellStyle: { textTransform: 'capitalize' },
+    },
+    {
+      field: 'width',
+      headerName: 'Width',
+      width: 100,
+      type: 'numericColumn',
+      valueGetter: (params) => {
+        if (params.data && params.data.unit === 'sqft' && params.data.width) {
+          return parseFloat(params.data.width).toFixed(2);
+        }
+        return '-';
+      },
+    },
+    {
+      field: 'height',
+      headerName: 'Height',
+      width: 100,
+      type: 'numericColumn',
+      valueGetter: (params) => {
+        if (params.data && params.data.unit === 'sqft' && params.data.height) {
+          return parseFloat(params.data.height).toFixed(2);
+        }
+        return '-';
+      },
+    },
+    {
+      field: 'quantity',
+      headerName: 'Quantity',
+      width: 130,
+      type: 'numericColumn',
+      cellRenderer: (params) => {
+        if (!params.data) return '';
+        const qty = parseFloat(params.data.quantity).toFixed(2);
+        if (params.data.unit === 'sqft' && params.data.width && params.data.height) {
+          return (
+            <div>
+              <div className="font-medium">{qty}</div>
+              <div className="text-xs text-blue-600">
+                ({params.data.width} × {params.data.height})
+              </div>
+            </div>
+          );
+        }
+        return qty;
+      },
+    },
+    {
+      field: 'unit_price',
+      headerName: 'Unit Price',
+      width: 120,
+      type: 'numericColumn',
+      valueFormatter: (params) => formatCurrency(params.value || 0),
+    },
+    {
+      field: 'subtotal',
+      headerName: 'Subtotal',
+      width: 130,
+      type: 'numericColumn',
+      aggFunc: 'sum',
+      valueFormatter: (params) => formatCurrency(params.value || 0),
+      cellStyle: { fontWeight: '500' },
+    },
+    {
+      field: 'karighar_charges_amount',
+      headerName: 'KG Charges',
+      width: 140,
+      type: 'numericColumn',
+      aggFunc: 'sum',
+      cellRenderer: (params) => {
+        if (!params.data) {
+          // This is a group row, show aggregated value
+          return formatCurrency(params.value || 0);
+        }
+        return (
+          <div>
+            <div>{formatCurrency(params.data.karighar_charges_amount || 0)}</div>
+            <div className="text-xs text-red-500">({params.data.karighar_charges_percentage}%)</div>
+          </div>
+        );
+      },
+    },
+    {
+      field: 'discount_amount',
+      headerName: 'Discount',
+      width: 130,
+      type: 'numericColumn',
+      aggFunc: 'sum',
+      cellRenderer: (params) => {
+        if (!params.data) {
+          return formatCurrency(params.value || 0);
+        }
+        return (
+          <div>
+            <div>{formatCurrency(params.data.discount_amount || 0)}</div>
+            <div className="text-xs text-red-500">({params.data.discount_percentage}%)</div>
+          </div>
+        );
+      },
+    },
+    {
+      field: 'gst_percentage',
+      headerName: 'GST%',
+      width: 90,
+      type: 'numericColumn',
+      valueFormatter: (params) => params.data ? `${params.value}%` : '',
+    },
+    {
+      field: 'item_total',
+      headerName: 'Item Total',
+      width: 150,
+      type: 'numericColumn',
+      aggFunc: 'sum',
+      valueFormatter: (params) => formatCurrency(params.value || 0),
+      cellStyle: { fontWeight: 'bold', color: '#059669' },
+    },
+  ], []);
+
+  // Default column properties
+  const defaultColDef = useMemo(() => ({
+    sortable: true,
+    resizable: true,
+  }), []);
+
+  // Auto group column definition
+  const autoGroupColumnDef = useMemo(() => ({
+    headerName: 'Room / Category',
+    minWidth: 250,
+    cellRendererParams: {
+      suppressCount: false,
+      checkbox: false,
+    },
+    cellRenderer: 'agGroupCellRenderer',
+    cellStyle: (params) => {
+      if (params.node.level === 0) {
+        // Room level - blue background
+        return { 
+          backgroundColor: '#dbeafe',
+          fontWeight: 'bold',
+          fontSize: '15px',
+          color: '#1e40af'
+        };
+      } else if (params.node.level === 1) {
+        // Category level - slate background
+        return { 
+          backgroundColor: '#f1f5f9',
+          fontWeight: '600',
+          fontSize: '14px',
+          color: '#475569'
+        };
+      }
+      return {};
+    },
+  }), []);
+
+  // Export to CSV function
+  const onExportCSV = () => {
+    if (gridRef.current && gridRef.current.api) {
+      gridRef.current.api.exportDataAsCsv({
+        fileName: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}.csv`,
+        columnKeys: [
+          'room_name', 
+          'category', 
+          'description', 
+          'unit',
+          'width', 
+          'height', 
+          'quantity', 
+          'unit_price', 
+          'subtotal',
+          'karighar_charges_amount',
+          'discount_amount',
+          'gst_percentage',
+          'item_total'
+        ],
+        processCellCallback: (params) => {
+          // Format currency values
+          if (['unit_price', 'subtotal', 'karighar_charges_amount', 'discount_amount', 'item_total'].includes(params.column.getColId())) {
+            return `₹${parseFloat(params.value || 0).toLocaleString('en-IN')}`;
+          }
+          return params.value;
+        }
+      });
+      toast.success('CSV exported successfully!');
+    }
+  };
+
   if (status === 'loading' || loading || estimationLoading) {
     return (
       <div className="min-h-screen pt-20 flex items-start justify-center">
