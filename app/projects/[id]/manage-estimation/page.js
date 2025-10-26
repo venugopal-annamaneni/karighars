@@ -170,6 +170,331 @@ export default function ProjectEstimationPage() {
     setData(newData);
   };
 
+  const duplicateItem = (index) => {
+    const itemToDuplicate = { ...data[index], id: Date.now() };
+    const newData = [
+      ...data.slice(0, index + 1),
+      itemToDuplicate,
+      ...data.slice(index + 1)
+    ];
+    setData(newData);
+    toast.success('Item duplicated');
+  };
+
+  // Editable Cell Components
+  const EditableTextCell = ({ getValue, row, column, table }) => {
+    const initialValue = getValue();
+    const [value, setValue] = useState(initialValue);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    const onBlur = () => {
+      table.options.meta?.updateData(row.index, column.id, value);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        inputRef.current?.blur();
+        // Move to next row, same column
+        const nextRow = table.getRowModel().rows[row.index + 1];
+        if (nextRow) {
+          const nextCell = document.querySelector(
+            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
+          );
+          nextCell?.focus();
+        }
+      } else if (e.key === 'Escape') {
+        setValue(initialValue);
+        inputRef.current?.blur();
+      } else if (e.key === 'Tab') {
+        // Let default behavior handle Tab
+        onBlur();
+      }
+    };
+
+    return (
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        className="h-8 text-sm"
+        data-row={row.index}
+        data-col={column.id}
+      />
+    );
+  };
+
+  const EditableNumberCell = ({ getValue, row, column, table }) => {
+    const initialValue = getValue();
+    const [value, setValue] = useState(initialValue);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    const onBlur = () => {
+      table.options.meta?.updateData(row.index, column.id, parseFloat(value) || 0);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        inputRef.current?.blur();
+        const nextRow = table.getRowModel().rows[row.index + 1];
+        if (nextRow) {
+          const nextCell = document.querySelector(
+            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
+          );
+          nextCell?.focus();
+        }
+      } else if (e.key === 'Escape') {
+        setValue(initialValue);
+        inputRef.current?.blur();
+      } else if (e.key === 'Tab') {
+        onBlur();
+      }
+    };
+
+    return (
+      <Input
+        ref={inputRef}
+        type="number"
+        step="0.01"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        className="h-8 text-sm"
+        data-row={row.index}
+        data-col={column.id}
+      />
+    );
+  };
+
+  const EditableSelectCell = ({ getValue, row, column, table, options }) => {
+    const initialValue = getValue();
+
+    const onChange = (value) => {
+      table.options.meta?.updateData(row.index, column.id, value);
+    };
+
+    return (
+      <Select value={initialValue} onValueChange={onChange}>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
+  // Column Definitions
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'room_name',
+      header: 'Room/Section',
+      size: 150,
+      cell: EditableTextCell,
+    },
+    {
+      accessorKey: 'category',
+      header: 'Category',
+      size: 130,
+      cell: ({ getValue, row, column, table }) => (
+        <EditableSelectCell
+          getValue={getValue}
+          row={row}
+          column={column}
+          table={table}
+          options={Object.entries(ESTIMATION_CATEGORY).map(([key, value]) => ({
+            value: value,
+            label: value.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
+          }))}
+        />
+      ),
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+      size: 180,
+      cell: EditableTextCell,
+    },
+    {
+      accessorKey: 'unit',
+      header: 'Unit',
+      size: 100,
+      cell: ({ getValue, row, column, table }) => (
+        <EditableSelectCell
+          getValue={getValue}
+          row={row}
+          column={column}
+          table={table}
+          options={[
+            { value: 'sqft', label: 'Sq.ft' },
+            { value: 'no', label: 'No' },
+            { value: 'lumpsum', label: 'Lumpsum' }
+          ]}
+        />
+      ),
+    },
+    {
+      accessorKey: 'width',
+      header: 'Width',
+      size: 90,
+      cell: ({ row, ...props }) => {
+        if (row.original.unit === 'sqft') {
+          return <EditableNumberCell row={row} {...props} />;
+        }
+        return <div className="text-center text-muted-foreground">-</div>;
+      },
+    },
+    {
+      accessorKey: 'height',
+      header: 'Height',
+      size: 90,
+      cell: ({ row, ...props }) => {
+        if (row.original.unit === 'sqft') {
+          return <EditableNumberCell row={row} {...props} />;
+        }
+        return <div className="text-center text-muted-foreground">-</div>;
+      },
+    },
+    {
+      accessorKey: 'quantity',
+      header: 'Quantity',
+      size: 100,
+      cell: ({ row, getValue, ...props }) => {
+        if (row.original.unit === 'sqft') {
+          const qty = getValue();
+          const { width, height } = row.original;
+          return (
+            <div className="text-sm">
+              <div className="font-medium">{parseFloat(qty).toFixed(2)}</div>
+              {width && height && (
+                <div className="text-xs text-blue-600">
+                  ({width} × {height})
+                </div>
+              )}
+            </div>
+          );
+        }
+        return <EditableNumberCell row={row} getValue={getValue} {...props} />;
+      },
+    },
+    {
+      accessorKey: 'unit_price',
+      header: 'Unit Price (₹)',
+      size: 120,
+      cell: EditableNumberCell,
+    },
+    {
+      accessorKey: 'karighar_charges_percentage',
+      header: 'KG Charges (%)',
+      size: 120,
+      cell: EditableNumberCell,
+    },
+    {
+      accessorKey: 'discount_percentage',
+      header: 'Discount (%)',
+      size: 110,
+      cell: EditableNumberCell,
+    },
+    {
+      accessorKey: 'gst_percentage',
+      header: 'GST (%)',
+      size: 90,
+      cell: EditableNumberCell,
+    },
+    {
+      accessorKey: 'vendor_type',
+      header: 'Vendor',
+      size: 100,
+      cell: ({ getValue, row, column, table }) => (
+        <EditableSelectCell
+          getValue={getValue}
+          row={row}
+          column={column}
+          table={table}
+          options={[
+            { value: 'PI', label: 'PI' },
+            { value: 'Aristo', label: 'Aristo' },
+            { value: 'Other', label: 'Other' }
+          ]}
+        />
+      ),
+    },
+    {
+      id: 'item_total',
+      header: 'Item Total',
+      size: 120,
+      cell: ({ row }) => {
+        const total = calculateItemTotal(row.original).item_total;
+        return (
+          <div className="font-medium text-green-700 text-sm">
+            {formatCurrency(total)}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      size: 100,
+      cell: ({ row }) => (
+        <div className="flex gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => duplicateItem(row.index)}
+            className="h-7 w-7 p-0"
+            title="Duplicate"
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+          {data.length > 1 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => removeItem(row.index)}
+              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ], [data, bizModel]);
+
+  // Table Instance
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    meta: {
+      updateData: (rowIndex, columnId, value) => {
+        updateItem(rowIndex, columnId, value);
+      },
+    },
+  });
+
   const calculateItemTotal = (item) => {
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unit_price) || 0;
