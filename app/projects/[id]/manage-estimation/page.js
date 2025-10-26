@@ -248,7 +248,7 @@ export default function ProjectEstimationPage() {
 
     let totalGst = 0;
 
-    items.forEach(item => {
+    data.forEach(item => {
       const itemCalc = calculateItemTotal(item);
 
       if (item.category === ESTIMATION_CATEGORY.WOODWORK) {
