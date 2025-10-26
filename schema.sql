@@ -231,10 +231,13 @@ COMMENT ON COLUMN documents.related_id IS 'ID of the related entity';
 CREATE TABLE estimation_items (
     id INTEGER NOT NULL DEFAULT nextval('estimation_items_id_seq'::regclass),
     estimation_id INTEGER,
+    room_name VARCHAR(255) NOT NULL,
     category TEXT,
     description TEXT NOT NULL,
+    unit VARCHAR(20) NOT NULL DEFAULT 'sqft',
+    width DECIMAL(10,2),
+    height DECIMAL(10,2),
     quantity NUMERIC(18,4) DEFAULT 1,
-    unit TEXT,
     unit_price NUMERIC(20,4) DEFAULT 0,
     total NUMERIC(22,2),
     vendor_type TEXT,
@@ -251,9 +254,15 @@ CREATE TABLE estimation_items (
     PRIMARY KEY (id),
     FOREIGN KEY (estimation_id) REFERENCES project_estimations(id) ON DELETE CASCADE,
     CHECK ((vendor_type = ANY (ARRAY['PI'::text, 'Aristo'::text, 'Other'::text]))),
-    CHECK ((category = ANY (ARRAY['woodwork'::text, 'misc_internal'::text, 'misc_external'::text, 'shopping_service'::text])))
+    CHECK ((category = ANY (ARRAY['woodwork'::text, 'misc_internal'::text, 'misc_external'::text, 'shopping_service'::text]))),
+    CHECK ((unit = ANY (ARRAY['sqft'::text, 'no'::text, 'lumpsum'::text])))
 );
 
+COMMENT ON COLUMN estimation_items.room_name IS 'Room or section name (e.g., Living Room, Kitchen) - mandatory for organization';
+COMMENT ON COLUMN estimation_items.unit IS 'Unit of measurement: sqft (area with width×height), no (count), lumpsum (fixed)';
+COMMENT ON COLUMN estimation_items.width IS 'Width dimension - required only when unit = sqft';
+COMMENT ON COLUMN estimation_items.height IS 'Height dimension - required only when unit = sqft';
+COMMENT ON COLUMN estimation_items.quantity IS 'Quantity - auto-calculated (width × height) for sqft, manual input for no/lumpsum';
 COMMENT ON COLUMN estimation_items.karighar_charges_percentage IS 'KG charges percentage - D&C for woodwork, Service charge for misc/shopping';
 COMMENT ON COLUMN estimation_items.discount_percentage IS 'Discount percentage on (subtotal + karighar_charges) for woodwork/misc, only on karighar_charges for shopping';
 COMMENT ON COLUMN estimation_items.gst_percentage IS 'GST percentage applicable on this item';
