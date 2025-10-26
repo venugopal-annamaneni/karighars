@@ -129,10 +129,11 @@ export default function ProjectEstimationPage() {
   };
 
   const addItem = () => {
-    setItems([...items, {
+    setData([...data, {
+      id: Date.now(),
       room_name: '',
       category: '',
-      item_name: '',
+      description: '',
       unit: 'sqft',
       width: '',
       height: '',
