@@ -147,8 +147,8 @@ export default function ProjectEstimationPage() {
   };
 
   const removeItem = (index) => {
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
+    const newData = data.filter((_, i) => i !== index);
+    setData(newData);
   };
 
   const updateItem = (index, field, value) => {
