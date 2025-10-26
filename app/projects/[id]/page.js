@@ -30,6 +30,54 @@ export default function ProjectEstimationsPage() {
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const { fetchProjectData, project, estimation, loading } = useProjectData();
 
+  // Helper function to group items by room and category
+  const groupItemsByRoomAndCategory = (items) => {
+    const grouped = {};
+    
+    items.forEach(item => {
+      const room = item.room_name || 'Uncategorized';
+      if (!grouped[room]) {
+        grouped[room] = {};
+      }
+      
+      const category = item.category;
+      if (!grouped[room][category]) {
+        grouped[room][category] = [];
+      }
+      
+      grouped[room][category].push(item);
+    });
+    
+    return grouped;
+  };
+
+  // Category display order
+  const categoryOrder = {
+    'woodwork': 1,
+    'misc_internal': 2,
+    'misc_external': 3,
+    'shopping_service': 4
+  };
+
+  const sortedGroupedItems = () => {
+    const grouped = groupItemsByRoomAndCategory(estimationItems);
+    const sorted = {};
+    
+    // Sort rooms alphabetically
+    Object.keys(grouped).sort().forEach(room => {
+      sorted[room] = {};
+      
+      // Sort categories within each room
+      Object.keys(grouped[room])
+        .sort((a, b) => (categoryOrder[a] || 999) - (categoryOrder[b] || 999))
+        .forEach(category => {
+          sorted[room][category] = grouped[room][category];
+        });
+    });
+    
+    return sorted;
+  };
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
