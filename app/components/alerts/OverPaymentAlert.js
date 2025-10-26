@@ -35,11 +35,11 @@ const OverpaymentAlert = ({ estimation, userRole, onClose }) => {
           <div className="space-y-2 text-sm text-red-800 mb-4">
             <p className="font-semibold">Required Actions:</p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Admin or Finance must approve this overpayment</li>
-              <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
+              <li>Admin or Finance should create a {REVERSAL_PAYMENT_TYPE} to clear this alert</li>
+              {/* <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
               <li>Finance team uploads receipt reversal document</li>
-              <li>Receipt reversal becomes approved and reflects in ledger</li>
-              <li>If this is due to estimation changes, estimator can revert to its previous version</li>
+              <li>Receipt reversal becomes approved and reflects in ledger</li> */}
+              <li>If this overpayment alert is caused by changes to estimation items, avoid reducing the estimation value below the customer’s total payments.</li>
             </ol>
           </div>
           <div className="flex gap-3">
@@ -47,7 +47,6 @@ const OverpaymentAlert = ({ estimation, userRole, onClose }) => {
             <Button
               onClick={async () => {
                 try {
-                  debugger;
                   const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

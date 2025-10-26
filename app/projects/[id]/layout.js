@@ -75,7 +75,6 @@ function ProjectLayoutInner({ children }) {
   })
 
   useEffect(() => {
-    debugger;
     if (estimation?.has_overpayment) {
       alert.showAlert(
         {

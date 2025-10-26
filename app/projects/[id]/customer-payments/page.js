@@ -190,7 +190,6 @@ export default function CustomerPaymentsPage() {
   };
 
   const handleDocumentUpload = async (e, payment, user_id) => {
-    debugger;
     const file = e.target.files[0];
     if (!file) return;
 
