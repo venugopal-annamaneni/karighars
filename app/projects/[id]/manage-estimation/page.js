@@ -487,7 +487,7 @@ export default function ProjectEstimationPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {items.map((item, index) => (
+              {data.map((item, index) => (
                 <div key={index} className="border rounded-lg p-4 space-y-4">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-medium">Item #{index + 1}</p>
