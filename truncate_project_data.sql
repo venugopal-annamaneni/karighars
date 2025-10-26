@@ -15,12 +15,18 @@ TRUNCATE TABLE project_invoices CASCADE;
 -- Truncate customer payments
 TRUNCATE TABLE customer_payments CASCADE;
 
--- Truncate estimation items and estimations
+-- Truncate estimation items and project_estimations
 TRUNCATE TABLE estimation_items CASCADE;
-TRUNCATE TABLE estimations CASCADE;
+TRUNCATE TABLE project_estimations CASCADE;
 
 -- Truncate documents
 TRUNCATE TABLE documents CASCADE;
+
+-- Truncate project ledger
+TRUNCATE TABLE project_ledger CASCADE;
+
+-- Truncate project status history
+TRUNCATE TABLE project_status_history CASCADE;
 
 -- Finally truncate projects
 TRUNCATE TABLE projects CASCADE;
@@ -33,7 +39,7 @@ COMMIT;
 -- Verify truncation
 SELECT 'projects' as table_name, COUNT(*) as count FROM projects
 UNION ALL
-SELECT 'estimations', COUNT(*) FROM estimations
+SELECT 'project_estimations', COUNT(*) FROM project_estimations
 UNION ALL
 SELECT 'estimation_items', COUNT(*) FROM estimation_items
 UNION ALL
