@@ -143,6 +143,15 @@ export default function ProjectEstimationPage() {
   const updateItem = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
+    
+    // Auto-calculate quantity for sqft unit
+    if (field === 'width' || field === 'height' || field === 'unit') {
+      const item = newItems[index];
+      if (item.unit === 'sqft' && item.width && item.height) {
+        item.quantity = parseFloat(item.width) * parseFloat(item.height);
+      }
+    }
+    
     if (field === "category") {
       newItems[index]["karighar_charges_percentage"] = getDefaultCharges(value)
       newItems[index]["gst_percentage"] = newItems[index]["gst_percentage"].length > 0 ? newItems[index]["gst_percentage"] : bizModel.gst_percentage;
