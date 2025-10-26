@@ -42,7 +42,7 @@ export default function ProjectEstimationPage() {
       id: Date.now(),
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -105,7 +105,7 @@ export default function ProjectEstimationPage() {
               id: item.id || Date.now() + Math.random(),
               room_name: item.room_name || '',
               category: item.category,
-              description: item.item_name,
+              item_name: item.item_name,
               unit: item.unit || 'sqft',
               width: item.width || '',
               height: item.height || '',
@@ -133,7 +133,7 @@ export default function ProjectEstimationPage() {
       id: Date.now(),
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -327,7 +327,7 @@ export default function ProjectEstimationPage() {
       ),
     },
     {
-      accessorKey: 'description',
+      accessorKey: 'item_name',
       header: 'Description',
       size: 180,
       cell: EditableTextCell,
@@ -647,12 +647,12 @@ export default function ProjectEstimationPage() {
 
           // Prepare items with calculated values
           const itemsWithCalcs = data
-            .filter(item => item.description.trim() !== '')
+            .filter(item => item.item_name.trim() !== '')
             .map(item => {
               const calc = calculateItemTotal(item);
               return {
                 ...item,
-                item_name: item.description,
+                item_name: item.item_name,
                 subtotal: calc.subtotal,
                 karighar_charges_amount: calc.karighar_charges_amount,
                 discount_amount: calc.discount_amount,
@@ -677,12 +677,12 @@ export default function ProjectEstimationPage() {
 
       // No overpayment, proceed normally
       const itemsWithCalcs = data
-        .filter(item => item.description.trim() !== '')
+        .filter(item => item.item_name.trim() !== '')
         .map(item => {
           const calc = calculateItemTotal(item);
           return {
             ...item,
-            item_name: item.description,
+            item_name: item.item_name,
             subtotal: calc.subtotal,
             karighar_charges_amount: calc.karighar_charges_amount,
             discount_amount: calc.discount_amount,
