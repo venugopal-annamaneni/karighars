@@ -441,7 +441,7 @@ export default function ProjectEstimationPage() {
     }
   }
   const getMaxDiscount = (index) => {
-    const itemCategory = items[index].category;
+    const itemCategory = data[index].category;
     switch (itemCategory) {
       case ESTIMATION_CATEGORY.WOODWORK:
         return bizModel.max_design_charge_discount_percentage;
