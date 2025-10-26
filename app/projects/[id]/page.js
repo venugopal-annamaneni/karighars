@@ -278,63 +278,6 @@ export default function ProjectEstimationsPage() {
     const csv = generateCsv(csvConfig)(csvData);
     download(csvConfig)(csv);
     toast.success('CSV exported successfully!');
-  }; 
-          'quantity', 
-          'unit_price', 
-          'subtotal',
-          'karighar_charges_amount',
-          'discount_amount',
-          'gst_percentage',
-          'item_total'
-        ],
-        processCellCallback: (params) => {
-          // Format currency values
-          if (['unit_price', 'subtotal', 'karighar_charges_amount', 'discount_amount', 'item_total'].includes(params.column.getColId())) {
-            return `₹${parseFloat(params.value || 0).toLocaleString('en-IN')}`;
-          }
-          return params.value;
-        }
-      });
-      toast.success('CSV exported successfully!');
-    }
-  };
-
-  // Helper function to group and sort estimation items
-  const sortedGroupedItems = () => {
-    const grouped = estimationItems.reduce((acc, item) => {
-      const roomName = item.room_name || 'Unassigned';
-      const category = item.category || 'misc';
-      
-      if (!acc[roomName]) {
-        acc[roomName] = {};
-      }
-      if (!acc[roomName][category]) {
-        acc[roomName][category] = [];
-      }
-      acc[roomName][category].push(item);
-      return acc;
-    }, {});
-
-    // Sort categories within each room
-    Object.keys(grouped).forEach(roomName => {
-      const categoryOrder = {
-        'woodwork': 1,
-        'misc_internal': 2,
-        'misc_external': 3,
-        'shopping_service': 4
-      };
-      
-      const sortedCategories = {};
-      Object.keys(grouped[roomName])
-        .sort((a, b) => (categoryOrder[a] || 999) - (categoryOrder[b] || 999))
-        .forEach(category => {
-          sortedCategories[category] = grouped[roomName][category];
-        });
-      
-      grouped[roomName] = sortedCategories;
-    });
-
-    return grouped;
   };
 
   if (status === 'loading' || loading || estimationLoading) {
