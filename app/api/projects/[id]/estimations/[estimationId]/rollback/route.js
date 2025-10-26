@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
-import { USER_ROLE } from '@/lib/constants';
+import { USER_ROLE } from '@/app/constants';
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);

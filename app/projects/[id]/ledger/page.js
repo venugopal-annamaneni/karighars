@@ -3,7 +3,7 @@
 import { useProjectData } from '@/app/context/ProjectDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PROJECT_STAGES } from '@/lib/constants';
+import { LEDGER_ENTRY_TYPE, PROJECT_STAGES } from '@/app/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   Activity
@@ -84,11 +84,11 @@ export default function ProjectLedgerPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-medium capitalize">{entry.transaction_type}</p>
-                    {entry.amount > 0 && (
-                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 hover:text-green-700">Inflow</Badge>
+                    {entry.entry_type === LEDGER_ENTRY_TYPE.CREDIT && (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 hover:text-green-700">Inflow ({entry.entry_type})</Badge>
                     )}
-                    {entry.amount < 0 && (
-                      <Badge className="bg-red-100 text-red-700 hover:bg-red-100 hover:text-red-700">Outflow</Badge>
+                    {entry.entry_type === LEDGER_ENTRY_TYPE.DEBIT && (
+                      <Badge className="bg-red-100 text-red-700 hover:bg-red-100 hover:text-red-700">Outflow ({entry.entry_type})</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { LEDGER_ENTRY_TYPE } from '@/app/constants';
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -54,7 +55,7 @@ export async function GET(request, { params }) {
   // Calculate running balance
   let runningBalance = 0;
   const ledgerWithBalance = result.rows.map(entry => {
-    if (entry.entry_type === 'credit') {
+    if (entry.entry_type === LEDGER_ENTRY_TYPE.CREDIT) {
       runningBalance += parseFloat(entry.amount);
     } else {
       runningBalance -= parseFloat(entry.amount);

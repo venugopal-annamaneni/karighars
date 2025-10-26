@@ -1,8 +1,8 @@
-import { PAYMENT_STATUS, USER_ROLE } from "@/lib/constants";
+import { PAYMENT_STATUS, REVERSAL_PAYMENT_TYPE, USER_ROLE } from "@/app/constants";
 import { Button } from "../../../components/ui/button";
 import { toast } from "sonner";
 
-const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
+const OverpaymentAlert = ({ estimation, userRole, onClose }) => {
   return (
 
     <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6">
@@ -18,13 +18,13 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
             <div className="bg-white p-3 rounded border border-red-200">
               <p className="text-sm text-red-700 mb-1">Total Collected (Approved)</p>
               <p className="text-xl font-bold text-red-900">
-                ₹{((parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount) + parseFloat(estimation.overpayment_amount || 0))).toLocaleString('en-IN')}
+                ₹{((parseFloat(estimation.final_value) + parseFloat(estimation.overpayment_amount || 0))).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="bg-white p-3 rounded border border-red-200">
               <p className="text-sm text-red-700 mb-1">Current Estimation Value</p>
               <p className="text-xl font-bold text-red-900">
-                ₹{(parseFloat(estimation.final_value) + parseFloat(estimation.gst_amount)).toLocaleString('en-IN')}
+                ₹{parseFloat(estimation.final_value).toLocaleString('en-IN')}
               </p>
             </div>
           </div>
@@ -35,43 +35,44 @@ const OverpaymentAlert = ({ estimation, userRole, fetchProjectData }) => {
           <div className="space-y-2 text-sm text-red-800 mb-4">
             <p className="font-semibold">Required Actions:</p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Admin must approve this overpayment</li>
-              <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
+              <li>Admin or Finance should create a {REVERSAL_PAYMENT_TYPE} to clear this alert</li>
+              {/* <li>System will create receipt reversal record in Customer Payments (In {PAYMENT_STATUS.PENDING} state)</li>
               <li>Finance team uploads receipt reversal document</li>
-              <li>Receipt reversal becomes approved and reflects in ledger</li>
-              <li>Or creator can cancel and revert to previous version</li>
+              <li>Receipt reversal becomes approved and reflects in ledger</li> */}
+              <li>If this overpayment alert is caused by changes to estimation items, avoid reducing the estimation value below the customer’s total payments.</li>
             </ol>
           </div>
           <div className="flex gap-3">
-            {userRole === USER_ROLE.ADMIN && (
-              <Button
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        "payment_type": "RECEIPT_REVERSAL",
-                        "project_id": estimation.project_id
-                      })
-                    });
-                    if (res.ok) {
-                      toast.success(`Overpayment approved! Receipt reversal created in Customer Payments (pending document upload).`);
-                      setTimeout(() => {fetchProjectData()}, 2000);
-                    } else {
-                      const data = await res.json();
-                      toast.error(data.error || 'Failed to approve overpayment');
-                    }
-                  } catch (error) {
-                    console.error('Error:', error);
-                    toast.error('An error occurred');
+
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/projects/${estimation.project_id}/customer-payments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      "payment_type": REVERSAL_PAYMENT_TYPE,
+                      "project_id": estimation.project_id
+                    })
+                  });
+                  if (res.ok) {
+                    toast.success(`Overpayment approved! Receipt reversal created in Customer Payments (pending document upload).`);
+                    onClose();
+                  } else {
+                    const data = await res.json();
+                    toast.error(data.error || 'Failed to approve overpayment');
                   }
-                }}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Create Receipt Reversal
-              </Button>
-            )}
+                } catch (error) {
+                  console.error('Error:', error);
+                  toast.error('An error occurred');
+                }
+              }}
+              disabled={!(userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.FINANCE)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Create Receipt Reversal
+            </Button>
+
           </div>
         </div>
       </div>

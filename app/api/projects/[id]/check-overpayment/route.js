@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
-import { PAYMENT_STATUS } from '@/lib/constants';
+import { PAYMENT_STATUS } from '@/app/constants';
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions);

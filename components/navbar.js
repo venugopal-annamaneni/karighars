@@ -27,7 +27,7 @@ import {
   Menu
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { USER_ROLE } from '@/lib/constants';
+import { USER_ROLE } from '@/app/constants';
 import Image from 'next/image';
 
 const navigation = [

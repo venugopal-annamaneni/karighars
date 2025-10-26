@@ -8,23 +8,73 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { INVOICE_RECORD_TYPE, USER_ROLE } from '@/app/constants';
 
-const PAYMENT_STATUS = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected'
-};
 
-export default function OverInvoicedAlert({ data, onClose }) {
+export default function OverInvoicedAlert({ data, userRole, onClose }) {
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
+    document_number: '',
+    amount: '',
+    document_date: new Date().toISOString().split('T')[0],
+    document_url: '',
+    remarks: '',
+    record_type: INVOICE_RECORD_TYPE.INVOICE,
     credit_note_number: `CN-${data.project_id}-${Date.now()}`,
     amount: Math.abs(data.over_invoiced_amount),
-    remarks: 'Credit note for over-invoiced amount'
+    remarks: ''
   });
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setUploading(true);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({
+          ...prev,
+          document_url: data.url,
+          file_name: data.fileName,
+          file_size: data.size,
+          mime_type: data.type
+        }));
+        toast.success('Document uploaded successfully');
+      } else {
+        toast.error('Failed to upload document');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Error uploading document');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleCreateCreditNote = async () => {
+    debugger;
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (!formData.document_url) {
+      toast.error('Please upload credit note document');
+      return;
+    }
+
     try {
       setCreating(true);
 
@@ -33,18 +83,19 @@ export default function OverInvoicedAlert({ data, onClose }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project_id: data.project_id,
-          estimation_id: data.estimation_id,
-          invoice_number: formData.credit_note_number,
-          invoice_amount: -Math.abs(formData.amount), // NEGATIVE for credit note
-          invoice_date: new Date().toISOString(),
-          invoice_document_url: '', // To be uploaded later
+          document_number: formData.credit_note_number,
+          record_type: INVOICE_RECORD_TYPE.CREDIT_NOTE,
+          amount: -Math.abs(formData.amount), // NEGATIVE for credit note
+          document_date: new Date().toISOString(),
+          document_url: formData.document_url,
           remarks: formData.remarks
         })
       });
 
       if (response.ok) {
-        toast.success(`Credit note created successfully! Please upload the credit note document in the Invoices tab.`);
+        toast.success(`Credit note created successfully!`);
         onClose();
+        data.fetchProjectData();
       } else {
         const error = await response.json();
         toast.error(error.error || 'Failed to create credit note');
@@ -68,14 +119,7 @@ export default function OverInvoicedAlert({ data, onClose }) {
   return (
     <Card className="border-orange-500 bg-orange-50 shadow-lg">
       <CardHeader className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 top-2"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+
         <CardTitle className="text-orange-700 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" />
           Over-Invoiced Project Detected
@@ -105,18 +149,17 @@ export default function OverInvoicedAlert({ data, onClose }) {
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <p className="font-semibold mb-2 text-sm">What happens next?</p>
           <ol className="list-decimal ml-5 space-y-1 text-sm">
-            <li>Finance creates credit note for {formatCurrency(data.over_invoiced_amount)}</li>
-            <li>Finance uploads credit note document in Invoices tab</li>
-            <li>Admin approves credit note</li>
+            <li>Finance team to create a credit note for {formatCurrency(data.over_invoiced_amount)}</li>
             <li>Invoiced amount reduces accordingly</li>
           </ol>
         </div>
 
         {!showForm && (
-          <Button 
-            onClick={() => setShowForm(true)} 
+          <Button
+            onClick={() => setShowForm(true)}
             className="w-full"
             variant="default"
+            disabled={!(userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.FINANCE)}
           >
             Create Credit Note
           </Button>
@@ -130,6 +173,18 @@ export default function OverInvoicedAlert({ data, onClose }) {
                 value={formData.credit_note_number}
                 onChange={(e) => setFormData({ ...formData, credit_note_number: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Invoice Document *</Label>
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+                disabled={uploading}
+              />
+              {formData.document_url && (
+                <p className="text-xs text-green-600">✓ Document uploaded</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -173,7 +228,7 @@ export default function OverInvoicedAlert({ data, onClose }) {
             </div>
 
             <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-              ⚠️ After creation, you must upload the credit note document in the Invoices tab before it can be approved.
+              ⚠️ After creation, auto approved on credit note document in the Invoices tab.
             </p>
           </div>
         )}

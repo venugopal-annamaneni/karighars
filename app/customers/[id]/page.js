@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { ArrowLeft, Edit, Save, X, Upload, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { DOCUMENT_TYPE } from '@/app/constants';
 
 export default function CustomerDetailPage() {
   const { data: session, status } = useSession();
@@ -394,11 +395,11 @@ export default function CustomerDetailPage() {
                 {/* Aadhar Card */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-medium mb-2">Aadhar Card</h3>
-                  {documents.find(d => d.document_type === 'kyc_aadhar') ? (
+                  {documents.find(d => d.document_type === DOCUMENT_TYPE.AADHAR) ? (
                     <div className="space-y-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700">✓ Uploaded</Badge>
                       <Button size="sm" variant="outline" className="w-full" asChild>
-                        <a href={documents.find(d => d.document_type === 'kyc_aadhar').document_url} target="_blank" rel="noopener noreferrer">
+                        <a href={documents.find(d => d.document_type === DOCUMENT_TYPE.AADHAR).document_url} target="_blank" rel="noopener noreferrer">
                           <FileText className="h-4 w-4 mr-2" />
                           View
                         </a>
@@ -411,7 +412,7 @@ export default function CustomerDetailPage() {
                         id="aadhar"
                         accept="image/*,.pdf"
                         className="hidden"
-                        onChange={(e) => handleFileUpload('kyc_aadhar', e.target.files[0])}
+                        onChange={(e) => handleFileUpload(DOCUMENT_TYPE.AADHAR, e.target.files[0])}
                         disabled={uploadingDoc}
                       />
                       <Button
@@ -431,11 +432,11 @@ export default function CustomerDetailPage() {
                 {/* PAN Card */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-medium mb-2">PAN Card</h3>
-                  {documents.find(d => d.document_type === 'kyc_pan') ? (
+                  {documents.find(d => d.document_type === DOCUMENT_TYPE.PAN) ? (
                     <div className="space-y-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700">✓ Uploaded</Badge>
                       <Button size="sm" variant="outline" className="w-full" asChild>
-                        <a href={documents.find(d => d.document_type === 'kyc_pan').document_url} target="_blank" rel="noopener noreferrer">
+                        <a href={documents.find(d => d.document_type === DOCUMENT_TYPE.PAN).document_url} target="_blank" rel="noopener noreferrer">
                           <FileText className="h-4 w-4 mr-2" />
                           View
                         </a>
@@ -448,7 +449,7 @@ export default function CustomerDetailPage() {
                         id="pan"
                         accept="image/*,.pdf"
                         className="hidden"
-                        onChange={(e) => handleFileUpload('kyc_pan', e.target.files[0])}
+                        onChange={(e) => handleFileUpload(DOCUMENT_TYPE.PAN, e.target.files[0])}
                         disabled={uploadingDoc}
                       />
                       <Button
@@ -468,11 +469,11 @@ export default function CustomerDetailPage() {
                 {/* Blank Cheque */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-medium mb-2">Blank Cheque</h3>
-                  {documents.find(d => d.document_type === 'kyc_cheque') ? (
+                  {documents.find(d => d.document_type === DOCUMENT_TYPE.KYC_CHEQUE) ? (
                     <div className="space-y-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700">✓ Uploaded</Badge>
                       <Button size="sm" variant="outline" className="w-full" asChild>
-                        <a href={documents.find(d => d.document_type === 'kyc_cheque').document_url} target="_blank" rel="noopener noreferrer">
+                        <a href={documents.find(d => d.document_type === DOCUMENT_TYPE.KYC_CHEQUE).document_url} target="_blank" rel="noopener noreferrer">
                           <FileText className="h-4 w-4 mr-2" />
                           View
                         </a>
@@ -485,7 +486,7 @@ export default function CustomerDetailPage() {
                         id="cheque"
                         accept="image/*,.pdf"
                         className="hidden"
-                        onChange={(e) => handleFileUpload('kyc_cheque', e.target.files[0])}
+                        onChange={(e) => handleFileUpload(DOCUMENT_TYPE.KYC_CHEQUE, e.target.files[0])}
                         disabled={uploadingDoc}
                       />
                       <Button

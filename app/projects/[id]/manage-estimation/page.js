@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ESTIMATION_CATEGORY, ESTIMATION_STATUS } from '@/lib/constants';
+import { ESTIMATION_CATEGORY, ESTIMATION_STATUS } from '@/app/constants';
 import { AlertTriangle, Plus, Save, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';

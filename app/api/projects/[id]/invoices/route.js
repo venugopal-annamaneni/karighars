@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { DOCUMENT_TYPE, INVOICE_RECORD_TYPE, INVOICE_STATUS } from '@/app/constants';
 
 // GET - Fetch all invoices for a project
 export async function GET(request, { params }) {
@@ -16,13 +17,9 @@ export async function GET(request, { params }) {
     const result = await query(`
       SELECT 
         pi.*,
-        u1.name as uploaded_by_name,
-        u2.name as approved_by_name,
-        u3.name as cancelled_by_name
+        u1.name as created_by_name
       FROM project_invoices pi
-      LEFT JOIN users u1 ON pi.uploaded_by = u1.id
-      LEFT JOIN users u2 ON pi.approved_by = u2.id
-      LEFT JOIN users u3 ON pi.cancelled_by = u3.id
+      LEFT JOIN users u1 ON pi.created_by = u1.id
       WHERE pi.project_id = $1
       ORDER BY pi.created_at DESC
     `, [projectId]);
@@ -48,50 +45,50 @@ export async function POST(request, { params }) {
 
   try {
     const projectId = params.id;
-    const body = await request.json();
+    const body = await request.json(); 
 
     // Validation
-    if (!body.invoice_amount || parseFloat(body.invoice_amount) === 0) {
-      return NextResponse.json({ error: 'Invoice amount cannot be zero' }, { status: 400 });
+    if (!body.amount || parseFloat(body.amount) === 0) {
+      return NextResponse.json({ error: 'Amount cannot be zero' }, { status: 400 });
     }
 
-    if (!body.invoice_document_url) {
-      return NextResponse.json({ error: 'Invoice document is required' }, { status: 400 });
+    if (!body.document_url) {
+      return NextResponse.json({ error: 'Document is required' }, { status: 400 });
     }
 
     const result = await query(`
       INSERT INTO project_invoices (
-        project_id, invoice_number, invoice_amount, invoice_date,
-        invoice_document_url, remarks, uploaded_by
+        project_id, document_number, amount, record_type, document_date,
+        document_url, remarks, status, created_by
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `, [
       projectId,
-      body.invoice_number || null,
-      body.invoice_amount,
-      body.invoice_date || new Date(),
-      body.invoice_document_url,
+      body.document_number,
+      body.amount,
+      body.record_type,
+      body.document_date || new Date(),
+      body.document_url,
       body.remarks || null,
+      INVOICE_STATUS.APPROVED,
       session.user.id
     ]);
 
-    // Insert document into documents table
+    // Update Project table
     await query(`
-      INSERT INTO documents (
-        project_id, document_type, document_url, document_name,
-        source_table, source_id, uploaded_by, uploaded_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-    `, [
-      projectId,
-      'invoice',
-      body.invoice_document_url,
-      body.invoice_number || 'Invoice',
-      'project_invoices',
-      result.rows[0].id,
-      session.user.id
-    ]);
+      UPDATE projects
+      SET invoiced_amount = COALESCE(invoiced_amount, 0) + $1
+      WHERE id = $2
+    `, [body.amount, projectId]);
+
+    // Insert document into documents table
+    await query(`INSERT INTO documents (group_type, group_id, related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      ["project", projectId, "project_invoices", body.related_id, body.document_type, body.document_url,
+        body.file_name, body.file_size, body.mime_type, session.user.id,
+        body.remarks || null]
+    );
 
     // Log activity
     await query(`
@@ -102,8 +99,8 @@ export async function POST(request, { params }) {
       'project_invoices',
       result.rows[0].id,
       session.user.id,
-      'invoice_uploaded',
-      `Invoice uploaded: ${body.invoice_number || 'N/A'} - ₹${body.invoice_amount}`
+      `${body.record_type} Uploaded`,
+      `Invoice uploaded: ${body.document_number || 'N/A'} - ₹${body.amount}`
     ]);
 
     return NextResponse.json({ invoice: result.rows[0] });

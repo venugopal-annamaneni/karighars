@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { Settings, Briefcase, TrendingUp, TrendingDown, Plus, Trash2, Edit } from 'lucide-react';
-import { BIZMODEL_STATUS, USER_ROLE } from '@/lib/constants';
+import { BIZMODEL_STATUS, USER_ROLE } from '@/app/constants';
 
 export default function BizModelsPage() {
   const { data: session, status } = useSession();

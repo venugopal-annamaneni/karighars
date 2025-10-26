@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { PAYMENT_STATUS, USER_ROLE } from '@/lib/constants';
+import { DOCUMENT_TYPE, PAYMENT_STATUS, REVERSAL_PAYMENT_TYPE, USER_ROLE } from '@/app/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   AlertTriangle,
@@ -90,7 +90,7 @@ export default function CustomerPaymentsPage() {
       const totalAmount = parseFloat(paymentData.amount || 0);
 
       // Get payment type from milestone or use default
-      let paymentType = 'other';
+      let paymentType = '';
       let milestoneId = null;
 
       if (paymentData.milestone_id) {
@@ -99,7 +99,11 @@ export default function CustomerPaymentsPage() {
           paymentType = milestone.milestone_code;
           milestoneId = paymentData.milestone_id;
         }
+      } else {
+        toast.error("Payment is not linked to any milestone. Technical issue, contact Admin");
+        return;
       }
+      
 
       const res = await fetch(`/api/projects/${projectId}/customer-payments`, {
         method: 'POST',
@@ -185,9 +189,19 @@ export default function CustomerPaymentsPage() {
     }
   };
 
-  const handleDocumentUpload = async (paymentId, file, type = 'payment_receipt', user_id) => {
+  const handleDocumentUpload = async (e, payment, user_id) => {
+    const file = e.target.files[0];
     if (!file) return;
-    setUploadingReceipt(prev => ({ ...prev, [paymentId]: true }));
+
+    let type = '';
+    if (file) {
+      if (payment.payment_type === REVERSAL_PAYMENT_TYPE) {
+        type = DOCUMENT_TYPE.RECEIPT_REVERSAL;
+      } else {
+        type = DOCUMENT_TYPE.PAYMENT_RECEIPT;
+      }
+    }
+    setUploadingReceipt(prev => ({ ...prev, [payment.id]: true }));
     const formData = new FormData();
     formData.append('file', file);
 
@@ -197,9 +211,9 @@ export default function CustomerPaymentsPage() {
       const uploadData = await uploadRes.json();
 
       // Build dynamic payload
-      const updateBody = { document_url: uploadData.url, status: 'approved' };
+      const updateBody = { document_url: uploadData.url, status: 'approved', document_type: type };
 
-      const updateRes = await fetch(`/api/projects/${projectId}/customer-payments/${paymentId}`, {
+      const updateRes = await fetch(`/api/projects/${projectId}/customer-payments/${payment.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateBody),
@@ -213,7 +227,7 @@ export default function CustomerPaymentsPage() {
           group_type: "project",
           group_id: projectId,
           related_entity: 'customer_payments',
-          related_id: paymentId,
+          related_id: payment.id,
           document_type: type,
           document_url: uploadData.url,
           file_name: uploadData.fileName,
@@ -497,12 +511,13 @@ export default function CustomerPaymentsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Reference Number </Label>
+                <Label>Reference Number *</Label>
                 <Input
+                  required
                   placeholder="Transaction ID / Cheque Number"
                   value={paymentData.reference_number}
                   onChange={(e) => setPaymentData({ ...paymentData, reference_number: e.target.value })}
-                  required
+                  
                 />
               </div>
               <div className="space-y-2">
@@ -593,16 +608,7 @@ export default function CustomerPaymentsPage() {
                         id={`${payment.payment_type === 'RECEIPT_REVERSAL' ? 'receipt-reversal' : 'receipt'}-${payment.id}`}
                         accept="image/*,.pdf"
                         className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            if (payment.payment_type === 'RECEIPT_REVERSAL') {
-                              handleDocumentUpload(payment.id, file, 'receipt_reversal', session.user.id);
-                            } else {
-                              handleDocumentUpload(payment.id, file, 'payment_receipt', session.user.id);
-                            }
-                          }
-                        }}
+                        onChange={(e) => handleDocumentUpload(e, payment, session.user.id)}
                         disabled={uploadingReceipt[payment.id]}
                       />
                       <Button

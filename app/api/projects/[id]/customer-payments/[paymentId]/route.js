@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
-import { PAYMENT_STATUS, USER_ROLE } from '@/lib/constants';
+import { DOCUMENT_TYPE, LEDGER_ENTRY_TYPE, PAYMENT_STATUS, USER_ROLE } from '@/app/constants';
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -61,10 +61,12 @@ export async function PUT(request, { params }) {
     if (body.status === PAYMENT_STATUS.APPROVED) {
       const payment = result.rows[0];
 
+      console.log(body);
+
       // Determine ledger entry type
-      const entryType = body.document_type === 'receipt_reversal' ? 'debit' : 'credit';
+      const entryType = body.document_type === DOCUMENT_TYPE.RECEIPT_REVERSAL ? LEDGER_ENTRY_TYPE.DEBIT : LEDGER_ENTRY_TYPE.CREDIT;
       const remarks =
-        body.document_type === 'receipt_reversal'
+        body.document_type === DOCUMENT_TYPE.RECEIPT_REVERSAL
           ? 'Receipt reversal approved by Finance'
           : 'Payment approved by Finance';
 

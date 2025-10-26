@@ -48,7 +48,10 @@ export default function ProjectsPage() {
         const data = await res.json();
         setProjects(data.projects);
         setFilteredProjects(data.projects);
-        setTotalRecords(data.projects[0].total_records)
+        if(data.projects.length > 0)
+          setTotalRecords(data.projects[0].total_records)
+        else
+          setTotalRecords(0);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);

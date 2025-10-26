@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Toaster } from '@/components/ui/sonner';
-import { ALERT_TYPE, PROJECT_STAGES } from '@/lib/constants';
+import { ALERT_TYPE, PROJECT_STAGES } from '@/app/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ArrowLeft, Calendar, Edit, FileText, MapPin, Users } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -70,7 +70,7 @@ function ProjectLayoutInner({ children }) {
 
   useEffect(() => {
     if (project) {
-      fetchOtherData();
+      fetchAuxData();
     }
   })
 
@@ -80,7 +80,6 @@ function ProjectLayoutInner({ children }) {
         {
           estimation,
           userRole: session?.user?.role,
-          fetchProjectData,
         },
         ALERT_TYPE.OVERPAYMENT_ALERT
       );
@@ -97,7 +96,9 @@ function ProjectLayoutInner({ children }) {
             estimation_id: estimation.id,
             final_value: finalValue,
             invoiced_amount: invoicedAmount,
-            over_invoiced_amount: overInvoicedAmount
+            over_invoiced_amount: overInvoicedAmount,
+            userRole: session?.user?.role,
+            fetchProjectData: fetchProjectData
           },
           ALERT_TYPE.OVER_INVOICED_ALERT
         );
@@ -109,7 +110,7 @@ function ProjectLayoutInner({ children }) {
     }
   }, [estimation, project]);
 
-  const fetchOtherData = async () => {
+  const fetchAuxData = async () => {
     if (project && project.biz_model_id && stages.length === 0) {
       const bizModelRes = await fetch(`/api/biz-models/${project.biz_model_id}`);
       if (bizModelRes.ok) {
