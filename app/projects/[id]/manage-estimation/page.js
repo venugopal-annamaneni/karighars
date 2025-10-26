@@ -93,10 +93,13 @@ export default function ProjectEstimationPage() {
           const itemsData = await itemsRes.json();
           if (itemsData.items.length > 0) {
             setItems(itemsData.items.map(item => ({
+              room_name: item.room_name || '',
               category: item.category,
               description: item.description,
+              unit: item.unit || 'sqft',
+              width: item.width || '',
+              height: item.height || '',
               quantity: parseFloat(item.quantity),
-              unit: item.unit,
               unit_price: parseFloat(item.unit_price),
               karighar_charges_percentage: parseFloat(item.karighar_charges_percentage),
               discount_percentage: parseFloat(item.discount_percentage),
