@@ -43,7 +43,7 @@ export default function ProjectEstimationPage() {
     {
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -95,7 +95,7 @@ export default function ProjectEstimationPage() {
             setItems(itemsData.items.map(item => ({
               room_name: item.room_name || '',
               category: item.category,
-              description: item.description,
+              item_name: item.item_name,
               unit: item.unit || 'sqft',
               width: item.width || '',
               height: item.height || '',
@@ -122,7 +122,7 @@ export default function ProjectEstimationPage() {
     setItems([...items, {
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -311,7 +311,7 @@ export default function ProjectEstimationPage() {
 
           // Prepare items with calculated values
           const itemsWithCalcs = items
-            .filter(item => item.description.trim() !== '')
+            .filter(item => item.item_name.trim() !== '')
             .map(item => {
               const calc = calculateItemTotal(item);
               return {
@@ -340,7 +340,7 @@ export default function ProjectEstimationPage() {
 
       // No overpayment, proceed normally
       const itemsWithCalcs = items
-        .filter(item => item.description.trim() !== '')
+        .filter(item => item.item_name.trim() !== '')
         .map(item => {
           const calc = calculateItemTotal(item);
           return {
@@ -528,8 +528,8 @@ export default function ProjectEstimationPage() {
                       <Label className="text-xs">Description<span className='text-red-500'>*</span></Label>
                       <Input
                         placeholder="e.g., Modular Kitchen"
-                        value={item.description}
-                        onChange={(e) => updateItem(index, 'description', e.target.value)}
+                        value={item.item_name}
+                        onChange={(e) => updateItem(index, 'item_name', e.target.value)}
                         className="h-9"
                         required
                       />
