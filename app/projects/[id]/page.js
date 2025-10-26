@@ -11,13 +11,17 @@ import {
   Edit,
   FileText,
   Plus,
-  StepBackIcon
+  StepBackIcon,
+  Download
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 export default function ProjectEstimationsPage() {
   const { data: session, status } = useSession();
@@ -26,57 +30,10 @@ export default function ProjectEstimationsPage() {
   const projectId = params.id;
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
+  const gridRef = useRef();
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const { fetchProjectData, project, estimation, loading } = useProjectData();
-
-  // Helper function to group items by room and category
-  const groupItemsByRoomAndCategory = (items) => {
-    const grouped = {};
-    
-    items.forEach(item => {
-      const room = item.room_name || 'Uncategorized';
-      if (!grouped[room]) {
-        grouped[room] = {};
-      }
-      
-      const category = item.category;
-      if (!grouped[room][category]) {
-        grouped[room][category] = [];
-      }
-      
-      grouped[room][category].push(item);
-    });
-    
-    return grouped;
-  };
-
-  // Category display order
-  const categoryOrder = {
-    'woodwork': 1,
-    'misc_internal': 2,
-    'misc_external': 3,
-    'shopping_service': 4
-  };
-
-  const sortedGroupedItems = () => {
-    const grouped = groupItemsByRoomAndCategory(estimationItems);
-    const sorted = {};
-    
-    // Sort rooms alphabetically
-    Object.keys(grouped).sort().forEach(room => {
-      sorted[room] = {};
-      
-      // Sort categories within each room
-      Object.keys(grouped[room])
-        .sort((a, b) => (categoryOrder[a] || 999) - (categoryOrder[b] || 999))
-        .forEach(category => {
-          sorted[room][category] = grouped[room][category];
-        });
-    });
-    
-    return sorted;
-  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
