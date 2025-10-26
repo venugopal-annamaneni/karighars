@@ -101,10 +101,11 @@ export default function ProjectEstimationPage() {
         if (itemsRes.ok) {
           const itemsData = await itemsRes.json();
           if (itemsData.items.length > 0) {
-            setItems(itemsData.items.map(item => ({
+            setData(itemsData.items.map(item => ({
+              id: item.id || Date.now() + Math.random(),
               room_name: item.room_name || '',
               category: item.category,
-              item_name: item.item_name,
+              description: item.item_name,
               unit: item.unit || 'sqft',
               width: item.width || '',
               height: item.height || '',
