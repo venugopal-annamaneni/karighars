@@ -811,241 +811,119 @@ export default function ProjectEstimationPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {data.map((item, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-medium">Item #{index + 1}</p>
-                    {data.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+            {/* Action Buttons */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={addItem}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Total Items: {data.length}
+              </div>
+            </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Room/Section Name<span className='text-red-500'>*</span></Label>
-                      <Input
-                        placeholder="e.g., Living Room, Kitchen"
-                        value={item.room_name}
-                        onChange={(e) => updateItem(index, 'room_name', e.target.value)}
-                        className="h-9"
-                        required
-                      />
-                    </div>
+            {/* TanStack Table */}
+            <div 
+              ref={tableContainerRef}
+              className="border rounded-lg overflow-auto"
+              style={{ maxHeight: '600px' }}
+            >
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 bg-slate-100 z-10">
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <th
+                          key={header.id}
+                          className="p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap"
+                          style={{ minWidth: header.column.columnDef.size }}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <div
+                              className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                              {{
+                                asc: ' 🔼',
+                                desc: ' 🔽',
+                              }[header.column.getIsSorted()] ?? null}
+                            </div>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map(row => (
+                    <tr
+                      key={row.id}
+                      className="border-b hover:bg-slate-50"
+                    >
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id} className="p-2">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs">Category<span className='text-red-500'>*</span></Label>
-                      <Select
-                        value={item.category}
-                        onValueChange={(value) => updateItem(index, 'category', value)}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(ESTIMATION_CATEGORY).map(([key, value]) => (
-                            <SelectItem key={key} value={value}>
-                              {value
-                                .replace('_', ' ')        // turn project_manager → project manager
-                                .replace(/\b\w/g, c => c.toUpperCase())}  {/* capitalize words */}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+            {/* Keyboard Shortcuts Help */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
+              <strong>⌨️ Keyboard Shortcuts:</strong> 
+              <span className="ml-2">Tab = Next cell</span>
+              <span className="ml-2">•</span>
+              <span className="ml-2">Enter = Next row</span>
+              <span className="ml-2">•</span>
+              <span className="ml-2">Esc = Cancel edit</span>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs">Description<span className='text-red-500'>*</span></Label>
-                      <Input
-                        placeholder="e.g., Modular Kitchen"
-                        value={item.description}
-                        onChange={(e) => updateItem(index, 'description', e.target.value)}
-                        className="h-9"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Unit<span className='text-red-500'>*</span></Label>
-                      <Select
-                        required
-                        value={item.unit}
-                        onValueChange={(value) => updateItem(index, 'unit', value)}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sqft">Sq.ft</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                          <SelectItem value="lumpsum">Lumpsum</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Conditional rendering based on unit type */}
-                    {item.unit === 'sqft' ? (
-                      <>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Width<span className='text-red-500'>*</span></Label>
-                          <Input
-                            required
-                            type="number"
-                            step="0.01"
-                            placeholder="0"
-                            value={item.width}
-                            onChange={(e) => updateItem(index, 'width', e.target.value)}
-                            className="h-9"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs">Height<span className='text-red-500'>*</span></Label>
-                          <Input
-                            required
-                            type="number"
-                            step="0.01"
-                            placeholder="0"
-                            value={item.height}
-                            onChange={(e) => updateItem(index, 'height', e.target.value)}
-                            className="h-9"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs">Quantity (W × H)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="Auto-calculated"
-                            value={item.quantity}
-                            disabled
-                            className="h-9 bg-slate-100"
-                          />
-                          <span className="text-xs text-blue-600">
-                            {item.width && item.height ? `${item.width} × ${item.height} = ${item.quantity}` : 'Enter width & height'}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label className="text-xs">Quantity<span className='text-red-500'>*</span></Label>
-                        <Input
-                          required
-                          type="number"
-                          step="0.01"
-                          placeholder="0"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Unit Price (₹)<span className='text-red-500'>*</span></Label>
-                      <Input
-                        required
-                        type="number"
-                        step="0.01"
-                        placeholder="0"
-                        value={item.unit_price}
-                        onChange={(e) => updateItem(index, 'unit_price', e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">KG Charges (%)<span className='text-red-500'>*</span></Label>
-                      <Input
-                        required
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Select category for standard charges"
-                        value={item.karighar_charges_percentage}
-                        onChange={(e) => updateItem(index, 'karighar_charges_percentage', e.target.value)}
-                        className="h-9"
-                      />
-                      <span className='text-xs text-amber-700 italic'>Select category for standard charges</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Discount (%)<span className='text-red-500'>*</span></Label>
-                      <Input
-                        required
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="0"
-                        value={item.discount_percentage}
-                        onChange={(e) => updateItem(index, 'discount_percentage', e.target.value)}
-                        className="h-9"
-                      />
-                      <span className='text-xs text-amber-700 italic'>max discount allowed is {getMaxDiscount(index)}%</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">GST (%)<span className='text-red-500'>*</span></Label>
-                      <Input
-                        required
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        placeholder="Enter GST%"
-                        value={item.gst_percentage}
-                        onChange={(e) => updateItem(index, 'gst_percentage', e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Vendor Type<span className='text-red-500'>*</span></Label>
-                      <Select
-                        required
-                        value={item.vendor_type}
-                        onValueChange={(value) => updateItem(index, 'vendor_type', value)}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PI">PI</SelectItem>
-                          <SelectItem value="Aristo">Aristo</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Item Total</Label>
-                      <Input
-                        value={formatCurrency(calculateItemTotal(item).item_total)}
-                        disabled
-                        className="h-9 font-medium bg-green-50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Show breakdown for clarity */}
-                  {item.category === 'shopping_service' && (
-                    <div className="text-xs text-muted-foreground bg-amber-50 p-2 rounded">
-                      <strong>Note:</strong> For {ESTIMATION_CATEGORY.SHOPPING_SERVICE}, customer pays {formatCurrency((item.quantity || 0) * (item.unit_price || 0))} directly to vendor. Only KG charges, discount & GST amount are considered for calculations.
-                    </div>
-                  )}
+            {/* Totals Summary */}
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+              <h3 className="font-semibold mb-3">Estimation Summary</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Woodwork Value</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateTotals().woodwork_value)}
+                  </p>
                 </div>
-              ))}
+                <div>
+                  <p className="text-muted-foreground">Misc Internal Value</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateTotals().misc_internal_value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Shopping Service Value</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateTotals().shopping_service_value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Final Value</p>
+                  <p className="font-bold text-xl text-green-700">
+                    {formatCurrency(calculateTotals().final_value)}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
