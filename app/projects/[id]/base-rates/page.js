@@ -60,7 +60,7 @@ export default function BaseRatesPage() {
   const fetchBaseRates = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/app/api/projects/${projectId}/base-rates`);
+      const res = await fetch(`/api/projects/${projectId}/base-rates`);
       if (!res.ok) throw new Error('Failed to fetch base rates');
       
       const data = await res.json();
@@ -101,7 +101,7 @@ export default function BaseRatesPage() {
         return;
       }
 
-      const res = await fetch(`/app/api/projects/${projectId}/base-rates`, {
+      const res = await fetch(`/api/projects/${projectId}/base-rates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -132,7 +132,7 @@ export default function BaseRatesPage() {
     try {
       setProcessing(true);
 
-      const res = await fetch(`/app/api/projects/${projectId}/base-rates/${selectedRate.id}/approve`, {
+      const res = await fetch(`/api/projects/${projectId}/base-rates/${selectedRate.id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +183,7 @@ export default function BaseRatesPage() {
 
       setProcessing(true);
 
-      const res = await fetch(`/app/api/projects/${projectId}/base-rates/${selectedRate.id}/reject`, {
+      const res = await fetch(`/api/projects/${projectId}/base-rates/${selectedRate.id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comments: rejectComments })
@@ -246,7 +246,7 @@ export default function BaseRatesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div>
       {/* Active Rate */}
       <Card>
         <CardHeader>

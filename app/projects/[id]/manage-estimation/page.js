@@ -103,7 +103,7 @@ export default function ProjectEstimationPage() {
     try {
 
       // Load active base rate (instead of biz_model)
-      const baseRateRes = await fetch(`/app/api/projects/${projectId}/base-rates/active`);
+      const baseRateRes = await fetch(`/api/projects/${projectId}/base-rates/active`);
       if (!baseRateRes.ok) {
         throw new Error('Failed to fetch active base rates');
       }
