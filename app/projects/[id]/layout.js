@@ -293,6 +293,7 @@ function ProjectLayoutInner({ children }) {
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="base-rates">Base Rates</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
           <TabsContent value={activeTab} className="space-y-4">
