@@ -62,9 +62,31 @@ export default function ProjectEstimationPage() {
     remarks: '',
     status: ESTIMATION_STATUS.DRAFT,
   });
+  const [columnPinning, setColumnPinning] = useState({
+    left: ['room_name', 'category', 'item_name'], // first 3 columns
+    right: ['item_total', 'actions'], // last column
+  });
+
 
   const { fetchProjectData, project, estimation, loading } = useProjectData();
   const tableContainerRef = useRef(null);
+
+  useEffect(() => {
+    const left = document.getElementById("left-fixed");
+    const right = document.getElementById("right-fixed");
+    const middle = document.getElementById("middle-scroll");
+
+    if (!middle || !left || !right) return;
+
+    const syncScroll = () => {
+      left.scrollTop = middle.scrollTop;
+      right.scrollTop = middle.scrollTop;
+    };
+
+    middle.addEventListener("scroll", syncScroll);
+    return () => middle.removeEventListener("scroll", syncScroll);
+  }, []);
+
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -264,7 +286,7 @@ export default function ProjectEstimationPage() {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className={`h-8 text-sm ${readOnly ? "border border-gray-300 text-gray-400" : ""}`}
+        className={`h-8 text-sm ${readOnly ? "border border-gray-300 bg-gray-100 text-gray-400" : ""}`}
         data-row={row.index}
         data-col={column.id}
       />
@@ -409,7 +431,9 @@ export default function ProjectEstimationPage() {
       accessorKey: 'unit_price',
       header: 'Unit Price (₹)',
       size: 120,
-      cell: EditableNumberCell,
+      cell: ({ row, getValue, ...props }) => {
+        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={true} />;
+      },
     },
     {
       accessorKey: 'karighar_charges_percentage',
@@ -500,6 +524,10 @@ export default function ProjectEstimationPage() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    state: {
+      columnPinning,
+    },
+    onColumnPinningChange: setColumnPinning,
     meta: {
       updateData: (rowIndex, columnId, value) => {
         updateItem(rowIndex, columnId, value);
@@ -826,67 +854,174 @@ export default function ProjectEstimationPage() {
           <CardContent>
             {/* Action Buttons */}
             <div className="w-full flex justify-end items-center mb-4">
-              
+
               <div className="text-sm text-muted-foreground">
                 Total Items: {data.length}
               </div>
             </div>
 
             {/* TanStack Table */}
-            <div
-              ref={tableContainerRef}
-              className="border rounded-lg overflow-auto"
-              style={{ maxHeight: '600px' }}
-            >
-              <table className="w-full text-sm border-collapse">
-                <thead className="sticky top-0 bg-slate-100 z-10">
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <th
-                          key={header.id}
-                          className="p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap"
-                          style={{ minWidth: header.column.columnDef.size }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div
-                              className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                              onClick={header.column.getToggleSortingHandler()}
+            {/* Fixed Column Layout */}
+            <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
+              {/* LEFT FIXED (First 3 columns) */}
+              <div
+                id="left-fixed"
+                className="flex-none w-[420px] border-r overflow-hidden"
+                style={{ maxHeight: "600px", overflowY: "auto" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-20">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(h =>
+                            ["room_name", "category", "item_name"].includes(h.column.id)
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              style={{ minWidth: header.column.columnDef.size }}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(cell =>
+                            ["room_name", "category", "item_name"].includes(cell.column.id)
+                          )
+                          .map(cell => (
+                            <td
+                              key={cell.id}
+                              className="h-14 p-2 border-r border-slate-200 bg-slate-200"
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* SCROLLABLE MIDDLE SECTION */}
+              <div
+                ref={tableContainerRef}
+                id="middle-scroll"
+                className="flex-1 overflow-auto"
+                style={{ maxHeight: "600px" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-10">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(
+                            h =>
+                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
+                                h.column.id
+                              )
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-100"
+                              style={{ minWidth: header.column.columnDef.size }}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(
+                            cell =>
+                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
+                                cell.column.id
+                              )
+                          )
+                          .map(cell => (
+                            <td key={cell.id} className="h-14 p-2 bg-white border-r border-slate-200">
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* RIGHT FIXED (Last column) */}
+              <div
+                id="right-fixed"
+                className="flex-none w-[210px] border-l overflow-hidden"
+                style={{ maxHeight: "600px", overflowY: "auto" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-20">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(h =>
+                            ["item_total", "actions"].includes(h.column.id)
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              style={{ minWidth: header.column.columnDef.size }}
                             >
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
-                              {{
-                                asc: ' 🔼',
-                                desc: ' 🔽',
-                              }[header.column.getIsSorted()] ?? null}
-                            </div>
-                          )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map(row => (
-                    <tr
-                      key={row.id}
-                      className="border-b hover:bg-slate-50"
-                    >
-                      {row.getVisibleCells().map(cell => (
-                        <td key={cell.id} className="p-2">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(cell =>
+                            ["item_total", "actions"].includes(cell.column.id)
+                          )
+                          .map(cell => (
+                            <td key={cell.id} className="h-14 p-2 text-right font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200">
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
 
             {/* Keyboard Shortcuts Help */}
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
