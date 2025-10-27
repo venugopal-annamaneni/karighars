@@ -356,7 +356,7 @@ export default function ProjectEstimationPage() {
     },
     {
       accessorKey: 'item_name',
-      header: 'Description',
+      header: 'Item Name',
       size: 180,
       cell: EditableTextCell,
     },
@@ -500,18 +500,18 @@ export default function ProjectEstimationPage() {
           >
             <Copy className="h-3 w-3" />
           </Button>
-          {data.length > 1 && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => removeItem(row.index)}
-              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              title="Delete"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
+
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => removeItem(row.index)}
+            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+
         </div>
       ),
     },
@@ -895,6 +895,11 @@ export default function ProjectEstimationPage() {
                     ))}
                   </thead>
                   <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={3} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                      </tr>
+                    )}
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} className="border-b hover:bg-slate-50">
                         {row
@@ -952,6 +957,11 @@ export default function ProjectEstimationPage() {
                     ))}
                   </thead>
                   <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={9} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+                      </tr>
+                    )}
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} className="border-b hover:bg-slate-50">
                         {row
@@ -1003,6 +1013,11 @@ export default function ProjectEstimationPage() {
                     ))}
                   </thead>
                   <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={2} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                      </tr>
+                    )}
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} className="border-b hover:bg-slate-50">
                         {row
