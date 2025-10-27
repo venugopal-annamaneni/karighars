@@ -397,6 +397,7 @@ CREATE TABLE projects (
     project_code TEXT NOT NULL,
     customer_id INTEGER,
     biz_model_id INTEGER,
+    base_rate_id INTEGER,
     name TEXT NOT NULL,
     location TEXT,
     stage TEXT DEFAULT 'onboarding'::text,
@@ -413,8 +414,41 @@ CREATE TABLE projects (
     PRIMARY KEY (id),
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (biz_model_id) REFERENCES biz_models(id),
+    FOREIGN KEY (base_rate_id) REFERENCES project_base_rates(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
+
+CREATE TABLE project_base_rates (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    service_charge_percentage NUMERIC(5,2) NOT NULL DEFAULT 10,
+    max_service_charge_discount_percentage NUMERIC(5,2) NOT NULL DEFAULT 50,
+    design_charge_percentage NUMERIC(5,2) NOT NULL DEFAULT 10,
+    max_design_charge_discount_percentage NUMERIC(5,2) NOT NULL DEFAULT 50,
+    shopping_charge_percentage NUMERIC(5,2) NOT NULL DEFAULT 10,
+    max_shopping_charge_discount_percentage NUMERIC(5,2) NOT NULL DEFAULT 50,
+    gst_percentage NUMERIC(5,2) NOT NULL DEFAULT 18,
+    status VARCHAR(20) NOT NULL DEFAULT 'approved',
+    active BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    created_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    approved_at TIMESTAMPTZ,
+    approved_by INTEGER REFERENCES users(id),
+    rejected_at TIMESTAMPTZ,
+    rejected_by INTEGER REFERENCES users(id),
+    comments TEXT,
+    CHECK (status IN ('requested', 'approved', 'rejected')),
+    CHECK (active IN (true, false))
+);
+
+CREATE INDEX idx_project_base_rates_project_id ON project_base_rates(project_id);
+CREATE INDEX idx_project_base_rates_active ON project_base_rates(project_id, active) WHERE active = true;
+CREATE UNIQUE INDEX idx_project_base_rates_one_active ON project_base_rates(project_id) WHERE active = true;
+
+COMMENT ON TABLE project_base_rates IS 'Project-specific base rate configurations with approval workflow';
+COMMENT ON COLUMN project_base_rates.active IS 'Only one row can be active per project at a time';
+COMMENT ON COLUMN project_base_rates.status IS 'requested: pending approval, approved: approved, rejected: denied';
 
 CREATE TABLE purchase_order_status_history (
     id INTEGER NOT NULL DEFAULT nextval('purchase_order_status_history_id_seq'::regclass),
