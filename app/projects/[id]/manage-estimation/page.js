@@ -264,7 +264,7 @@ export default function ProjectEstimationPage() {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className={`h-8 text-sm ${readOnly ? "text-red-700" : ""}`}
+        className={`h-8 text-sm ${readOnly ? "border border-gray-300 text-gray-400" : ""}`}
         data-row={row.index}
         data-col={column.id}
       />
@@ -825,18 +825,8 @@ export default function ProjectEstimationPage() {
           </CardHeader>
           <CardContent>
             {/* Action Buttons */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={addItem}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              </div>
+            <div className="w-full flex justify-end items-center mb-4">
+              
               <div className="text-sm text-muted-foreground">
                 Total Items: {data.length}
               </div>
