@@ -91,18 +91,104 @@ export async function POST(request) {
 
   const initialStage = stageRes.rows[0].stage_code;
 
-  const result = await query(
-    `INSERT INTO projects (project_code, customer_id, name, location, stage, biz_model_id, sales_order_id, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-    [projectCode, body.customer_id, body.name, body.location, initialStage, bizModelId, salesOrderId, session.user.id]
-  );
+  try {
+    // Start transaction
+    await query('BEGIN');
 
-  // Log activity
-  await query(
-    `INSERT INTO activity_logs (project_id, related_entity, actor_id, action, comment)
-           VALUES ($1, $2, $3, $4, $5)`,
-    [result.rows[0].id, 'projects', session.user.id, 'created', `Project created: ${body.name}`]
-  );
+    // Step 1: Create project (without base_rate_id initially)
+    const projectResult = await query(
+      `INSERT INTO projects (project_code, customer_id, name, location, stage, biz_model_id, sales_order_id, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [projectCode, body.customer_id, body.name, body.location, initialStage, bizModelId, salesOrderId, session.user.id]
+    );
 
-  return NextResponse.json({ project: result.rows[0] });
+    const newProject = projectResult.rows[0];
+
+    // Step 2: Fetch biz_model rates
+    const bizModelResult = await query(
+      `SELECT 
+        service_charge_percentage,
+        max_service_charge_discount_percentage,
+        design_charge_percentage,
+        max_design_charge_discount_percentage,
+        shopping_charge_percentage,
+        max_shopping_charge_discount_percentage,
+        gst_percentage
+       FROM biz_models WHERE id = $1`,
+      [bizModelId]
+    );
+
+    if (bizModelResult.rows.length === 0) {
+      throw new Error('Business model not found');
+    }
+
+    const bizModel = bizModelResult.rows[0];
+
+    // Step 3: Create base_rate entry (approved and active)
+    const baseRateResult = await query(
+      `INSERT INTO project_base_rates (
+        project_id,
+        service_charge_percentage,
+        max_service_charge_discount_percentage,
+        design_charge_percentage,
+        max_design_charge_discount_percentage,
+        shopping_charge_percentage,
+        max_shopping_charge_discount_percentage,
+        gst_percentage,
+        status,
+        active,
+        created_by,
+        approved_by,
+        approved_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now()) RETURNING id`,
+      [
+        newProject.id,
+        bizModel.service_charge_percentage,
+        bizModel.max_service_charge_discount_percentage,
+        bizModel.design_charge_percentage,
+        bizModel.max_design_charge_discount_percentage,
+        bizModel.shopping_charge_percentage,
+        bizModel.max_shopping_charge_discount_percentage,
+        bizModel.gst_percentage,
+        'approved',
+        true,
+        session.user.id,
+        session.user.id
+      ]
+    );
+
+    const baseRateId = baseRateResult.rows[0].id;
+
+    // Step 4: Update project with base_rate_id
+    await query(
+      'UPDATE projects SET base_rate_id = $1 WHERE id = $2',
+      [baseRateId, newProject.id]
+    );
+
+    // Step 5: Log activity
+    await query(
+      `INSERT INTO activity_logs (project_id, related_entity, actor_id, action, comment)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [newProject.id, 'projects', session.user.id, 'created', `Project created: ${body.name}`]
+    );
+
+    // Commit transaction
+    await query('COMMIT');
+
+    // Return project with base_rate_id
+    const finalProjectResult = await query(
+      'SELECT * FROM projects WHERE id = $1',
+      [newProject.id]
+    );
+
+    return NextResponse.json({ project: finalProjectResult.rows[0] });
+  } catch (error) {
+    // Rollback on error
+    await query('ROLLBACK');
+    console.error('Error creating project:', error);
+    return NextResponse.json(
+      { error: 'Failed to create project: ' + error.message },
+      { status: 500 }
+    );
+  }
 }
