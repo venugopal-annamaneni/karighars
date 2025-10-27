@@ -102,15 +102,13 @@ export default function ProjectEstimationPage() {
   const fetchEstimationDetails = async () => {
     try {
 
-      // Load biz model details
-      const bizModelRes = await fetch(`/api/biz-models/${project.biz_model_id}`);
-      let bizModelData = null;
-      if (bizModelRes.ok) {
-        bizModelData = await bizModelRes.json();
-        setBizModel(bizModelData.model);
-      } else {
-        throw new Error('Failed to fetch business model');
+      // Load active base rate (instead of biz_model)
+      const baseRateRes = await fetch(`/app/api/projects/${projectId}/base-rates/active`);
+      if (!baseRateRes.ok) {
+        throw new Error('Failed to fetch active base rates');
       }
+      const baseRateData = await baseRateRes.json();
+      setBizModel(baseRateData.activeRate); // Keep same state name for compatibility
 
       // Load existing estimation if available
       if (estimation && estimation.id) {
