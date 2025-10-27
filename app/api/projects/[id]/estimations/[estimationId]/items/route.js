@@ -10,13 +10,22 @@ export async function GET(request, { params }) {
   }
 
   try {
-      const estimationId = params.estimationId;
-      const result = await query(`
+    const estimationId = params.estimationId;
+    const result = await query(`
         SELECT * FROM estimation_items
         WHERE estimation_id = $1
-        ORDER BY id
+        ORDER BY 
+          room_name ASC,
+          CASE 
+              WHEN category = 'woodwork' THEN 1
+              WHEN category = 'misc_internal' THEN 2
+              WHEN category = 'misc_external' THEN 3
+              WHEN category = 'shopping_service' THEN 4
+              ELSE 5
+          END,
+          updated_at DESC NULLS LAST;
       `, [estimationId]);
-      return NextResponse.json({ items: result.rows });
+    return NextResponse.json({ items: result.rows });
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

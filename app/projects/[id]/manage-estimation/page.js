@@ -42,7 +42,7 @@ export default function ProjectEstimationPage() {
       id: Date.now(),
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -62,9 +62,31 @@ export default function ProjectEstimationPage() {
     remarks: '',
     status: ESTIMATION_STATUS.DRAFT,
   });
+  const [columnPinning, setColumnPinning] = useState({
+    left: ['room_name', 'category', 'item_name'], // first 3 columns
+    right: ['item_total', 'actions'], // last column
+  });
+
 
   const { fetchProjectData, project, estimation, loading } = useProjectData();
   const tableContainerRef = useRef(null);
+
+  useEffect(() => {
+    const left = document.getElementById("left-fixed");
+    const right = document.getElementById("right-fixed");
+    const middle = document.getElementById("middle-scroll");
+
+    if (!middle || !left || !right) return;
+
+    const syncScroll = () => {
+      left.scrollTop = middle.scrollTop;
+      right.scrollTop = middle.scrollTop;
+    };
+
+    middle.addEventListener("scroll", syncScroll);
+    return () => middle.removeEventListener("scroll", syncScroll);
+  }, []);
+
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -105,7 +127,7 @@ export default function ProjectEstimationPage() {
               id: item.id || Date.now() + Math.random(),
               room_name: item.room_name || '',
               category: item.category,
-              description: item.item_name,
+              item_name: item.item_name,
               unit: item.unit || 'sqft',
               width: item.width || '',
               height: item.height || '',
@@ -133,7 +155,7 @@ export default function ProjectEstimationPage() {
       id: Date.now(),
       room_name: '',
       category: '',
-      description: '',
+      item_name: '',
       unit: 'sqft',
       width: '',
       height: '',
@@ -141,7 +163,7 @@ export default function ProjectEstimationPage() {
       unit_price: 0,
       karighar_charges_percentage: 0,
       discount_percentage: 0,
-      gst_percentage: 0,
+      gst_percentage: bizModel.gst_percentage,
       vendor_type: ''
     }]);
   };
@@ -154,7 +176,7 @@ export default function ProjectEstimationPage() {
   const updateItem = (index, field, value) => {
     const newData = [...data];
     newData[index][field] = value;
-    
+
     // Auto-calculate quantity for sqft unit
     if (field === 'width' || field === 'height' || field === 'unit') {
       const item = newData[index];
@@ -162,7 +184,7 @@ export default function ProjectEstimationPage() {
         item.quantity = parseFloat(item.width) * parseFloat(item.height);
       }
     }
-    
+
     if (field === "category") {
       newData[index]["karighar_charges_percentage"] = getDefaultCharges(value)
       newData[index]["gst_percentage"] = newData[index]["gst_percentage"].length > 0 ? newData[index]["gst_percentage"] : bizModel.gst_percentage;
@@ -181,14 +203,39 @@ export default function ProjectEstimationPage() {
     toast.success('Item duplicated');
   };
 
+  function registerCellRef(table, rowIndex, columnId, ref) {
+    const key = `${rowIndex}-${columnId}`;
+    table.options.meta.cellRefs[key] = ref;
+  }
+
+  function focusCell(table, rowIndex, columnId, retries = 5) {
+    const key = `${rowIndex}-${columnId}`;
+    const ref = table.options.meta.cellRefs[key];
+
+    if (ref?.current) {
+      // ✅ Focus immediately
+      ref.current.focus();
+      ref.current.select?.();
+      ref.current.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    } else if (retries > 0) {
+      // ⏳ The next cell may not exist yet — try again shortly
+      queueMicrotask(() => focusCell(table, rowIndex, columnId, retries - 1));
+    }
+  }
+
+
+
   // Editable Cell Components
-  const EditableTextCell = ({ getValue, row, column, table }) => {
+  const EditableTextCell = ({ getValue, row, column, table, type = "text", readOnly = false }) => {
     const initialValue = getValue();
-    const [value, setValue] = useState(initialValue);
+    const [value, setValue] = useState(initialValue ?? "");
     const inputRef = useRef(null);
 
+    // register ref immediately
+    registerCellRef(table, row.index, column.id, inputRef);
+
     useEffect(() => {
-      setValue(initialValue);
+      setValue(initialValue ?? "");
     }, [initialValue]);
 
     const onBlur = () => {
@@ -196,98 +243,78 @@ export default function ProjectEstimationPage() {
     };
 
     const onKeyDown = (e) => {
-      if (e.key === 'Enter') {
+      const visibleCols = table.getVisibleLeafColumns();
+      const currentColIndex = visibleCols.findIndex(c => c.id === column.id);
+
+      if (e.key === "Enter") {
         e.preventDefault();
-        inputRef.current?.blur();
-        // Move to next row, same column
-        const nextRow = table.getRowModel().rows[row.index + 1];
-        if (nextRow) {
-          const nextCell = document.querySelector(
-            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
-          );
-          nextCell?.focus();
-        }
-      } else if (e.key === 'Escape') {
-        setValue(initialValue);
-        inputRef.current?.blur();
-      } else if (e.key === 'Tab') {
-        // Let default behavior handle Tab
         onBlur();
+        setTimeout(() => focusCell(table, row.index + 1, column.id), 0);
+      } else if (e.key === "Tab") {
+        debugger;
+        e.preventDefault();
+        onBlur();
+        const nextCol = visibleCols[currentColIndex + (e.shiftKey ? -1 : 1)];
+        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
+        else focusCell(table, row.index + 1, visibleCols[0].id);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setTimeout(focusCell(table, row.index + 1, column.id), 0);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setTimeout(focusCell(table, row.index - 1, column.id), 0);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const nextCol = visibleCols[currentColIndex + 1];
+        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const prevCol = visibleCols[currentColIndex - 1];
+        if (prevCol) setTimeout(focusCell(table, row.index, prevCol.id), 0);
+      } else if (e.key === "Escape") {
+        setValue(initialValue ?? "");
+        inputRef.current?.blur();
       }
     };
 
     return (
       <Input
+        readOnly={readOnly}
         ref={inputRef}
+        type={type}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className="h-8 text-sm"
+        className={`h-8 text-sm ${readOnly ? "border border-gray-300 bg-gray-100 text-gray-400" : ""}`}
         data-row={row.index}
         data-col={column.id}
       />
     );
   };
 
-  const EditableNumberCell = ({ getValue, row, column, table }) => {
-    const initialValue = getValue();
-    const [value, setValue] = useState(initialValue);
-    const inputRef = useRef(null);
 
-    useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-
-    const onBlur = () => {
-      table.options.meta?.updateData(row.index, column.id, parseFloat(value) || 0);
-    };
-
-    const onKeyDown = (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        inputRef.current?.blur();
-        const nextRow = table.getRowModel().rows[row.index + 1];
-        if (nextRow) {
-          const nextCell = document.querySelector(
-            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
-          );
-          nextCell?.focus();
-        }
-      } else if (e.key === 'Escape') {
-        setValue(initialValue);
-        inputRef.current?.blur();
-      } else if (e.key === 'Tab') {
-        onBlur();
-      }
-    };
-
-    return (
-      <Input
-        ref={inputRef}
-        type="number"
-        step="0.01"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        className="h-8 text-sm"
-        data-row={row.index}
-        data-col={column.id}
-      />
-    );
+  const EditableNumberCell = ({ readOnly = false, ...props }) => {
+    return <EditableTextCell {...props} type="number" readOnly={readOnly} />;
   };
 
   const EditableSelectCell = ({ getValue, row, column, table, options }) => {
     const initialValue = getValue();
+    const selectRef = useRef(null);
+
+    // ✅ Register ref immediately during render
+    registerCellRef(table, row.index, column.id, selectRef);
 
     const onChange = (value) => {
       table.options.meta?.updateData(row.index, column.id, value);
     };
 
     return (
-      <Select value={initialValue} onValueChange={onChange}>
-        <SelectTrigger className="h-8 text-sm">
+      <Select
+        value={initialValue}
+        onValueChange={onChange}
+      >
+        <SelectTrigger ref={selectRef} className="h-8 text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -300,6 +327,7 @@ export default function ProjectEstimationPage() {
       </Select>
     );
   };
+
 
   // Column Definitions
   const columns = useMemo(() => [
@@ -327,8 +355,8 @@ export default function ProjectEstimationPage() {
       ),
     },
     {
-      accessorKey: 'description',
-      header: 'Description',
+      accessorKey: 'item_name',
+      header: 'Item Name',
       size: 180,
       cell: EditableTextCell,
     },
@@ -355,10 +383,15 @@ export default function ProjectEstimationPage() {
       header: 'Width',
       size: 90,
       cell: ({ row, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          return <EditableNumberCell row={row} {...props} />;
-        }
-        return <div className="text-center text-muted-foreground">-</div>;
+        // if (row.original.unit === 'sqft') {
+        //   return <EditableNumberCell row={row} {...props} />;
+        // }
+        // return <EditableNumberCell row={row} {...props} />;
+        return <EditableNumberCell
+          row={row}
+          {...props}
+          readOnly={row.original.unit !== 'sqft'}
+        />
       },
     },
     {
@@ -366,10 +399,15 @@ export default function ProjectEstimationPage() {
       header: 'Height',
       size: 90,
       cell: ({ row, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          return <EditableNumberCell row={row} {...props} />;
-        }
-        return <div className="text-center text-muted-foreground">-</div>;
+        // if (row.original.unit === 'sqft') {
+        //   return <EditableNumberCell row={row} {...props} />;
+        // }
+        // return <EditableNumberCell row={row} {...props} readOnly="true" />;
+        return <EditableNumberCell
+          row={row}
+          {...props}
+          readOnly={row.original.unit !== 'sqft'}
+        />
       },
     },
     {
@@ -377,28 +415,25 @@ export default function ProjectEstimationPage() {
       header: 'Quantity',
       size: 100,
       cell: ({ row, getValue, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          const qty = getValue();
-          const { width, height } = row.original;
-          return (
-            <div className="text-sm">
-              <div className="font-medium">{parseFloat(qty).toFixed(2)}</div>
-              {width && height && (
-                <div className="text-xs text-blue-600">
-                  ({width} × {height})
-                </div>
-              )}
-            </div>
-          );
-        }
-        return <EditableNumberCell row={row} getValue={getValue} {...props} />;
+        // if (row.original.unit === 'sqft') {
+        //   const qty = getValue();
+        //   const { width, height } = row.original;
+        //   return (
+        //     <div className="text-sm">
+        //       <EditableNumberCell row={row} getValue={getValue} {...props} readOnly="true" />
+        //     </div>
+        //   );
+        // }
+        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={row.original.unit === 'sqft'} />;
       },
     },
     {
       accessorKey: 'unit_price',
       header: 'Unit Price (₹)',
       size: 120,
-      cell: EditableNumberCell,
+      cell: ({ row, getValue, ...props }) => {
+        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={true} />;
+      },
     },
     {
       accessorKey: 'karighar_charges_percentage',
@@ -465,33 +500,39 @@ export default function ProjectEstimationPage() {
           >
             <Copy className="h-3 w-3" />
           </Button>
-          {data.length > 1 && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => removeItem(row.index)}
-              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              title="Delete"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
+
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => removeItem(row.index)}
+            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+
         </div>
       ),
     },
   ], [data, bizModel]);
 
-  // Table Instance
+  const cellRefs = useRef({});
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    state: {
+      columnPinning,
+    },
+    onColumnPinningChange: setColumnPinning,
     meta: {
       updateData: (rowIndex, columnId, value) => {
         updateItem(rowIndex, columnId, value);
       },
+      cellRefs: cellRefs.current, // <--- store refs
     },
   });
 
@@ -647,12 +688,12 @@ export default function ProjectEstimationPage() {
 
           // Prepare items with calculated values
           const itemsWithCalcs = data
-            .filter(item => item.description.trim() !== '')
+            .filter(item => item.item_name.trim() !== '')
             .map(item => {
               const calc = calculateItemTotal(item);
               return {
                 ...item,
-                item_name: item.description,
+                item_name: item.item_name,
                 subtotal: calc.subtotal,
                 karighar_charges_amount: calc.karighar_charges_amount,
                 discount_amount: calc.discount_amount,
@@ -677,12 +718,12 @@ export default function ProjectEstimationPage() {
 
       // No overpayment, proceed normally
       const itemsWithCalcs = data
-        .filter(item => item.description.trim() !== '')
+        .filter(item => item.item_name.trim() !== '')
         .map(item => {
           const calc = calculateItemTotal(item);
           return {
             ...item,
-            item_name: item.description,
+            item_name: item.item_name,
             subtotal: calc.subtotal,
             karighar_charges_amount: calc.karighar_charges_amount,
             discount_amount: calc.discount_amount,
@@ -812,82 +853,194 @@ export default function ProjectEstimationPage() {
           </CardHeader>
           <CardContent>
             {/* Action Buttons */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={addItem}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              </div>
+            <div className="w-full flex justify-end items-center mb-4">
+
               <div className="text-sm text-muted-foreground">
                 Total Items: {data.length}
               </div>
             </div>
 
             {/* TanStack Table */}
-            <div 
-              ref={tableContainerRef}
-              className="border rounded-lg overflow-auto"
-              style={{ maxHeight: '600px' }}
-            >
-              <table className="w-full text-sm border-collapse">
-                <thead className="sticky top-0 bg-slate-100 z-10">
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <th
-                          key={header.id}
-                          className="p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap"
-                          style={{ minWidth: header.column.columnDef.size }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div
-                              className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                              onClick={header.column.getToggleSortingHandler()}
+            {/* Fixed Column Layout */}
+            <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
+              {/* LEFT FIXED (First 3 columns) */}
+              <div
+                id="left-fixed"
+                className="flex-none w-[420px] border-r overflow-hidden"
+                style={{ maxHeight: "600px", overflowY: "auto" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-20">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(h =>
+                            ["room_name", "category", "item_name"].includes(h.column.id)
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              style={{ minWidth: header.column.columnDef.size }}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={3} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                      </tr>
+                    )}
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(cell =>
+                            ["room_name", "category", "item_name"].includes(cell.column.id)
+                          )
+                          .map(cell => (
+                            <td
+                              key={cell.id}
+                              className="h-14 p-2 border-r border-slate-200 bg-slate-200"
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* SCROLLABLE MIDDLE SECTION */}
+              <div
+                ref={tableContainerRef}
+                id="middle-scroll"
+                className="flex-1 overflow-auto"
+                style={{ maxHeight: "600px" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-10">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(
+                            h =>
+                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
+                                h.column.id
+                              )
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-100"
+                              style={{ minWidth: header.column.columnDef.size }}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={9} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+                      </tr>
+                    )}
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(
+                            cell =>
+                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
+                                cell.column.id
+                              )
+                          )
+                          .map(cell => (
+                            <td key={cell.id} className="h-14 p-2 bg-white border-r border-slate-200">
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* RIGHT FIXED (Last column) */}
+              <div
+                id="right-fixed"
+                className="flex-none w-[210px] border-l overflow-hidden"
+                style={{ maxHeight: "600px", overflowY: "auto" }}
+              >
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 z-20">
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers
+                          .filter(h =>
+                            ["item_total", "actions"].includes(h.column.id)
+                          )
+                          .map(header => (
+                            <th
+                              key={header.id}
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              style={{ minWidth: header.column.columnDef.size }}
                             >
                               {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
-                              {{
-                                asc: ' 🔼',
-                                desc: ' 🔽',
-                              }[header.column.getIsSorted()] ?? null}
-                            </div>
-                          )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map(row => (
-                    <tr
-                      key={row.id}
-                      className="border-b hover:bg-slate-50"
-                    >
-                      {row.getVisibleCells().map(cell => (
-                        <td key={cell.id} className="p-2">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            </th>
+                          ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.length == 0 && (
+                      <tr className="border-b hover:bg-slate-50">
+                        <td colSpan={2} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                      </tr>
+                    )}
+                    {table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        {row
+                          .getVisibleCells()
+                          .filter(cell =>
+                            ["item_total", "actions"].includes(cell.column.id)
+                          )
+                          .map(cell => (
+                            <td key={cell.id} className="h-14 p-2 text-right font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200">
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
 
             {/* Keyboard Shortcuts Help */}
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
-              <strong>⌨️ Keyboard Shortcuts:</strong> 
+              <strong>⌨️ Keyboard Shortcuts:</strong>
               <span className="ml-2">Tab = Next cell</span>
               <span className="ml-2">•</span>
               <span className="ml-2">Enter = Next row</span>
@@ -898,11 +1051,17 @@ export default function ProjectEstimationPage() {
             {/* Totals Summary */}
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="font-semibold mb-3">Estimation Summary</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Woodwork Value</p>
                   <p className="font-bold text-lg">
                     {formatCurrency(calculateTotals().woodwork_value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Woodwork Value</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateTotals().misc_external_value)}
                   </p>
                 </div>
                 <div>

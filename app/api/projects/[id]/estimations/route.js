@@ -80,14 +80,14 @@ export async function POST(request) {
       console.log(item);
       await query(
         `INSERT INTO estimation_items (
-          estimation_id, category, description, room_name, unit, width, height, quantity, unit_price,
+          estimation_id, category, item_name, room_name, unit, width, height, quantity, unit_price,
           karighar_charges_percentage, discount_percentage, gst_percentage,
           subtotal, karighar_charges_amount, discount_amount, amount_before_gst, gst_amount, item_total,
           vendor_type
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
         [
-          result.rows[0].id, item.category, item.description, item.room_name, item.unit, 
+          result.rows[0].id, item.category, item.item_name, item.room_name, item.unit, 
           item.width || null, item.height || null, finalQuantity, item.unit_price,
           item.karighar_charges_percentage, item.discount_percentage, item.gst_percentage,
           item.subtotal, item.karighar_charges_amount, item.discount_amount, item.amount_before_gst, item.gst_amount, item.item_total,

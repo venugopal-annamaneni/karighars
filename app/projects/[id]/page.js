@@ -259,21 +259,41 @@ export default function ProjectEstimationsPage() {
       fieldSeparator: ',',
     });
 
-    const csvData = estimationItems.map(item => ({
-      room_name: item.room_name,
-      category: item.category,
-      description: item.description,
-      unit: item.unit,
-      width: item.width || '-',
-      height: item.height || '-',
-      quantity: item.quantity,
-      unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
-      subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
-      karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
-      discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
-      gst_percentage: item.gst_percentage,
-      item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
-    }));
+    let csvData = [];
+    if (estimationItems.length > 0) {
+      csvData = estimationItems.map(item => ({
+        room_name: item.room_name,
+        category: item.category,
+        item_name: item.item_name,
+        unit: item.unit,
+        width: item.width || '-',
+        height: item.height || '-',
+        quantity: item.quantity,
+        unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
+        subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
+        karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
+        discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
+        gst_percentage: item.gst_percentage,
+        item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
+      }));
+    } else {
+      csvData = [{
+        room_name: "",
+        category: "",
+        item_name: "",
+        unit: "",
+        width: "",
+        height: "",
+        quantity: "",
+        unit_price: "",
+        subtotal: "",
+        karighar_charges_amount: "",
+        discount_amount: "",
+        gst_percentage: "",
+        item_total: "",
+      }]
+    }
+    debugger;
 
     const csv = generateCsv(csvConfig)(csvData);
     download(csvConfig)(csv);
@@ -387,130 +407,135 @@ export default function ProjectEstimationsPage() {
                 </div>
               )}
 
-              {estimationItems.length > 0 && (
-                <div className="space-y-4">
-                  {/* Export Button */}
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={onExportCSV} 
-                      variant="outline" 
-                      size="sm"
-                      className="gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Export to CSV
-                    </Button>
-                  </div>
 
-                  {/* TanStack Table */}
-                  <div className="border rounded-lg overflow-auto" style={{ maxHeight: '600px' }}>
-                    <table className="w-full text-sm border-collapse">
-                      <thead className="sticky top-0 bg-slate-100 z-10">
-                        {table.getHeaderGroups().map(headerGroup => (
-                          <tr key={headerGroup.id}>
-                            {headerGroup.headers.map(header => (
-                              <th 
-                                key={header.id} 
-                                className="p-3 text-left font-semibold border-b-2 border-slate-300"
-                                style={{ minWidth: header.column.id === 'description' ? '200px' : '100px' }}
-                              >
-                                {header.isPlaceholder ? null : (
-                                  <div 
-                                    className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                                    onClick={header.column.getToggleSortingHandler()}
-                                  >
-                                    {flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                                    {{
-                                      asc: ' 🔼',
-                                      desc: ' 🔽',
-                                    }[header.column.getIsSorted()] ?? null}
-                                  </div>
-                                )}
-                              </th>
-                            ))}
-                          </tr>
-                        ))}
-                      </thead>
-                      <tbody>
-                        {table.getRowModel().rows.map(row => {
-                          // Determine row styling based on grouping level
-                          let rowClassName = '';
-                          let isGroupRow = row.getIsGrouped();
-                          
-                          if (isGroupRow) {
-                            const depth = row.depth;
-                            if (depth === 0) {
-                              // Room level
-                              rowClassName = 'bg-blue-100 font-bold text-blue-900';
-                            } else if (depth === 1) {
-                              // Category level
-                              rowClassName = 'bg-slate-100 font-semibold text-slate-700';
-                            }
+              <div className="space-y-4">
+                {/* Export Button */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={onExportCSV}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export to CSV
+                  </Button>
+                </div>
+
+                {/* TanStack Table */}
+                <div className="border rounded-lg overflow-auto" style={{ maxHeight: '600px' }}>
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="sticky top-0 bg-slate-100 z-10">
+                      {table.getHeaderGroups().map(headerGroup => (
+                        <tr key={headerGroup.id}>
+                          {headerGroup.headers.map(header => (
+                            <th
+                              key={header.id}
+                              className="p-3 text-left font-semibold border-b-2 border-slate-300"
+                              style={{ minWidth: header.column.id === 'item_name' ? '200px' : '100px' }}
+                            >
+                              {header.isPlaceholder ? null : (
+                                <div
+                                  className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                                  onClick={header.column.getToggleSortingHandler()}
+                                >
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                                  {{
+                                    asc: ' 🔼',
+                                    desc: ' 🔽',
+                                  }[header.column.getIsSorted()] ?? null}
+                                </div>
+                              )}
+                            </th>
+                          ))}
+                        </tr>
+                      ))}
+                    </thead>
+                    <tbody>
+                      {table.getRowModel().rows.length == 0 && (
+                        <tr className="border-b hover:bg-slate-50">
+                          <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+                        </tr>
+                      )}
+                      {table.getRowModel().rows.map(row => {
+                        // Determine row styling based on grouping level
+                        let rowClassName = '';
+                        let isGroupRow = row.getIsGrouped();
+
+                        if (isGroupRow) {
+                          const depth = row.depth;
+                          if (depth === 0) {
+                            // Room level
+                            rowClassName = 'bg-blue-100 font-bold text-blue-900';
+                          } else if (depth === 1) {
+                            // Category level
+                            rowClassName = 'bg-slate-100 font-semibold text-slate-700';
                           }
-                          
-                          return (
-                            <tr key={row.id} className={`border-b hover:bg-slate-50 ${rowClassName}`}>
-                              {row.getVisibleCells().map((cell, cellIndex) => {
-                                const isFirstCell = cellIndex === 0;
-                                const paddingLeft = `${row.depth * 20 + 12}px`;
-                                
-                                return (
-                                  <td 
-                                    key={cell.id} 
-                                    className="p-3"
-                                    style={isFirstCell ? { paddingLeft } : {}}
-                                  >
-                                    {isFirstCell && row.getCanExpand() && (
-                                      <button
-                                        onClick={row.getToggleExpandedHandler()}
-                                        className="inline-flex items-center mr-2"
-                                      >
-                                        {row.getIsExpanded() ? (
-                                          <ChevronDown className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronRight className="h-4 w-4" />
-                                        )}
-                                      </button>
-                                    )}
-                                    {cell.getIsGrouped() ? (
-                                      // Render group cell
-                                      <>
-                                        {flexRender(
-                                          cell.column.columnDef.cell,
-                                          cell.getContext()
-                                        )}{' '}
-                                        <span className="text-xs text-muted-foreground">
-                                          ({row.subRows.length})
-                                        </span>
-                                      </>
-                                    ) : cell.getIsAggregated() ? (
-                                      // Render aggregated cell
-                                      flexRender(
-                                        cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
-                                        cell.getContext()
-                                      )
-                                    ) : cell.getIsPlaceholder() ? null : (
-                                      // Render regular cell
-                                      flexRender(
+                        }
+
+                        return (
+                          <tr key={row.id} className={`border-b hover:bg-slate-50 ${rowClassName}`}>
+                            {row.getVisibleCells().map((cell, cellIndex) => {
+                              const isFirstCell = cellIndex === 0;
+                              const paddingLeft = `${row.depth * 20 + 12}px`;
+
+                              return (
+                                <td
+                                  key={cell.id}
+                                  className="p-3"
+                                  style={isFirstCell ? { paddingLeft } : {}}
+                                >
+                                  {isFirstCell && row.getCanExpand() && (
+                                    <button
+                                      onClick={row.getToggleExpandedHandler()}
+                                      className="inline-flex items-center mr-2"
+                                    >
+                                      {row.getIsExpanded() ? (
+                                        <ChevronDown className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {cell.getIsGrouped() ? (
+                                    // Render group cell
+                                    <>
+                                      {flexRender(
                                         cell.column.columnDef.cell,
                                         cell.getContext()
-                                      )
-                                    )}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                      )}{' '}
+                                      <span className="text-xs text-muted-foreground">
+                                        ({row.subRows.length})
+                                      </span>
+                                    </>
+                                  ) : cell.getIsAggregated() ? (
+                                    // Render aggregated cell
+                                    flexRender(
+                                      cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )
+                                  ) : cell.getIsPlaceholder() ? null : (
+                                    // Render regular cell
+                                    flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                  {/* Grand Totals Summary */}
-                  {/* <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
+                {/* Grand Totals Summary */}
+                {/* <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Total Subtotal</p>
@@ -543,8 +568,8 @@ export default function ProjectEstimationsPage() {
                       </div>
                     </div>
                   </div> */}
-                </div>
-              )}
+              </div>
+
             </div>
           ) : (
             <div className="text-center py-12">

@@ -16,6 +16,16 @@ code {
         monospace;
 }
 
+
+.shadow-right {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-left {
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+
 .App {
     text-align: center;
 }
