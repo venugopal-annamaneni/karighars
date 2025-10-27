@@ -141,7 +141,7 @@ export default function ProjectEstimationPage() {
       unit_price: 0,
       karighar_charges_percentage: 0,
       discount_percentage: 0,
-      gst_percentage: 0,
+      gst_percentage: bizModel.gst_percentage,
       vendor_type: ''
     }]);
   };
@@ -154,7 +154,7 @@ export default function ProjectEstimationPage() {
   const updateItem = (index, field, value) => {
     const newData = [...data];
     newData[index][field] = value;
-    
+
     // Auto-calculate quantity for sqft unit
     if (field === 'width' || field === 'height' || field === 'unit') {
       const item = newData[index];
@@ -162,7 +162,7 @@ export default function ProjectEstimationPage() {
         item.quantity = parseFloat(item.width) * parseFloat(item.height);
       }
     }
-    
+
     if (field === "category") {
       newData[index]["karighar_charges_percentage"] = getDefaultCharges(value)
       newData[index]["gst_percentage"] = newData[index]["gst_percentage"].length > 0 ? newData[index]["gst_percentage"] : bizModel.gst_percentage;
@@ -181,14 +181,39 @@ export default function ProjectEstimationPage() {
     toast.success('Item duplicated');
   };
 
+  function registerCellRef(table, rowIndex, columnId, ref) {
+    const key = `${rowIndex}-${columnId}`;
+    table.options.meta.cellRefs[key] = ref;
+  }
+
+  function focusCell(table, rowIndex, columnId, retries = 5) {
+    const key = `${rowIndex}-${columnId}`;
+    const ref = table.options.meta.cellRefs[key];
+
+    if (ref?.current) {
+      // ✅ Focus immediately
+      ref.current.focus();
+      ref.current.select?.();
+      ref.current.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    } else if (retries > 0) {
+      // ⏳ The next cell may not exist yet — try again shortly
+      queueMicrotask(() => focusCell(table, rowIndex, columnId, retries - 1));
+    }
+  }
+
+
+
   // Editable Cell Components
-  const EditableTextCell = ({ getValue, row, column, table }) => {
+  const EditableTextCell = ({ getValue, row, column, table, type = "text", readOnly = false }) => {
     const initialValue = getValue();
-    const [value, setValue] = useState(initialValue);
+    const [value, setValue] = useState(initialValue ?? "");
     const inputRef = useRef(null);
 
+    // register ref immediately
+    registerCellRef(table, row.index, column.id, inputRef);
+
     useEffect(() => {
-      setValue(initialValue);
+      setValue(initialValue ?? "");
     }, [initialValue]);
 
     const onBlur = () => {
@@ -196,98 +221,78 @@ export default function ProjectEstimationPage() {
     };
 
     const onKeyDown = (e) => {
-      if (e.key === 'Enter') {
+      const visibleCols = table.getVisibleLeafColumns();
+      const currentColIndex = visibleCols.findIndex(c => c.id === column.id);
+
+      if (e.key === "Enter") {
         e.preventDefault();
-        inputRef.current?.blur();
-        // Move to next row, same column
-        const nextRow = table.getRowModel().rows[row.index + 1];
-        if (nextRow) {
-          const nextCell = document.querySelector(
-            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
-          );
-          nextCell?.focus();
-        }
-      } else if (e.key === 'Escape') {
-        setValue(initialValue);
-        inputRef.current?.blur();
-      } else if (e.key === 'Tab') {
-        // Let default behavior handle Tab
         onBlur();
+        setTimeout(() => focusCell(table, row.index + 1, column.id), 0);
+      } else if (e.key === "Tab") {
+        debugger;
+        e.preventDefault();
+        onBlur();
+        const nextCol = visibleCols[currentColIndex + (e.shiftKey ? -1 : 1)];
+        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
+        else focusCell(table, row.index + 1, visibleCols[0].id);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setTimeout(focusCell(table, row.index + 1, column.id), 0);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setTimeout(focusCell(table, row.index - 1, column.id), 0);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const nextCol = visibleCols[currentColIndex + 1];
+        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const prevCol = visibleCols[currentColIndex - 1];
+        if (prevCol) setTimeout(focusCell(table, row.index, prevCol.id), 0);
+      } else if (e.key === "Escape") {
+        setValue(initialValue ?? "");
+        inputRef.current?.blur();
       }
     };
 
     return (
       <Input
+        readOnly={readOnly}
         ref={inputRef}
+        type={type}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className="h-8 text-sm"
+        className={`h-8 text-sm ${readOnly ? "text-red-700" : ""}`}
         data-row={row.index}
         data-col={column.id}
       />
     );
   };
 
-  const EditableNumberCell = ({ getValue, row, column, table }) => {
-    const initialValue = getValue();
-    const [value, setValue] = useState(initialValue);
-    const inputRef = useRef(null);
 
-    useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-
-    const onBlur = () => {
-      table.options.meta?.updateData(row.index, column.id, parseFloat(value) || 0);
-    };
-
-    const onKeyDown = (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        inputRef.current?.blur();
-        const nextRow = table.getRowModel().rows[row.index + 1];
-        if (nextRow) {
-          const nextCell = document.querySelector(
-            `[data-row="${row.index + 1}"][data-col="${column.id}"]`
-          );
-          nextCell?.focus();
-        }
-      } else if (e.key === 'Escape') {
-        setValue(initialValue);
-        inputRef.current?.blur();
-      } else if (e.key === 'Tab') {
-        onBlur();
-      }
-    };
-
-    return (
-      <Input
-        ref={inputRef}
-        type="number"
-        step="0.01"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        className="h-8 text-sm"
-        data-row={row.index}
-        data-col={column.id}
-      />
-    );
+  const EditableNumberCell = ({ readOnly = false, ...props }) => {
+    return <EditableTextCell {...props} type="number" readOnly={readOnly} />;
   };
 
   const EditableSelectCell = ({ getValue, row, column, table, options }) => {
     const initialValue = getValue();
+    const selectRef = useRef(null);
+
+    // ✅ Register ref immediately during render
+    registerCellRef(table, row.index, column.id, selectRef);
 
     const onChange = (value) => {
       table.options.meta?.updateData(row.index, column.id, value);
     };
 
     return (
-      <Select value={initialValue} onValueChange={onChange}>
-        <SelectTrigger className="h-8 text-sm">
+      <Select
+        value={initialValue}
+        onValueChange={onChange}
+      >
+        <SelectTrigger ref={selectRef} className="h-8 text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -300,6 +305,7 @@ export default function ProjectEstimationPage() {
       </Select>
     );
   };
+
 
   // Column Definitions
   const columns = useMemo(() => [
@@ -355,10 +361,15 @@ export default function ProjectEstimationPage() {
       header: 'Width',
       size: 90,
       cell: ({ row, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          return <EditableNumberCell row={row} {...props} />;
-        }
-        return <div className="text-center text-muted-foreground">-</div>;
+        // if (row.original.unit === 'sqft') {
+        //   return <EditableNumberCell row={row} {...props} />;
+        // }
+        // return <EditableNumberCell row={row} {...props} />;
+        return <EditableNumberCell
+          row={row}
+          {...props}
+          readOnly={row.original.unit !== 'sqft'}
+        />
       },
     },
     {
@@ -366,10 +377,15 @@ export default function ProjectEstimationPage() {
       header: 'Height',
       size: 90,
       cell: ({ row, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          return <EditableNumberCell row={row} {...props} />;
-        }
-        return <div className="text-center text-muted-foreground">-</div>;
+        // if (row.original.unit === 'sqft') {
+        //   return <EditableNumberCell row={row} {...props} />;
+        // }
+        // return <EditableNumberCell row={row} {...props} readOnly="true" />;
+        return <EditableNumberCell
+          row={row}
+          {...props}
+          readOnly={row.original.unit !== 'sqft'}
+        />
       },
     },
     {
@@ -377,21 +393,16 @@ export default function ProjectEstimationPage() {
       header: 'Quantity',
       size: 100,
       cell: ({ row, getValue, ...props }) => {
-        if (row.original.unit === 'sqft') {
-          const qty = getValue();
-          const { width, height } = row.original;
-          return (
-            <div className="text-sm">
-              <div className="font-medium">{parseFloat(qty).toFixed(2)}</div>
-              {width && height && (
-                <div className="text-xs text-blue-600">
-                  ({width} × {height})
-                </div>
-              )}
-            </div>
-          );
-        }
-        return <EditableNumberCell row={row} getValue={getValue} {...props} />;
+        // if (row.original.unit === 'sqft') {
+        //   const qty = getValue();
+        //   const { width, height } = row.original;
+        //   return (
+        //     <div className="text-sm">
+        //       <EditableNumberCell row={row} getValue={getValue} {...props} readOnly="true" />
+        //     </div>
+        //   );
+        // }
+        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={row.original.unit === 'sqft'} />;
       },
     },
     {
@@ -482,7 +493,8 @@ export default function ProjectEstimationPage() {
     },
   ], [data, bizModel]);
 
-  // Table Instance
+  const cellRefs = useRef({});
+
   const table = useReactTable({
     data,
     columns,
@@ -492,6 +504,7 @@ export default function ProjectEstimationPage() {
       updateData: (rowIndex, columnId, value) => {
         updateItem(rowIndex, columnId, value);
       },
+      cellRefs: cellRefs.current, // <--- store refs
     },
   });
 
@@ -830,7 +843,7 @@ export default function ProjectEstimationPage() {
             </div>
 
             {/* TanStack Table */}
-            <div 
+            <div
               ref={tableContainerRef}
               className="border rounded-lg overflow-auto"
               style={{ maxHeight: '600px' }}
@@ -887,7 +900,7 @@ export default function ProjectEstimationPage() {
 
             {/* Keyboard Shortcuts Help */}
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
-              <strong>⌨️ Keyboard Shortcuts:</strong> 
+              <strong>⌨️ Keyboard Shortcuts:</strong>
               <span className="ml-2">Tab = Next cell</span>
               <span className="ml-2">•</span>
               <span className="ml-2">Enter = Next row</span>
@@ -898,11 +911,17 @@ export default function ProjectEstimationPage() {
             {/* Totals Summary */}
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="font-semibold mb-3">Estimation Summary</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Woodwork Value</p>
                   <p className="font-bold text-lg">
                     {formatCurrency(calculateTotals().woodwork_value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Woodwork Value</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateTotals().misc_external_value)}
                   </p>
                 </div>
                 <div>
