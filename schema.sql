@@ -80,19 +80,15 @@ CREATE TABLE biz_model_milestones (
     description TEXT,
     is_mandatory BOOLEAN DEFAULT true,
     sequence_order INTEGER,
-    woodwork_percentage NUMERIC(9,4) DEFAULT 0,
-    misc_percentage NUMERIC(9,4) DEFAULT 0,
+    category_percentages JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now(),
-    shopping_percentage NUMERIC(5,2) DEFAULT 0,
     UNIQUE (biz_model_id, milestone_code),
     PRIMARY KEY (id),
     FOREIGN KEY (biz_model_id) REFERENCES biz_models(id) ON DELETE CASCADE,
     CHECK ((direction = ANY (ARRAY['inflow'::text, 'outflow'::text])))
 );
 
-COMMENT ON COLUMN biz_model_milestones.woodwork_percentage IS 'Cumulative percentage to be collected for woodwork items by this milestone';
-COMMENT ON COLUMN biz_model_milestones.misc_percentage IS 'Cumulative percentage to be collected for misc items by this milestone';
-COMMENT ON COLUMN biz_model_milestones.shopping_percentage IS 'Cumulative percentage for shopping service items (used in SHOPPING_100 milestone)';
+COMMENT ON COLUMN biz_model_milestones.category_percentages IS 'JSONB structure mapping category IDs to cumulative percentages. Example: {"woodwork": 30, "misc": 50, "shopping": 100}. Categories are dynamically defined in biz_models.category_rates.';
 
 CREATE TABLE biz_model_stages (
     id INTEGER NOT NULL DEFAULT nextval('biz_model_stages_id_seq'::regclass),
