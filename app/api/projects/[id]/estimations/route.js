@@ -12,7 +12,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  
+
   // Get next version number
   const versionResult = await query(
     'SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM project_estimations WHERE project_id = $1',
@@ -27,6 +27,8 @@ export async function POST(request) {
   const shoppingServiceValue = parseFloat(body.shopping_service_value) || 0;
   const serviceCharge = parseFloat(body.service_charge) || 0;
   const discount = parseFloat(body.discount) || 0;
+  const itemDiscount = parseFloat(body.item_discount) || 0;
+  const kgDiscount = parseFloat(body.kg_discount) || 0;
   const gstAmount = parseFloat(body.gst_amount) || 0;
   const finalValue = parseFloat(body.final_value) || 0;
 
@@ -54,15 +56,15 @@ export async function POST(request) {
     `INSERT INTO project_estimations (
       project_id, version, 
       woodwork_value, misc_internal_value, misc_external_value, shopping_service_value,
-      service_charge, discount, gst_amount, final_value,
+      service_charge, item_discount, kg_discount, discount,  gst_amount, final_value,
       has_overpayment, overpayment_amount,
       remarks, status, created_by
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
     [
       body.project_id, nextVersion,
       woodworkValue, miscInternalValue, miscExternalValue, shoppingServiceValue,
-      serviceCharge, discount, gstAmount, finalValue,
+      serviceCharge, itemDiscount, kgDiscount, discount, gstAmount, finalValue,
       hasOverpayment, overpaymentAmount,
       body.remarks, body.status || ESTIMATION_STATUS.DRAFT, session.user.id
     ]
@@ -76,22 +78,21 @@ export async function POST(request) {
       if (item.unit === 'sqft' && item.width && item.height) {
         finalQuantity = parseFloat(item.width) * parseFloat(item.height);
       }
-      
+
       console.log(item);
       await query(
         `INSERT INTO estimation_items (
-          estimation_id, category, item_name, room_name, unit, width, height, quantity, unit_price,
-          karighar_charges_percentage, discount_percentage, gst_percentage,
-          subtotal, karighar_charges_amount, discount_amount, amount_before_gst, gst_amount, item_total,
-          vendor_type
+          estimation_id, category, room_name, vendor_type, item_name, 
+          unit, width, height, quantity, unit_price,
+          subtotal, karighar_charges_percentage, karighar_charges_amount, item_discount_percentage, item_discount_amount, 
+          discount_kg_charges_percentage, discount_kg_charges_amount, gst_percentage, gst_amount, amount_before_gst, item_total
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         [
-          result.rows[0].id, item.category, item.item_name, item.room_name, item.unit, 
-          item.width || null, item.height || null, finalQuantity, item.unit_price,
-          item.karighar_charges_percentage, item.discount_percentage, item.gst_percentage,
-          item.subtotal, item.karighar_charges_amount, item.discount_amount, item.amount_before_gst, item.gst_amount, item.item_total,
-          item.vendor_type
+          result.rows[0].id, item.category, item.room_name, item.vendor_type, item.item_name, 
+          item.unit, parseFloat(item.width) || null, parseFloat(item.height)|| null, parseFloat(finalQuantity), parseFloat(item.unit_price),
+          parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
+          parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total)
         ]
       );
     }
