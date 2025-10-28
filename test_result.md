@@ -22,24 +22,31 @@
 
 ## Original User Problem Statement
 
-**Current Task**: Implement Dynamic Payment Milestone Categories in BizModel
+**Current Task**: Phase 2 - Implement Dynamic Payment Milestone Categories in Payment Calculation and Customer Payments UI
 
 **Key Requirements**:
-1. Replace hardcoded category percentage columns (`woodwork_percentage`, `misc_percentage`, `shopping_percentage`) with dynamic JSONB structure in `biz_model_milestones` table
-2. Update BizModel API to handle `category_percentages` JSONB instead of flat fields
-3. Refactor BizModel UI to dynamically display all categories from `category_rates` in milestone configuration
-4. Allow users to configure percentage for each category per milestone
-5. Support N categories (not just 3 hardcoded ones)
+1. Update Calculate Payment API to work with dynamic categories from BizModel
+2. Fetch category definitions from `biz_models.category_rates`
+3. Use `category_breakdown` JSONB from `project_estimations`
+4. Calculate target amounts dynamically for N categories
+5. Update Customer Payments UI to display dynamic category breakdowns
+6. Remove all hardcoded woodwork/misc/shopping references
 
-**Recent Changes**:
-- Updated schema.sql to replace flat percentage columns with `category_percentages` JSONB column
-- Created and executed migration script (007_dynamic_milestone_categories.sql)
-- Updated `/app/api/biz-models/route.js` POST handler to accept and insert `category_percentages` JSONB
-- Modified `/app/settings/bizmodels/page.js` to:
-  - Update milestone state to use `category_percentages: {}` instead of flat fields
-  - Add `updateMilestoneCategoryPercentage()` helper function
-  - Dynamically render percentage inputs for all categories based on `categories` state
-  - Sort categories by `sort_order` in milestone configuration
+**Recent Changes (Phase 2)**:
+- Completely refactored `/app/api/projects/[id]/calculate-payment/route.js`:
+  - Now fetches BizModel `category_rates` to get category definitions
+  - Uses milestone `category_percentages` JSONB instead of flat columns
+  - Uses estimation `category_breakdown` JSONB for totals
+  - Calculates target amounts dynamically for all categories
+  - Returns dynamic response: `{categories: {catId: {data}}, target_total, ...}`
+  
+- Updated `/app/app/projects/[id]/customer-payments/page.js`:
+  - Added `getCategoryIcon()` helper function
+  - Updated `handleMilestoneChange()` to work with dynamic API response
+  - Modified milestone dropdown to show dynamic category percentages
+  - Replaced hardcoded category breakdown display with dynamic rendering
+  - Removed all references to woodwork_amount, misc_amount, shopping_amount
+  - Cleaned up commented-out legacy code
 
 ---
 
