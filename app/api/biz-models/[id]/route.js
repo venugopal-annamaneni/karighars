@@ -158,9 +158,9 @@ export async function PUT(request, { params }) {
         await query(
           `INSERT INTO biz_model_milestones (
               biz_model_id, milestone_code, milestone_name, direction,
-              stage_code, description, sequence_order, woodwork_percentage, misc_percentage
+              stage_code, description, sequence_order, category_percentages
             )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [
             bizModelId,
             milestone.milestone_code,
@@ -169,8 +169,7 @@ export async function PUT(request, { params }) {
             milestone.stage_code,
             milestone.description,
             milestone.sequence_order,
-            milestone.woodwork_percentage || 0,
-            milestone.misc_percentage || 0,
+            JSON.stringify(milestone.category_percentages || {}),
           ]
         );
       }
