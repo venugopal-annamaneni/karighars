@@ -162,7 +162,8 @@ export default function ProjectEstimationPage() {
       quantity: 1,
       unit_price: 0,
       karighar_charges_percentage: 0,
-      discount_percentage: 0,
+      item_discount_percentage: 0,
+      discount_kg_charges_percentage: 0,
       gst_percentage: bizModel.gst_percentage,
       vendor_type: ''
     }]);
