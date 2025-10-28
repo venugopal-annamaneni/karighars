@@ -133,7 +133,8 @@ export default function ProjectEstimationPage() {
               quantity: parseFloat(item.quantity),
               unit_price: parseFloat(item.unit_price),
               karighar_charges_percentage: parseFloat(item.karighar_charges_percentage),
-              discount_percentage: parseFloat(item.discount_percentage),
+              item_discount_percentage: parseFloat(item.item_discount_percentage || 0),
+              discount_kg_charges_percentage: parseFloat(item.discount_kg_charges_percentage || 0),
               gst_percentage: parseFloat(item.gst_percentage),
               vendor_type: item.vendor_type
             })));
