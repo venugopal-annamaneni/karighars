@@ -303,11 +303,20 @@ export default function CustomerPaymentsPage() {
                       <SelectItem value="none">No milestone</SelectItem>
                       {milestones
                         .filter(milestone => (milestone.stage_code === project.stage || milestone.stage_code === 'ANY'))
-                        .map((milestone) => (
-                          <SelectItem key={milestone.id} value={milestone.id.toString()}>
-                            {milestone.milestone_name} - {`W:${milestone.woodwork_percentage}% M:${milestone.misc_percentage}% S:${milestone.shopping_percentage}%`}
-                          </SelectItem>
-                        ))}
+                        .map((milestone) => {
+                          // Format dynamic category percentages
+                          const catPercentages = milestone.category_percentages || {};
+                          const percentageDisplay = Object.entries(catPercentages)
+                            .filter(([catId, pct]) => pct > 0)
+                            .map(([catId, pct]) => `${catId.toUpperCase().substring(0, 1)}: ${pct}%`)
+                            .join(', ') || 'No percentages';
+                          
+                          return (
+                            <SelectItem key={milestone.id} value={milestone.id.toString()}>
+                              {milestone.milestone_name} - {percentageDisplay}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                 </div>
