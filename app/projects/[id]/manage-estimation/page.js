@@ -49,8 +49,8 @@ export default function ProjectEstimationPage() {
       quantity: 1,
       unit_price: 0,
       karighar_charges_percentage: 0,
-      karighar_charges_discount_percentage: 0,
-      discount_percentage: 0,
+      item_discount_percentage: 0,
+      discount_kg_charges_percentage: 0,
       gst_percentage: 0,
       vendor_type: ''
     }
