@@ -173,7 +173,7 @@ def create_4_category_bizmodel():
             'TEST_4CAT',
             'Test 4 Categories Model',
             'Test BizModel with 4 categories for extensibility testing',
-            'active',
+            'draft',  # Use 'draft' instead of 'active'
             True,
             json.dumps(category_rates),
             18.0
