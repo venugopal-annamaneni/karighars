@@ -343,18 +343,26 @@ export default function ProjectEstimationPage() {
       accessorKey: 'category',
       header: 'Category',
       size: 130,
-      cell: ({ getValue, row, column, table }) => (
-        <EditableSelectCell
-          getValue={getValue}
-          row={row}
-          column={column}
-          table={table}
-          options={Object.entries(ESTIMATION_CATEGORY).map(([key, value]) => ({
-            value: value,
-            label: value.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
-          }))}
-        />
-      ),
+      cell: ({ getValue, row, column, table }) => {
+        // Get dynamic categories from bizModel
+        const categories = bizModel.category_rates?.categories || [];
+        const categoryOptions = categories
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          .map(cat => ({
+            value: cat.id,
+            label: cat.category_name
+          }));
+
+        return (
+          <EditableSelectCell
+            getValue={getValue}
+            row={row}
+            column={column}
+            table={table}
+            options={categoryOptions}
+          />
+        );
+      },
     },
     {
       accessorKey: 'item_name',
