@@ -117,23 +117,26 @@ export default function BizModelsPage() {
     fetchModelDetails(modelId);
   };
 
-  const addStage = () => {
-    setStages([...stages, {
-      stage_code: '',
-      stage_name: '',
-      sequence_order: stages.length + 1,
-      description: ''
+  const addCategory = () => {
+    const newId = `category_${Date.now()}`;
+    setCategories([...categories, {
+      id: newId,
+      category_name: '',
+      kg_label: '',
+      max_item_discount_percentage: 20,
+      kg_percentage: 10,
+      max_kg_discount_percentage: 50
     }]);
   };
 
-  const removeStage = (index) => {
-    setStages(stages.filter((_, i) => i !== index));
+  const removeCategory = (index) => {
+    setCategories(categories.filter((_, i) => i !== index));
   };
 
-  const updateStage = (index, field, value) => {
-    const updated = [...stages];
+  const updateCategory = (index, field, value) => {
+    const updated = [...categories];
     updated[index][field] = value;
-    setStages(updated);
+    setCategories(updated);
   };
 
   const addMilestone = () => {
