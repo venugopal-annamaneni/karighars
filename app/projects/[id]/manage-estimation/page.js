@@ -598,22 +598,26 @@ export default function ProjectEstimationPage() {
     let woodworkSubtotal = 0;
     let woodworkTotal = 0;
     let woodworkKGCharges = 0;
-    let woodworkDiscounts = 0;
+    let woodworkItemDiscounts = 0;
+    let woodworkKGDiscounts = 0;
 
     let miscInternalSubtotal = 0;
     let miscInternalTotal = 0;
     let miscInternalKGCharges = 0;
-    let miscInternalDiscounts = 0;
+    let miscInternalItemDiscounts = 0;
+    let miscInternalKGDiscounts = 0;
 
     let miscExternalSubtotal = 0;
     let miscExternalTotal = 0;
     let miscExternalKGCharges = 0;
-    let miscExternalDiscounts = 0;
+    let miscExternalItemDiscounts = 0;
+    let miscExternalKGDiscounts = 0;
 
     let shoppingServiceSubtotal = 0;
     let shoppingServiceTotal = 0;
     let shoppingKGCharges = 0;
-    let shoppingDiscounts = 0;
+    let shoppingItemDiscounts = 0;
+    let shoppingKGDiscounts = 0;
 
     let totalGst = 0;
 
@@ -623,33 +627,37 @@ export default function ProjectEstimationPage() {
       if (item.category === ESTIMATION_CATEGORY.WOODWORK) {
         woodworkSubtotal += itemCalc.subtotal;
         woodworkKGCharges += itemCalc.karighar_charges_amount;
-        woodworkDiscounts += itemCalc.discount_amount;
+        woodworkItemDiscounts += itemCalc.item_discount_amount;
+        woodworkKGDiscounts += itemCalc.kg_discount_amount;
         woodworkTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.MISC_INTERNAL) {
         miscInternalSubtotal += itemCalc.subtotal;
         miscInternalKGCharges += itemCalc.karighar_charges_amount;
-        miscInternalDiscounts += itemCalc.discount_amount;
+        miscInternalItemDiscounts += itemCalc.item_discount_amount;
+        miscInternalKGDiscounts += itemCalc.kg_discount_amount;
         miscInternalTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.MISC_EXTERNAL) {
         miscExternalSubtotal += itemCalc.subtotal;
         miscExternalKGCharges += itemCalc.karighar_charges_amount;
-        miscExternalDiscounts += itemCalc.discount_amount;
+        miscExternalItemDiscounts += itemCalc.item_discount_amount;
+        miscExternalKGDiscounts += itemCalc.kg_discount_amount;
         miscExternalTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.SHOPPING_SERVICE) {
-        // For shopping, the subTotal is paid to vendor's directly
-        shoppingServiceSubtotal = itemCalc.subtotal;
+        // For shopping, the subtotal is paid to vendor directly
+        shoppingServiceSubtotal += itemCalc.subtotal;
         shoppingKGCharges += itemCalc.karighar_charges_amount;
-        shoppingDiscounts += itemCalc.discount_amount;
+        shoppingItemDiscounts += itemCalc.item_discount_amount;
+        shoppingKGDiscounts += itemCalc.kg_discount_amount;
         shoppingServiceTotal += itemCalc.item_total;
       }
 
       totalGst += itemCalc.gst_amount;
     });
 
-
-
     const serviceCharge = woodworkKGCharges + miscInternalKGCharges + miscExternalKGCharges + shoppingKGCharges;
-    const discount = woodworkDiscounts + miscInternalDiscounts + miscExternalDiscounts + shoppingDiscounts;
+    const itemDiscount = woodworkItemDiscounts + miscInternalItemDiscounts + miscExternalItemDiscounts + shoppingItemDiscounts;
+    const kgDiscount = woodworkKGDiscounts + miscInternalKGDiscounts + miscExternalKGDiscounts + shoppingKGDiscounts;
+    const totalDiscount = itemDiscount + kgDiscount;
     const grandTotal = woodworkTotal + miscInternalTotal + miscExternalTotal + shoppingServiceTotal;
 
     return {
