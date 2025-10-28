@@ -433,8 +433,14 @@ export default function ProjectEstimationPage() {
       header: 'Unit Price (₹)',
       size: 120,
       cell: ({ row, getValue, ...props }) => {
-        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={true} />;
+        return <EditableNumberCell row={row} getValue={getValue} {...props} />;
       },
+    },
+    {
+      accessorKey: 'item_discount_percentage',
+      header: 'Item Disc (%)',
+      size: 110,
+      cell: EditableNumberCell,
     },
     {
       accessorKey: 'karighar_charges_percentage',
@@ -443,8 +449,8 @@ export default function ProjectEstimationPage() {
       cell: EditableNumberCell,
     },
     {
-      accessorKey: 'discount_percentage',
-      header: 'Discount (%)',
+      accessorKey: 'discount_kg_charges_percentage',
+      header: 'KG Disc (%)',
       size: 110,
       cell: EditableNumberCell,
     },
