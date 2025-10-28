@@ -31,12 +31,7 @@ export default function BaseRatesPage() {
   const [processing, setProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
-    service_charge_percentage: '',
-    max_service_charge_discount_percentage: '',
-    design_charge_percentage: '',
-    max_design_charge_discount_percentage: '',
-    shopping_charge_percentage: '',
-    max_shopping_charge_discount_percentage: '',
+    category_rates: { categories: [] },
     gst_percentage: '',
     comments: ''
   });
@@ -75,14 +70,9 @@ export default function BaseRatesPage() {
   };
 
   const handleRequestChange = () => {
-    if (activeRate) {
+    if (activeRate && activeRate.category_rates) {
       setFormData({
-        service_charge_percentage: activeRate.service_charge_percentage,
-        max_service_charge_discount_percentage: activeRate.max_service_charge_discount_percentage,
-        design_charge_percentage: activeRate.design_charge_percentage,
-        max_design_charge_discount_percentage: activeRate.max_design_charge_discount_percentage,
-        shopping_charge_percentage: activeRate.shopping_charge_percentage,
-        max_shopping_charge_discount_percentage: activeRate.max_shopping_charge_discount_percentage,
+        category_rates: JSON.parse(JSON.stringify(activeRate.category_rates)),
         gst_percentage: activeRate.gst_percentage,
         comments: ''
       });
@@ -90,14 +80,19 @@ export default function BaseRatesPage() {
     setShowRequestModal(true);
   };
 
+  const updateCategory = (index, field, value) => {
+    const updated = { ...formData };
+    updated.category_rates.categories[index][field] = parseFloat(value) || 0;
+    setFormData(updated);
+  };
+
   const handleSubmitRequest = async () => {
     try {
       setProcessing(true);
 
       // Validation
-      if (!formData.service_charge_percentage || !formData.design_charge_percentage || 
-          !formData.shopping_charge_percentage || !formData.gst_percentage) {
-        toast.error('All rate percentages are required');
+      if (!formData.gst_percentage) {
+        toast.error('GST percentage is required');
         return;
       }
 
@@ -136,12 +131,7 @@ export default function BaseRatesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          service_charge_percentage: selectedRate.service_charge_percentage,
-          max_service_charge_discount_percentage: selectedRate.max_service_charge_discount_percentage,
-          design_charge_percentage: selectedRate.design_charge_percentage,
-          max_design_charge_discount_percentage: selectedRate.max_design_charge_discount_percentage,
-          shopping_charge_percentage: selectedRate.shopping_charge_percentage,
-          max_shopping_charge_discount_percentage: selectedRate.max_shopping_charge_discount_percentage,
+          category_rates: selectedRate.category_rates,
           gst_percentage: selectedRate.gst_percentage
         })
       });
@@ -246,7 +236,7 @@ export default function BaseRatesPage() {
   }
 
   return (
-    <div>
+    <div className="container mx-auto py-6 space-y-6">
       {/* Active Rate */}
       <Card>
         <CardHeader>
@@ -269,21 +259,26 @@ export default function BaseRatesPage() {
           {activeRate ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Service Charge</p>
-                  <p className="text-2xl font-bold text-blue-600">{activeRate.service_charge_percentage}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Max Discount: {activeRate.max_service_charge_discount_percentage}%</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Design Charge (Woodwork)</p>
-                  <p className="text-2xl font-bold text-purple-600">{activeRate.design_charge_percentage}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Max Discount: {activeRate.max_design_charge_discount_percentage}%</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Shopping Charge</p>
-                  <p className="text-2xl font-bold text-green-600">{activeRate.shopping_charge_percentage}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Max Discount: {activeRate.max_shopping_charge_discount_percentage}%</p>
-                </div>
+                {activeRate.category_rates?.categories?.map((category, index) => (
+                  <div key={index} className="p-4 border rounded-lg bg-slate-50">
+                    <p className="text-sm font-semibold text-primary">{category.category_name}</p>
+                    <p className="text-xs italic text-muted-foreground mb-2">{category.kg_label}</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">KG Charge:</span>
+                        <span className="font-bold text-blue-600">{category.kg_percentage}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Max Item Disc:</span>
+                        <span className="font-semibold">{category.max_item_discount_percentage}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Max KG Disc:</span>
+                        <span className="font-semibold text-amber-600">{category.max_kg_discount_percentage}%</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="p-4 border rounded-lg bg-slate-50">
                 <p className="text-sm text-muted-foreground">GST</p>
@@ -337,23 +332,22 @@ export default function BaseRatesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Service Charge</p>
-                <p className="font-semibold">{pendingRequest.service_charge_percentage}% (max disc: {pendingRequest.max_service_charge_discount_percentage}%)</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Design Charge</p>
-                <p className="font-semibold">{pendingRequest.design_charge_percentage}% (max disc: {pendingRequest.max_design_charge_discount_percentage}%)</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Shopping Charge</p>
-                <p className="font-semibold">{pendingRequest.shopping_charge_percentage}% (max disc: {pendingRequest.max_shopping_charge_discount_percentage}%)</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">GST</p>
-                <p className="font-semibold">{pendingRequest.gst_percentage}%</p>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {pendingRequest.category_rates?.categories?.map((category, index) => (
+                <div key={index} className="text-sm bg-white p-3 rounded border">
+                  <p className="font-semibold text-primary">{category.category_name}</p>
+                  <p className="text-xs text-muted-foreground mb-1">{category.kg_label}</p>
+                  <div className="space-y-1 text-xs">
+                    <div>KG: <span className="font-semibold">{category.kg_percentage}%</span></div>
+                    <div>Max Item Disc: <span className="font-semibold">{category.max_item_discount_percentage}%</span></div>
+                    <div>Max KG Disc: <span className="font-semibold">{category.max_kg_discount_percentage}%</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 p-3 bg-white rounded border">
+              <p className="text-xs text-muted-foreground">GST:</p>
+              <p className="text-sm font-bold">{pendingRequest.gst_percentage}%</p>
             </div>
             {pendingRequest.comments && (
               <div className="mt-3 p-3 bg-white rounded border">
@@ -387,23 +381,16 @@ export default function BaseRatesPage() {
                       {formatDate(rate.created_at)}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Service</p>
-                      <p className="font-medium">{rate.service_charge_percentage}% (max: {rate.max_service_charge_discount_percentage}%)</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Design</p>
-                      <p className="font-medium">{rate.design_charge_percentage}% (max: {rate.max_design_charge_discount_percentage}%)</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Shopping</p>
-                      <p className="font-medium">{rate.shopping_charge_percentage}% (max: {rate.max_shopping_charge_discount_percentage}%)</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">GST</p>
-                      <p className="font-medium">{rate.gst_percentage}%</p>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {rate.category_rates?.categories?.map((category, index) => (
+                      <div key={index} className="text-sm">
+                        <p className="font-semibold text-primary">{category.category_name}</p>
+                        <p className="text-xs">KG: {category.kg_percentage}%, Max KG Disc: {category.max_kg_discount_percentage}%</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-sm">
+                    <span className="text-muted-foreground">GST:</span> <span className="font-semibold">{rate.gst_percentage}%</span>
                   </div>
                   {rate.comments && (
                     <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
@@ -430,7 +417,7 @@ export default function BaseRatesPage() {
 
       {/* Request Change Modal */}
       <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Request Base Rate Change</DialogTitle>
             <DialogDescription>
@@ -440,68 +427,46 @@ export default function BaseRatesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Service Charge (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.service_charge_percentage}
-                  onChange={(e) => setFormData({...formData, service_charge_percentage: e.target.value})}
-                />
+            {formData.category_rates?.categories?.map((category, index) => (
+              <div key={index} className="border rounded-lg p-4 bg-slate-50">
+                <h4 className="font-semibold mb-3">{category.category_name}</h4>
+                <p className="text-xs text-muted-foreground mb-3">{category.kg_label}</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs">Max Item Discount %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={category.max_item_discount_percentage}
+                      onChange={(e) => updateCategory(index, 'max_item_discount_percentage', e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">KG Charge %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={category.kg_percentage}
+                      onChange={(e) => updateCategory(index, 'kg_percentage', e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Max KG Discount %</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={category.max_kg_discount_percentage}
+                      onChange={(e) => updateCategory(index, 'max_kg_discount_percentage', e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Max Service Discount (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.max_service_charge_discount_percentage}
-                  onChange={(e) => setFormData({...formData, max_service_charge_discount_percentage: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Design Charge (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.design_charge_percentage}
-                  onChange={(e) => setFormData({...formData, design_charge_percentage: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Max Design Discount (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.max_design_charge_discount_percentage}
-                  onChange={(e) => setFormData({...formData, max_design_charge_discount_percentage: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Shopping Charge (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.shopping_charge_percentage}
-                  onChange={(e) => setFormData({...formData, shopping_charge_percentage: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Max Shopping Discount (%)<span className="text-red-500">*</span></Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.max_shopping_charge_discount_percentage}
-                  onChange={(e) => setFormData({...formData, max_shopping_charge_discount_percentage: e.target.value})}
-                />
-              </div>
-            </div>
+            ))}
             <div>
-              <Label>GST (%)<span className="text-red-500">*</span></Label>
+              <Label>GST %<span className="text-red-500">*</span></Label>
               <Input
                 type="number"
                 step="0.01"
@@ -540,23 +505,20 @@ export default function BaseRatesPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedRate && (
-            <div className="space-y-2 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <strong>Service Charge:</strong> {selectedRate.service_charge_percentage}%
-                </div>
-                <div>
-                  <strong>Design Charge:</strong> {selectedRate.design_charge_percentage}%
-                </div>
-                <div>
-                  <strong>Shopping Charge:</strong> {selectedRate.shopping_charge_percentage}%
-                </div>
-                <div>
-                  <strong>GST:</strong> {selectedRate.gst_percentage}%
-                </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                {selectedRate.category_rates?.categories?.map((category, index) => (
+                  <div key={index} className="text-sm border p-2 rounded">
+                    <p className="font-semibold">{category.category_name}</p>
+                    <p className="text-xs">KG: {category.kg_percentage}%, Max Item Disc: {category.max_item_discount_percentage}%, Max KG Disc: {category.max_kg_discount_percentage}%</p>
+                  </div>
+                ))}
+              </div>
+              <div className="text-sm">
+                <strong>GST:</strong> {selectedRate.gst_percentage}%
               </div>
               {selectedRate.comments && (
-                <div className="p-2 bg-slate-50 rounded">
+                <div className="p-2 bg-slate-50 rounded text-sm">
                   <strong>Justification:</strong>
                   <p className="mt-1">{selectedRate.comments}</p>
                 </div>
