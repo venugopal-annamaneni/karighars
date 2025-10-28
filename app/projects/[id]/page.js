@@ -377,19 +377,19 @@ export default function ProjectEstimationsPage() {
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.WOODWORK)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.woodwork_value)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.woodwork?.total || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_INTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.misc_internal_value)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_internal?.total || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.misc_external_value)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_external?.total || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.SHOPPING_SERVICE)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.shopping_service_value)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.shopping_service?.total || 0)}</p>
                 </div>
               </div>
 
