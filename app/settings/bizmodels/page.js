@@ -922,11 +922,11 @@ export default function BizModelsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Business Model Configuration</CardTitle>
-                  <CardDescription>Settings and rules for this business model</CardDescription>
+                  <CardDescription>Category-wise pricing rules and settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-y-4 md:gap-y-0 gap-x-2">
-                    <div className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Model Code</p>
                         <p className="text-lg font-medium">{modelDetails.model.code}</p>
@@ -939,52 +939,44 @@ export default function BizModelsPage() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">GST %</p>
-                        <p className="text-lg font-medium">{modelDetails.model.gst_percentage}</p>
+                        <p className="text-lg font-medium">{modelDetails.model.gst_percentage}%</p>
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      <div className="p-4 border border-green-800 rounded-lg">
-                        <p className="text-sm text-muted-foreground ">Design Consultation Charges</p>
-                        <p className="text-xl font-bold text-green-700">
-                          {modelDetails.model.design_charge_percentage}%
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
-                        <p className="text-xl font-bold text-amber-700">
-                          {modelDetails.model.max_design_charge_discount_percentage}%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="p-4 border border-blue-800 rounded-lg">
-                        <p className="text-sm text-muted-foreground ">Service Charges</p>
-                        <p className="text-xl font-bold text-blue-700">
-                          {modelDetails.model.service_charge_percentage}%
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
-                        <p className="text-xl font-bold text-amber-700">
-                          {modelDetails.model.max_service_charge_discount_percentage}%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="p-4 border border-yellow-800 rounded-lg">
-                        <p className="text-sm text-muted-foreground ">Shopping Charges</p>
-                        <p className="text-xl font-bold text-yellow-700">
-                          {modelDetails.model.shopping_charge_percentage}%
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-4">Maximum Discount</p>
-                        <p className="text-xl font-bold text-amber-700">
-                          {modelDetails.model.max_shopping_charge_discount_percentage}%
-                        </p>
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="font-semibold mb-3">Categories & Rates</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {modelDetails.model.category_rates?.categories?.map((category, index) => (
+                          <div key={index} className="p-4 border rounded-lg bg-slate-50">
+                            <div className="mb-3">
+                              <h4 className="font-bold text-primary">{category.category_name}</h4>
+                              <p className="text-xs text-muted-foreground italic">{category.kg_label}</p>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Max Item Discount:</span>
+                                <span className="font-semibold">{category.max_item_discount_percentage}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">KG Charge:</span>
+                                <span className="font-semibold text-blue-600">{category.kg_percentage}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Max KG Discount:</span>
+                                <span className="font-semibold text-amber-600">{category.max_kg_discount_percentage}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                  <div className='grid grid-cols-1 text-right mt-4 md:mt-4'>
+                  <div className='grid grid-cols-1 text-right mt-4'>
                     <p className="text-xs font-semibold text-red-700 italic">
-                      Added to all estimations by default
+                      Rates applied to all estimations by default
                     </p>
                     <p className="text-xs font-semibold text-red-700 italic">
-                      Discounts above the maxium configured here require approval
+                      Discounts above maximum require approval
                     </p>
                   </div>
                 </CardContent>
