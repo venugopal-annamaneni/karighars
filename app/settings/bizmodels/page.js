@@ -395,8 +395,9 @@ export default function BizModelsPage() {
                 </DialogHeader>
 
                 <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                    <TabsTrigger value="categories">Categories & Rates</TabsTrigger>
                     <TabsTrigger value="stages">Stages</TabsTrigger>
                     <TabsTrigger value="milestones">Milestones</TabsTrigger>
                   </TabsList>
@@ -427,8 +428,8 @@ export default function BizModelsPage() {
                           onChange={(e) => setNewModel({ ...newModel, description: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label>GST %</Label>
+                      <div className="space-y-2">
+                        <Label>GST % *</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -436,60 +437,93 @@ export default function BizModelsPage() {
                           onChange={(e) => setNewModel({ ...newModel, gst_percentage: parseFloat(e.target.value) })}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Design Consultation Charges (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.design_charge_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, design_charge_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Max Discount (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.max_design_charge_discount_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, max_design_charge_discount_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Service Charges (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.service_charge_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, service_charge_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Max Discount (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.max_service_charge_discount_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, max_service_charge_discount_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Shopping Charges (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.shopping_charge_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, shopping_charge_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Max Discount (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newModel.max_shopping_charge_discount_percentage}
-                          onChange={(e) => setNewModel({ ...newModel, max_shopping_charge_discount_percentage: parseFloat(e.target.value) })}
-                        />
-                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="categories" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-muted-foreground">Define item categories with pricing rules</p>
+                      <Button onClick={addCategory} size="sm" variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Category
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {categories.map((category, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3 bg-slate-50">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm font-medium">Category {index + 1}</p>
+                            {categories.length > 1 && (
+                              <Button
+                                onClick={() => removeCategory(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Category Name *</Label>
+                              <Input
+                                placeholder="e.g., Woodwork"
+                                value={category.category_name}
+                                onChange={(e) => updateCategory(index, 'category_name', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">KG Charge Label *</Label>
+                              <Input
+                                placeholder="e.g., Design and Consultation"
+                                value={category.kg_label}
+                                onChange={(e) => updateCategory(index, 'kg_label', e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid md:grid-cols-3 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Max Item Discount %</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="20"
+                                value={category.max_item_discount_percentage}
+                                onChange={(e) => updateCategory(index, 'max_item_discount_percentage', parseFloat(e.target.value))}
+                                className="h-9"
+                              />
+                              <p className="text-xs text-muted-foreground">Max discount on item price</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">KG Charge %</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="10"
+                                value={category.kg_percentage}
+                                onChange={(e) => updateCategory(index, 'kg_percentage', parseFloat(e.target.value))}
+                                className="h-9"
+                              />
+                              <p className="text-xs text-muted-foreground">Service charge percentage</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Max KG Discount %</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="50"
+                                value={category.max_kg_discount_percentage}
+                                onChange={(e) => updateCategory(index, 'max_kg_discount_percentage', parseFloat(e.target.value))}
+                                className="h-9"
+                              />
+                              <p className="text-xs text-muted-foreground">Max discount on KG charges</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </TabsContent>
 
