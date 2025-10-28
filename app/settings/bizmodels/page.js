@@ -250,15 +250,42 @@ export default function BizModelsPage() {
           code: data.model.code,
           name: data.model.name,
           description: data.model.description,
-          gst_percentage: data.model.gst_percentage,
-          design_charge_percentage: data.model.design_charge_percentage,
-          max_design_charge_discount_percentage: data.model.max_design_charge_discount_percentage,
-          service_charge_percentage: data.model.service_charge_percentage,
-          max_service_charge_discount_percentage: data.model.max_service_charge_discount_percentage,
-          shopping_charge_percentage: data.model.shopping_charge_percentage,
-          max_shopping_charge_discount_percentage: data.model.max_shopping_charge_discount_percentage,
+          gst_percentage: data.model.gst_percentage || 18,
           is_active: data.model.is_active,
         });
+
+        // Load categories from JSONB or create default structure
+        if (data.model.category_rates && data.model.category_rates.categories) {
+          setCategories(data.model.category_rates.categories);
+        } else {
+          // Fallback to default categories if not found
+          setCategories([
+            {
+              id: 'woodwork',
+              category_name: 'Woodwork',
+              kg_label: 'Design and Consultation',
+              max_item_discount_percentage: 20,
+              kg_percentage: 10,
+              max_kg_discount_percentage: 50
+            },
+            {
+              id: 'misc',
+              category_name: 'Misc',
+              kg_label: 'Service Charges',
+              max_item_discount_percentage: 20,
+              kg_percentage: 8,
+              max_kg_discount_percentage: 40
+            },
+            {
+              id: 'shopping',
+              category_name: 'Shopping',
+              kg_label: 'Shopping Service Charges',
+              max_item_discount_percentage: 20,
+              kg_percentage: 5,
+              max_kg_discount_percentage: 30
+            }
+          ]);
+        }
 
         setStages(data.stages.length > 0 ? data.stages : [{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
         setMilestones(data.milestones.length > 0 ? data.milestones : [{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
