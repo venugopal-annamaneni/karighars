@@ -91,33 +91,30 @@ export async function PUT(request, { params }) {
       });
     }
 
+    // Validate category_rates structure if provided
+    if (body.category_rates && (!body.category_rates.categories || !Array.isArray(body.category_rates.categories))) {
+      return NextResponse.json({ error: 'Invalid category_rates structure' }, { status: 400 });
+    }
+
     // ✅ 1. Update main biz_model
     const updateRes = await query(
       `UPDATE biz_models
        SET code = $1,
            name = $2,
            description = $3,
-           service_charge_percentage = $4,
-           max_service_charge_discount_percentage = $5,
-           design_charge_percentage = $6,
-           max_design_charge_discount_percentage = $7,
-           shopping_charge_percentage = $8,
-           max_shopping_charge_discount_percentage = $9,
-           is_active = $10,
-           status = $11,
+           gst_percentage = $4,
+           category_rates = $5,
+           is_active = $6,
+           status = $7,
            updated_at = NOW()
-       WHERE id = $12
+       WHERE id = $8
        RETURNING *`,
       [
         body.code,
         body.name,
         body.description,
-        body.service_charge_percentage,
-        body.max_service_charge_discount_percentage,
-        body.design_charge_percentage,
-        body.max_design_charge_discount_percentage,
-        body.shopping_charge_percentage,
-        body.max_shopping_charge_discount_percentage,
+        body.gst_percentage || 18,
+        body.category_rates ? JSON.stringify(body.category_rates) : null,
         body.is_active,
         body.status || BIZMODEL_STATUS.DRAFT,
         bizModelId,
