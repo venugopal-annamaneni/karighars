@@ -46,7 +46,9 @@ export default function BizModelsPage() {
       kg_label: 'Design and Consultation',
       max_item_discount_percentage: 20,
       kg_percentage: 10,
-      max_kg_discount_percentage: 50
+      max_kg_discount_percentage: 50,
+      pay_to_vendor_directly: false,
+      sort_order: 1
     },
     {
       id: 'misc',
@@ -54,7 +56,9 @@ export default function BizModelsPage() {
       kg_label: 'Service Charges',
       max_item_discount_percentage: 20,
       kg_percentage: 8,
-      max_kg_discount_percentage: 40
+      max_kg_discount_percentage: 40,
+      pay_to_vendor_directly: false,
+      sort_order: 2
     },
     {
       id: 'shopping',
@@ -62,7 +66,9 @@ export default function BizModelsPage() {
       kg_label: 'Shopping Service Charges',
       max_item_discount_percentage: 20,
       kg_percentage: 5,
-      max_kg_discount_percentage: 30
+      max_kg_discount_percentage: 30,
+      pay_to_vendor_directly: true,
+      sort_order: 3
     }
   ]);
 
