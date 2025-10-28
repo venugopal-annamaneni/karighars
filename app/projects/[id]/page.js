@@ -57,6 +57,24 @@ export default function ProjectEstimationsPage() {
       fetchEstimationDetails();
   }, [loading])
 
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectBaseRates();
+    }
+  }, [projectId]);
+
+  const fetchProjectBaseRates = async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/base-rates/active`);
+      if (res.ok) {
+        const data = await res.json();
+        setProjectBaseRates(data);
+      }
+    } catch (error) {
+      console.error('Error fetching project base rates:', error);
+    }
+  };
+
   const fetchEstimationDetails = async () => {
     try {
       if (estimation && estimation.id) {
