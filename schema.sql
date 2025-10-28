@@ -112,23 +112,19 @@ CREATE TABLE biz_models (
     code TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    service_charge_percentage NUMERIC(9,4) DEFAULT 0,
-    max_service_charge_discount_percentage NUMERIC(9,4) DEFAULT 0,
+    gst_percentage NUMERIC(9,4) DEFAULT 18,
+    category_rates JSONB DEFAULT '{"categories": []}'::jsonb,
     status TEXT DEFAULT 'draft'::text,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    design_charge_percentage NUMERIC(9,4),
-    max_design_charge_discount_percentage NUMERIC(9,4),
-    shopping_charge_percentage NUMERIC(9,4),
-    max_shopping_charge_discount_percentage NUMERIC(9,4),
-    gst_percentage NUMERIC(9,4),
     UNIQUE (code),
     PRIMARY KEY (id),
     CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text])))
 );
 
 COMMENT ON COLUMN biz_models.status IS 'Status of business model: draft or published. Only published models can be used in projects.';
+COMMENT ON COLUMN biz_models.category_rates IS 'JSONB structure: {"categories": [{"id": "woodwork", "category_name": "Woodwork", "kg_label": "Design and Consultation", "max_item_discount_percentage": 20, "kg_percentage": 10, "max_kg_discount_percentage": 50}]}. Flexible category-based pricing rules.';
 
 CREATE TABLE customer_kyc (
     id INTEGER NOT NULL DEFAULT nextval('customer_kyc_id_seq'::regclass),
