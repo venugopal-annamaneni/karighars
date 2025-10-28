@@ -20,15 +20,15 @@ export async function POST(request) {
   );
   const nextVersion = versionResult.rows[0].next_version;
 
-  // Totals are now calculated at item level and passed from frontend
-  const woodworkValue = parseFloat(body.woodwork_value) || 0;
-  const miscInternalValue = parseFloat(body.misc_internal_value) || 0;
-  const miscExternalValue = parseFloat(body.misc_external_value) || 0;
-  const shoppingServiceValue = parseFloat(body.shopping_service_value) || 0;
+  // Build category_breakdown JSONB from items
+  const categoryBreakdown = body.category_breakdown || {};
+  
+  // Aggregate totals
+  const totalItemsValue = parseFloat(body.total_items_value) || 0;
+  const totalKgCharges = parseFloat(body.total_kg_charges) || 0;
+  const totalDiscountAmount = parseFloat(body.total_discount_amount) || 0;
   const serviceCharge = parseFloat(body.service_charge) || 0;
   const discount = parseFloat(body.discount) || 0;
-  const itemDiscount = parseFloat(body.item_discount) || 0;
-  const kgDiscount = parseFloat(body.kg_discount) || 0;
   const gstAmount = parseFloat(body.gst_amount) || 0;
   const finalValue = parseFloat(body.final_value) || 0;
 
@@ -54,17 +54,19 @@ export async function POST(request) {
 
   const result = await query(
     `INSERT INTO project_estimations (
-      project_id, version, 
-      woodwork_value, misc_internal_value, misc_external_value, shopping_service_value,
-      service_charge, item_discount, kg_discount, discount,  gst_amount, final_value,
+      project_id, version,
+      category_breakdown,
+      total_items_value, total_kg_charges, total_discount_amount,
+      service_charge, discount, gst_amount, final_value,
       has_overpayment, overpayment_amount,
       remarks, status, created_by
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
     [
       body.project_id, nextVersion,
-      woodworkValue, miscInternalValue, miscExternalValue, shoppingServiceValue,
-      serviceCharge, itemDiscount, kgDiscount, discount, gstAmount, finalValue,
+      JSON.stringify(categoryBreakdown),
+      totalItemsValue, totalKgCharges, totalDiscountAmount,
+      serviceCharge, discount, gstAmount, finalValue,
       hasOverpayment, overpaymentAmount,
       body.remarks, body.status || ESTIMATION_STATUS.DRAFT, session.user.id
     ]
