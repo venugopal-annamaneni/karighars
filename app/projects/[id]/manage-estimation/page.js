@@ -635,7 +635,7 @@ export default function ProjectEstimationPage() {
     data.forEach(item => {
       const itemCalc = calculateItemTotal(item);
 
-      if (item.category === ESTIMATION_CATEGORY.WOODWORK) {
+      if (item.category === 'woodwork') {
         woodworkSubtotal += itemCalc.subtotal;
         woodworkItemDiscounts += itemCalc.item_discount_amount;
         woodworkKGCharges += itemCalc.karighar_charges_gross;
@@ -643,7 +643,7 @@ export default function ProjectEstimationPage() {
         woodworkAmountBeforeGst += itemCalc.amount_before_gst;
         woodworkGst += itemCalc.gst_amount;
         woodworkTotal += itemCalc.item_total;
-      } else if (item.category === ESTIMATION_CATEGORY.MISC_INTERNAL) {
+      } else if (item.category === 'misc_internal') {
         miscInternalSubtotal += itemCalc.subtotal;
         miscInternalItemDiscounts += itemCalc.item_discount_amount;
         miscInternalKGCharges += itemCalc.karighar_charges_gross;
@@ -651,7 +651,7 @@ export default function ProjectEstimationPage() {
         miscInternalAmountBeforeGst += itemCalc.amount_before_gst;
         miscInternalGst += itemCalc.gst_amount;
         miscInternalTotal += itemCalc.item_total;
-      } else if (item.category === ESTIMATION_CATEGORY.MISC_EXTERNAL) {
+      } else if (item.category === 'misc_external') {
         miscExternalSubtotal += itemCalc.subtotal;
         miscExternalItemDiscounts += itemCalc.item_discount_amount;
         miscExternalKGCharges += itemCalc.karighar_charges_gross;
@@ -659,7 +659,7 @@ export default function ProjectEstimationPage() {
         miscExternalAmountBeforeGst += itemCalc.amount_before_gst;
         miscExternalGst += itemCalc.gst_amount;
         miscExternalTotal += itemCalc.item_total;
-      } else if (item.category === ESTIMATION_CATEGORY.SHOPPING_SERVICE) {
+      } else if (item.category === 'shopping_service') {
         shoppingServiceSubtotal += itemCalc.subtotal;
         shoppingItemDiscounts += itemCalc.item_discount_amount;
         shoppingKGCharges += itemCalc.karighar_charges_gross;
