@@ -32,6 +32,29 @@ import {
 } from '@tanstack/react-table';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 
+// Helper function for category icons
+const getCategoryIcon = (categoryId) => {
+  const iconMap = {
+    'woodwork': '🪵',
+    'misc': '🔧',
+    'misc_internal': '🔧',
+    'misc_external': '🔨',
+    'shopping': '🛒',
+    'shopping_service': '🛒',
+    'civil': '🏗️',
+    'default': '📦'
+  };
+  return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
+};
+
+// Helper to get grid columns based on category count
+const getCategoryGridCols = (count) => {
+  if (count <= 3) return 'md:grid-cols-3';
+  if (count === 4) return 'md:grid-cols-4';
+  if (count === 5 || count === 6) return 'md:grid-cols-3';
+  return 'md:grid-cols-4'; // 4xN grid for 7+
+};
+
 export default function ProjectEstimationsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
