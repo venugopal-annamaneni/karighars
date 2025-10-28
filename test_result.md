@@ -22,20 +22,24 @@
 
 ## Original User Problem Statement
 
-**Current Task**: Complete Invoice Management Feature implementation and fix closing tags issue in invoices page.
+**Current Task**: Implement Dynamic Payment Milestone Categories in BizModel
 
 **Key Requirements**:
-1. Fix closing tags syntax error in `/app/projects/[id]/invoices/page.js`
-2. Finalize `OverInvoicedAlert` component integration
-3. Ensure credit note creation works correctly
-4. Validate invoice upload with amount restrictions
-5. Test complete invoice management workflow
+1. Replace hardcoded category percentage columns (`woodwork_percentage`, `misc_percentage`, `shopping_percentage`) with dynamic JSONB structure in `biz_model_milestones` table
+2. Update BizModel API to handle `category_percentages` JSONB instead of flat fields
+3. Refactor BizModel UI to dynamically display all categories from `category_rates` in milestone configuration
+4. Allow users to configure percentage for each category per milestone
+5. Support N categories (not just 3 hardcoded ones)
 
 **Recent Changes**:
-- Fixed JavaScript syntax error in invoices page (closing parentheses in map function)
-- Updated invoice API validation to allow negative amounts for credit notes
-- Verified OverInvoicedAlert component structure
-- Verified integration in project layout
+- Updated schema.sql to replace flat percentage columns with `category_percentages` JSONB column
+- Created and executed migration script (007_dynamic_milestone_categories.sql)
+- Updated `/app/api/biz-models/route.js` POST handler to accept and insert `category_percentages` JSONB
+- Modified `/app/settings/bizmodels/page.js` to:
+  - Update milestone state to use `category_percentages: {}` instead of flat fields
+  - Add `updateMilestoneCategoryPercentage()` helper function
+  - Dynamically render percentage inputs for all categories based on `categories` state
+  - Sort categories by `sort_order` in milestone configuration
 
 ---
 
