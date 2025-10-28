@@ -139,6 +139,25 @@ export default function BizModelsPage() {
     setCategories(updated);
   };
 
+  const addStage = () => {
+    setStages([...stages, {
+      stage_code: '',
+      stage_name: '',
+      sequence_order: stages.length + 1,
+      description: ''
+    }]);
+  };
+
+  const removeStage = (index) => {
+    setStages(stages.filter((_, i) => i !== index));
+  };
+
+  const updateStage = (index, field, value) => {
+    const updated = [...stages];
+    updated[index][field] = value;
+    setStages(updated);
+  };
+
   const addMilestone = () => {
     setMilestones([...milestones, {
       milestone_code: '',
