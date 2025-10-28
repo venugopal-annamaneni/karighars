@@ -407,7 +407,8 @@ def test_payment_calculation_zero_percentages():
         response = requests.get(
             f"{API_BASE}/projects/{project_data['project_id']}/calculate-payment",
             params={'milestone_id': milestone_with_zeros['id']},
-            timeout=30
+            timeout=30,
+            allow_redirects=False
         )
         
         if response.status_code in [401, 307, 302]:
