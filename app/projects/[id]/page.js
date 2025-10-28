@@ -420,24 +420,25 @@ export default function ProjectEstimationsPage() {
         <CardContent>
           {estimation ? (
             <div className="space-y-4">
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.WOODWORK)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.woodwork?.subtotal || 0)}</p>
+              {/* Dynamic Category Cards */}
+              {projectBaseRates && projectBaseRates.category_rates && (
+                <div className={`grid gap-4 ${getCategoryGridCols(projectBaseRates.category_rates.categories?.length || 4)}`}>
+                  {projectBaseRates.category_rates.categories
+                    ?.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                    .map(category => {
+                      const categoryData = estimation.category_breakdown?.[category.id] || {};
+                      return (
+                        <div key={category.id} className="bg-slate-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span>{getCategoryIcon(category.id)}</span>
+                            <p className="text-sm text-muted-foreground">{category.category_name}</p>
+                          </div>
+                          <p className="text-xl font-bold">{formatCurrency(categoryData?.subtotal || 0)}</p>
+                        </div>
+                      );
+                    })}
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_INTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_internal?.subtotal || 0)}</p>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_external?.subtotal || 0)}</p>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.SHOPPING_SERVICE)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.shopping_service?.subtotal || 0)}</p>
-                </div>
-              </div>
+              )}
 
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
