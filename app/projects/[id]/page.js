@@ -377,26 +377,26 @@ export default function ProjectEstimationsPage() {
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.WOODWORK)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.woodwork?.total || 0)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.woodwork?.subtotal || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_INTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_internal?.total || 0)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_internal?.subtotal || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.MISC_EXTERNAL)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_external?.total || 0)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.misc_external?.subtotal || 0)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">{UIFriendly(ESTIMATION_CATEGORY.SHOPPING_SERVICE)}</p>
-                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.shopping_service?.total || 0)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(estimation.category_breakdown?.shopping_service?.subtotal || 0)}</p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <p className="text-sm text-green-700 mb-1">Service Charge</p>
-                  <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.service_charge || 0)}</p>
+                  <p className="text-xl font-bold text-green-700">+{formatCurrency(estimation.kg_charges || 0)}</p>
                 </div>
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <p className="text-sm text-red-700 mb-1">Discount</p>

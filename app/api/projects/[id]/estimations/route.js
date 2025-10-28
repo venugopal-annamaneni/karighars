@@ -22,15 +22,17 @@ export async function POST(request) {
 
   // Build category_breakdown JSONB from items
   const categoryBreakdown = body.category_breakdown || {};
-  
+ 
   // Aggregate totals
-  const totalItemsValue = parseFloat(body.total_items_value) || 0;
-  const totalKgCharges = parseFloat(body.total_kg_charges) || 0;
-  const totalDiscountAmount = parseFloat(body.total_discount_amount) || 0;
-  const serviceCharge = parseFloat(body.service_charge) || 0;
-  const discount = parseFloat(body.discount) || 0;
+  const itemsValue = parseFloat(body.items_value) || 0;
+  const itemsDiscount = parseFloat(body.items_discount) || 0;
+  const kgCharges = parseFloat(body.kg_charges) || 0;
+  const kgDiscount = parseFloat(body.kg_charges_discount) || 0;
+  const discount = itemsDiscount + kgDiscount ;
   const gstAmount = parseFloat(body.gst_amount) || 0;
   const finalValue = parseFloat(body.final_value) || 0;
+
+  console.log(body);
 
   // Check for overpayment (only for revision, not first estimation)
   let hasOverpayment = false;
@@ -54,21 +56,21 @@ export async function POST(request) {
 
   const result = await query(
     `INSERT INTO project_estimations (
-      project_id, version,
+      project_id, created_by, version, status, 
       category_breakdown,
-      total_items_value, total_kg_charges, total_discount_amount,
-      service_charge, discount, gst_amount, final_value,
+      items_value, kg_charges, item_discount, kg_discount, discount, gst_amount, 
+      final_value,
       has_overpayment, overpayment_amount,
-      remarks, status, created_by
+      remarks
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
     [
-      body.project_id, nextVersion,
+      body.project_id, session.user.id, nextVersion,body.status || ESTIMATION_STATUS.DRAFT,
       JSON.stringify(categoryBreakdown),
-      totalItemsValue, totalKgCharges, totalDiscountAmount,
-      serviceCharge, discount, gstAmount, finalValue,
+      itemsValue, kgCharges, itemsDiscount, kgDiscount, discount, gstAmount,
+      finalValue,
       hasOverpayment, overpaymentAmount,
-      body.remarks, body.status || ESTIMATION_STATUS.DRAFT, session.user.id
+      body.remarks, 
     ]
   );
 

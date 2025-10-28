@@ -236,7 +236,7 @@ export default function BaseRatesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="">
       {/* Active Rate */}
       <Card>
         <CardHeader>
