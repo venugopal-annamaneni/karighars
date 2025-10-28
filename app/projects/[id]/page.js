@@ -41,6 +41,7 @@ export default function ProjectEstimationsPage() {
   const [estimationLoading, setEstimationLoading] = useState(true);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
+  const [projectBaseRates, setProjectBaseRates] = useState(null);
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const { fetchProjectData, project, estimation, loading } = useProjectData();
