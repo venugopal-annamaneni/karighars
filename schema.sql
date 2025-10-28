@@ -357,26 +357,45 @@ CREATE TABLE project_estimations (
     id INTEGER NOT NULL DEFAULT nextval('project_estimations_id_seq'::regclass),
     project_id INTEGER,
     version INTEGER DEFAULT 1,
+    
+    -- Dynamic category breakdown (JSONB for flexibility)
+    category_breakdown JSONB DEFAULT '{}'::jsonb,
+    
+    -- High-level aggregate totals (for fast queries)
+    total_items_value NUMERIC(20,2) DEFAULT 0,
+    total_kg_charges NUMERIC(20,2) DEFAULT 0,
+    total_discount_amount NUMERIC(20,2) DEFAULT 0,
+    final_value NUMERIC(20,2) DEFAULT 0,
+    gst_amount NUMERIC(12,2) DEFAULT 0.00,
+    
+    -- Legacy category columns (can be removed after full migration)
     woodwork_value NUMERIC(20,2) DEFAULT 0,
     misc_internal_value NUMERIC(20,2) DEFAULT 0,
     misc_external_value NUMERIC(20,2) DEFAULT 0,
     shopping_service_value NUMERIC(20,2) DEFAULT 0,
-    final_value NUMERIC(20,2) DEFAULT 0,
-    gst_amount NUMERIC(12,2) DEFAULT 0.00,
+    
+    -- Status and approval
     status TEXT DEFAULT 'draft'::text,
     requires_approval BOOLEAN DEFAULT false,
     approval_status TEXT DEFAULT 'approved'::text,
     approved_by INTEGER,
     approved_at TIMESTAMPTZ,
+    
+    -- Overpayment tracking
     has_overpayment BOOLEAN DEFAULT false,
     overpayment_amount NUMERIC(20,2) DEFAULT 0.00,
+    
+    -- Additional fields
     remarks TEXT,
     ai_metadata JSONB DEFAULT '{}'::jsonb,
+    service_charge NUMERIC(20,2),
+    discount NUMERIC(20,2),
+    
+    -- Timestamps and audit
     created_by INTEGER,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    service_charge NUMERIC(20,2),
-    discount NUMERIC(20,2),
+    
     PRIMARY KEY (id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES users(id),
@@ -385,6 +404,15 @@ CREATE TABLE project_estimations (
     CHECK ((approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))
 );
 
+-- Index for JSONB queries
+CREATE INDEX IF NOT EXISTS idx_project_estimations_category_breakdown 
+ON project_estimations USING gin(category_breakdown);
+
+-- Column Comments
+COMMENT ON COLUMN project_estimations.category_breakdown IS 'JSONB structure: {"category_id": {"subtotal": 0, "item_discount_amount": 0, "discounted_subtotal": 0, "kg_charges_gross": 0, "kg_charges_discount": 0, "kg_charges_net": 0, "amount_before_gst": 0, "gst_amount": 0, "total": 0}}. Supports dynamic categories from biz_models.';
+COMMENT ON COLUMN project_estimations.total_items_value IS 'Sum of all discounted item subtotals across categories (for fast queries)';
+COMMENT ON COLUMN project_estimations.total_kg_charges IS 'Sum of all final KG charges (after discounts) across categories';
+COMMENT ON COLUMN project_estimations.total_discount_amount IS 'Sum of all discounts (item + KG) across categories';
 COMMENT ON COLUMN project_estimations.gst_amount IS 'Calculated GST amount based on final_value';
 COMMENT ON COLUMN project_estimations.has_overpayment IS 'True if this revision creates overpayment situation';
 COMMENT ON COLUMN project_estimations.overpayment_amount IS 'Amount of overpayment if estimation < collected';
