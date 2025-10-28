@@ -108,15 +108,19 @@ export default function ProjectEstimationsPage() {
       enableGrouping: true,
       cell: ({ getValue }) => {
         const value = getValue();
-        return value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        // Get category name from projectBaseRates
+        const category = projectBaseRates?.category_rates?.categories?.find(c => c.id === value);
+        return category?.category_name || value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
       },
       sortingFn: (rowA, rowB) => {
-        const categoryOrder = {
-          'woodwork': 1,
-          'misc_internal': 2,
-          'misc_external': 3,
-          'shopping_service': 4
-        };
+        const categories = projectBaseRates?.category_rates?.categories || [];
+        
+        // Build sort order map from category_rates
+        const categoryOrder = {};
+        categories.forEach(cat => {
+          categoryOrder[cat.id] = cat.sort_order || 999;
+        });
+        
         const a = categoryOrder[rowA.original.category] || 999;
         const b = categoryOrder[rowB.original.category] || 999;
         return a - b;
