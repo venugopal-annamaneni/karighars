@@ -15,9 +15,28 @@ export async function GET(request, { params }) {
     const projectId = params.id;
     const milestoneId = searchParams.get('milestone_id');
 
-    // Get latest estimation
+    // Get project's BizModel to fetch category definitions
+    const projectRes = await query(`
+      SELECT p.biz_model_id, bm.category_rates
+      FROM projects p
+      JOIN biz_models bm ON p.biz_model_id = bm.id
+      WHERE p.id = $1
+    `, [projectId]);
+
+    if (projectRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Project or BizModel not found' }, { status: 404 });
+    }
+
+    const categoryRates = projectRes.rows[0].category_rates;
+    const categories = categoryRates?.categories || [];
+
+    if (categories.length === 0) {
+      return NextResponse.json({ error: 'No categories defined in BizModel' }, { status: 400 });
+    }
+
+    // Get latest estimation with category breakdown
     const estRes = await query(`
-      SELECT id, woodwork_value, misc_internal_value, misc_external_value, shopping_service_value, final_value
+      SELECT id, category_breakdown, final_value
       FROM project_estimations
       WHERE project_id = $1
       ORDER BY created_at DESC
@@ -29,11 +48,11 @@ export async function GET(request, { params }) {
     }
 
     const estimation = estRes.rows[0];
-    const estimationId = estimation.id;
+    const categoryBreakdown = estimation.category_breakdown || {};
 
-    // Get milestone details
+    // Get milestone details with dynamic category percentages
     const milestoneRes = await query(`
-      SELECT milestone_code, milestone_name, woodwork_percentage, misc_percentage, shopping_percentage
+      SELECT milestone_code, milestone_name, category_percentages
       FROM biz_model_milestones
       WHERE id = $1
     `, [milestoneId]);
@@ -43,64 +62,50 @@ export async function GET(request, { params }) {
     }
 
     const milestone = milestoneRes.rows[0];
-    
-    const itemsRes = await query(`
-        SELECT 
-          COALESCE(SUM(CASE WHEN category = 'woodwork' THEN item_total ELSE 0 END), 0) as woodwork_total,
-          COALESCE(SUM(CASE WHEN category IN ('misc_internal', 'misc_external') THEN item_total ELSE 0 END), 0) as misc_total,
-          COALESCE(SUM(CASE WHEN category IN ('shopping_service') THEN item_total ELSE 0 END), 0) as shopping_total
-        FROM estimation_items
-        WHERE estimation_id = $1
-      `, [estimationId]);
+    const categoryPercentages = milestone.category_percentages || {};
 
-    const woodworkTotal = parseFloat(itemsRes.rows[0].woodwork_total || 0);
-    const miscTotal = parseFloat(itemsRes.rows[0].misc_total || 0);
-    const shoppingTotal = parseFloat(itemsRes.rows[0].shopping_total || 0);
+    // Calculate target amounts dynamically for all categories
+    const categoryCalculations = {};
+    let targetTotal = 0;
 
-    const woodworkPercentage = parseFloat(milestone.woodwork_percentage || 0);
-    const miscPercentage = parseFloat(milestone.misc_percentage || 0);
-    const shoppingPercentage = parseFloat(milestone.shopping_percentage || 0);
+    categories
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .forEach(category => {
+        const categoryId = category.id;
+        const categoryTotal = categoryBreakdown[categoryId]?.total || 0;
+        const categoryPercentage = categoryPercentages[categoryId] || 0;
+        const targetAmount = (categoryTotal * categoryPercentage) / 100;
 
-    // Calculate target amounts for this milestone
-    const targetWoodworkAmount = (woodworkTotal * woodworkPercentage) / 100;
-    const targetMiscAmount = (miscTotal * miscPercentage) / 100;
-    const targetShoppingAmount = (shoppingTotal * shoppingPercentage) / 100;
-    const targetTotal = targetWoodworkAmount + targetMiscAmount + targetShoppingAmount;
+        categoryCalculations[categoryId] = {
+          category_name: category.category_name,
+          sort_order: category.sort_order || 0,
+          total: parseFloat(categoryTotal),
+          target_percentage: parseFloat(categoryPercentage),
+          target_amount: parseFloat(targetAmount.toFixed(2))
+        };
 
+        targetTotal += targetAmount;
+      });
+
+    // Get total payments collected so far
     const paymentsRes = await query(`
-        SELECT 
-          COALESCE(SUM(amount), 0) as collected_total
-        FROM customer_payments
-        WHERE project_id = $1 
-          AND status = $2
-      `, [projectId, PAYMENT_STATUS.APPROVED]);
+      SELECT COALESCE(SUM(amount), 0) as collected_total
+      FROM customer_payments
+      WHERE project_id = $1 AND status = $2
+    `, [projectId, PAYMENT_STATUS.APPROVED]);
 
-    const collectedTotal = paymentsRes.rows[0].collected_total || 0;
+    const collectedTotal = parseFloat(paymentsRes.rows[0].collected_total || 0);
     const remainingTotal = Math.max(0, targetTotal - collectedTotal);
-
 
     return NextResponse.json({
       milestone_type: 'regular',
       milestone_code: milestone.milestone_code,
       milestone_name: milestone.milestone_name,
-
-      woodwork_total: woodworkTotal,
-      target_woodwork_percentage: woodworkPercentage,
-      target_woodwork_amount: targetWoodworkAmount,
-
-      misc_total: miscTotal,
-      target_misc_percentage: miscPercentage,
-      target_misc_amount: targetMiscAmount,
-
-      shopping_total: shoppingTotal,
-      target_shopping_percentage: shoppingPercentage,
-      target_shopping_amount: targetShoppingAmount,
-
-      target_total: targetTotal,
-      collected_total: collectedTotal,
-      expected_total: remainingTotal
+      categories: categoryCalculations,
+      target_total: parseFloat(targetTotal.toFixed(2)),
+      collected_total: parseFloat(collectedTotal.toFixed(2)),
+      expected_total: parseFloat(remainingTotal.toFixed(2))
     });
-
 
   } catch (error) {
     console.error('API Error:', error);
