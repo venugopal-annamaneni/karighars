@@ -547,8 +547,8 @@ export default function ProjectEstimationPage() {
   const calculateItemTotal = (item) => {
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unit_price) || 0;
-    const itemDiscountPerc = parseFloat(item.item_discount_percentage) || 0;
     const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
+    const itemDiscountPerc = parseFloat(item.item_discount_percentage) || 0;
     const kgDiscountPerc = parseFloat(item.discount_kg_charges_percentage) || 0;
     const gstPerc = parseFloat(item.gst_percentage) || 0;
 
@@ -557,23 +557,24 @@ export default function ProjectEstimationPage() {
 
     // Step 2: Apply item discount (BEFORE KG charges)
     const itemDiscountAmount = (subtotal * itemDiscountPerc) / 100;
-
+    const discountedSubtotal = subtotal - itemDiscountAmount;
 
     // Step 3: Calculate KG charges (on discounted subtotal)
-    const kgChargesGross = (subtotal * karigharChargesPerc) / 100;
+    const kgChargesGross = (discountedSubtotal * karigharChargesPerc) / 100;
 
     // Step 4: Apply KG discount (ON KG charges only)
     const kgDiscountAmount = (kgChargesGross * kgDiscountPerc) / 100;
     const kgChargesNet = kgChargesGross - kgDiscountAmount;
 
-    // Step 5: Calculate amount before GST
+    // Step 5: Calculate amount before GST (flag-based)
+    const categoryConfig = getCategoryConfig(item.category);
     let amountBeforeGst = 0;
-    if (item.category === 'shopping_service') {
-      // For shopping: Only KG charges (customer pays vendor directly for items)
+    if (categoryConfig?.pay_to_vendor_directly) {
+      // Customer pays vendor directly, only KG charges billed
       amountBeforeGst = kgChargesNet;
     } else {
-      // For woodwork/misc: Full amount
-      amountBeforeGst = subtotal - itemDiscountAmount + kgChargesNet;
+      // Full billing: items + KG charges
+      amountBeforeGst = discountedSubtotal + kgChargesNet;
     }
 
     // Step 6: Calculate GST
@@ -585,8 +586,10 @@ export default function ProjectEstimationPage() {
     return {
       subtotal,
       item_discount_amount: itemDiscountAmount,
+      discounted_subtotal: discountedSubtotal,
       karighar_charges_gross: kgChargesGross,
       kg_discount_amount: kgDiscountAmount,
+      karighar_charges_amount: kgChargesNet,
       amount_before_gst: amountBeforeGst,
       gst_amount: gstAmount,
       item_total: itemTotal
