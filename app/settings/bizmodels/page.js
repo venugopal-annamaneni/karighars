@@ -724,56 +724,37 @@ export default function BizModelsPage() {
                               />
                             </div>
                           </div>
-                          <div className="grid md:grid-cols-3 gap-3">
-                            {milestone.direction === 'inflow' && (
-                              <>
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Woodwork % 🪵</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0"
-                                    value={milestone.woodwork_percentage}
-                                    onChange={(e) => updateMilestone(index, 'woodwork_percentage', parseFloat(e.target.value))}
-                                    className="h-9"
-                                  />
-                                  <p className="text-xs text-muted-foreground">% of woodwork value to collect</p>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Misc % 🔧</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0"
-                                    value={milestone.misc_percentage}
-                                    onChange={(e) => updateMilestone(index, 'misc_percentage', parseFloat(e.target.value))}
-                                    className="h-9"
-                                  />
-                                  <p className="text-xs text-muted-foreground">% of misc (internal + external) to collect</p>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Shopping % 🔧</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0"
-                                    value={milestone.shopping_percentage}
-                                    onChange={(e) => updateMilestone(index, 'shopping_percentage', parseFloat(e.target.value))}
-                                    className="h-9"
-                                  />
-                                  <p className="text-xs text-muted-foreground">% of shopping charges to collect</p>
-                                </div>
-                              </>
-                            )}
-                            <div className="space-y-2 md:col-span-2">
-                              <Label className="text-xs">Description</Label>
-                              <Input
-                                placeholder="Description..."
-                                value={milestone.description}
-                                onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                                className="h-9"
-                              />
+                          {milestone.direction === 'inflow' && (
+                            <div className="space-y-3">
+                              <p className="text-xs font-medium text-muted-foreground">Category Percentages (Cumulative)</p>
+                              <div className="grid md:grid-cols-3 gap-3">
+                                {categories
+                                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                                  .map((category, catIndex) => (
+                                    <div key={catIndex} className="space-y-2">
+                                      <Label className="text-xs">{category.category_name} %</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0"
+                                        value={milestone.category_percentages?.[category.id] || 0}
+                                        onChange={(e) => updateMilestoneCategoryPercentage(index, category.id, e.target.value)}
+                                        className="h-9"
+                                      />
+                                      <p className="text-xs text-muted-foreground">% of {category.category_name.toLowerCase()} to collect</p>
+                                    </div>
+                                  ))}
+                              </div>
                             </div>
+                          )}
+                          <div className="space-y-2">
+                            <Label className="text-xs">Description</Label>
+                            <Input
+                              placeholder="Description..."
+                              value={milestone.description}
+                              onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                              className="h-9"
+                            />
                           </div>
                         </div>
                       ))}
