@@ -823,17 +823,19 @@ export default function BizModelsPage() {
                             <p className="text-xs text-muted-foreground mb-2">
                               {milestone.description}
                             </p>
-                            <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-2 flex-wrap text-xs">
                               <span className="text-muted-foreground">Stage:</span>
                               <Badge variant="outline" className="text-xs">
                                 {milestone.stage_code}
                               </Badge>
-                              <span className="text-muted-foreground">Woodwork:</span>
-                              <Badge className="bg-green-600">{milestone.woodwork_percentage}%</Badge>
-                              <span className="text-muted-foreground">Misc:</span>
-                              <Badge className="bg-blue-600">{milestone.misc_percentage}%</Badge>
-                              <span className="text-muted-foreground">Misc:</span>
-                              <Badge className="bg-blue-600">{milestone.shopping_percentage}%</Badge>
+                              {milestone.category_percentages && Object.entries(milestone.category_percentages).map(([catId, percentage]) => (
+                                percentage > 0 && (
+                                  <React.Fragment key={catId}>
+                                    <span className="text-muted-foreground">{catId}:</span>
+                                    <Badge className="bg-green-600">{percentage}%</Badge>
+                                  </React.Fragment>
+                                )
+                              ))}
                             </div>
                           </div>
                         ))}
