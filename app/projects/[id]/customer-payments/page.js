@@ -357,66 +357,9 @@ export default function CustomerPaymentsPage() {
                 <div className="text-sm text-muted-foreground">Loading calculation...</div>
               )}
 
-              {/* Amount to Collect - Prominent Display */}
-              {/* {paymentData.calculation && paymentData.calculation.expected_total > 0 && (
-                          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
-                            <p className="text-sm font-semibold text-green-900 mb-2">📊 Amount to Collect (Category-wise):</p>
-                            <div className="grid grid-cols-2 gap-3">
-                              {paymentData.calculation.expected_woodwork_amount > 0 && (
-                                <div className="bg-white rounded p-2 border border-green-200">
-                                  <p className="text-xs text-gray-600">🪵 Woodwork</p>
-                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}</p>
-                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_woodwork_percentage.toFixed(1)}%</p>
-                                </div>
-                              )}
-                              {paymentData.calculation.expected_misc_amount > 0 && (
-                                <div className="bg-white rounded p-2 border border-green-200">
-                                  <p className="text-xs text-gray-600">🔧 Misc</p>
-                                  <p className="text-lg font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}</p>
-                                  <p className="text-xs text-gray-500">{paymentData.calculation.remaining_misc_percentage.toFixed(1)}%</p>
-                                </div>
-                              )}
-                            </div>
-                            <div className="mt-2 pt-2 border-t border-green-200">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-green-900">Total Expected:</span>
-                                <span className="text-xl font-bold text-green-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )} */}
-
               {/* Input fields for actual amounts */}
               <div className="border-t pt-4 space-y-3">
-                {/* <p className="text-sm font-semibold">Enter Actual Amount Collected:</p> */}
-
                 <div className="grid md:grid-cols-1 gap-3">
-                  {/* <div className="space-y-2">
-                              <Label>Amount towards Woodwork (₹) *</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0"
-                                value={paymentData.woodwork_amount || ''}
-                                onChange={(e) => {
-                                  const woodwork = e.target.value;
-                                  const misc = paymentData.misc_amount || 0;
-                                  const total = (parseFloat(woodwork) || 0) + (parseFloat(misc) || 0);
-                                  setPaymentData({
-                                    ...paymentData,
-                                    woodwork_amount: woodwork,
-                                    amount: total.toFixed(2)
-                                  });
-                                }}
-                                required
-                              />
-                              {paymentData.calculation && paymentData.calculation.expected_woodwork_amount > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  Expected: ₹{parseFloat(paymentData.calculation.expected_woodwork_amount).toLocaleString('en-IN')}
-                                </p>
-                              )}
-                            </div> */}
-
                   <div className="space-y-2">
                     <Label>Amount Collected (₹) *</Label>
                     <Input
@@ -425,8 +368,6 @@ export default function CustomerPaymentsPage() {
                       placeholder="0"
                       value={paymentData.amount || ''}
                       onChange={(e) => {
-                        // const misc = e.target.value;
-                        // const woodwork = paymentData.woodwork_amount || 0;
                         const amount = e.target.value;
                         const total = (parseFloat(amount) || 0);
                         setPaymentData({
@@ -436,11 +377,6 @@ export default function CustomerPaymentsPage() {
                       }}
                       required
                     />
-                    {/* {paymentData.calculation && paymentData.calculation.expected_misc_amount > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  Expected: ₹{parseFloat(paymentData.calculation.expected_misc_amount).toLocaleString('en-IN')}
-                                </p>
-                              )} */}
                   </div>
                 </div>
 
