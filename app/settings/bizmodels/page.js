@@ -131,7 +131,9 @@ export default function BizModelsPage() {
       kg_label: '',
       max_item_discount_percentage: 20,
       kg_percentage: 10,
-      max_kg_discount_percentage: 50
+      max_kg_discount_percentage: 50,
+      pay_to_vendor_directly: false,
+      sort_order: categories.length + 1
     }]);
   };
 
