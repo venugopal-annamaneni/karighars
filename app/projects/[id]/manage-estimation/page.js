@@ -706,8 +706,9 @@ export default function ProjectEstimationPage() {
                 ...item,
                 item_name: item.item_name,
                 subtotal: calc.subtotal,
+                item_discount_amount: calc.item_discount_amount,
                 karighar_charges_amount: calc.karighar_charges_amount,
-                discount_amount: calc.discount_amount,
+                discount_kg_charges_amount: calc.kg_discount_amount,
                 amount_before_gst: calc.amount_before_gst,
                 gst_amount: calc.gst_amount,
                 item_total: calc.item_total
