@@ -556,10 +556,10 @@ export default function ProjectEstimationPage() {
 
     // Step 2: Apply item discount (BEFORE KG charges)
     const itemDiscountAmount = (subtotal * itemDiscountPerc) / 100;
-    const discountedSubtotal = subtotal - itemDiscountAmount;
+    
 
     // Step 3: Calculate KG charges (on discounted subtotal)
-    const kgChargesGross = (discountedSubtotal * karigharChargesPerc) / 100;
+    const kgChargesGross = (subtotal * karigharChargesPerc) / 100;
 
     // Step 4: Apply KG discount (ON KG charges only)
     const kgDiscountAmount = (kgChargesGross * kgDiscountPerc) / 100;
@@ -572,7 +572,7 @@ export default function ProjectEstimationPage() {
       amountBeforeGst = kgChargesNet;
     } else {
       // For woodwork/misc: Full amount
-      amountBeforeGst = discountedSubtotal + kgChargesNet;
+      amountBeforeGst = subtotal - itemDiscountAmount + kgChargesNet;
     }
 
     // Step 6: Calculate GST
@@ -584,7 +584,7 @@ export default function ProjectEstimationPage() {
     return {
       subtotal,
       item_discount_amount: itemDiscountAmount,
-      discounted_subtotal: discountedSubtotal,
+      //discounted_subtotal: discountedSubtotal,
       karighar_charges_gross: kgChargesGross,
       kg_discount_amount: kgDiscountAmount,
       karighar_charges_amount: kgChargesNet,
@@ -666,6 +666,8 @@ export default function ProjectEstimationPage() {
       misc_external_value: miscExternalSubtotal,
       shopping_service_value: shoppingServiceSubtotal,
       service_charge: serviceCharge,
+      item_discount: itemDiscount,
+      kg_discount: kgDiscount,
       discount: totalDiscount,
       gst_amount: totalGst,
       final_value: grandTotal
@@ -762,6 +764,7 @@ export default function ProjectEstimationPage() {
   };
 
   const saveEstimation = async (data) => {
+    debugger;
     try {
       const res = await fetch(`/api/projects/${data.project_id}/estimations`, {
         method: 'POST',
@@ -1068,7 +1071,7 @@ export default function ProjectEstimationPage() {
             {/* Totals Summary */}
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="font-semibold mb-3">Estimation Summary</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Woodwork Value</p>
                   <p className="font-bold text-lg">
@@ -1076,7 +1079,7 @@ export default function ProjectEstimationPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Woodwork Value</p>
+                  <p className="text-muted-foreground">Misc External Value</p>
                   <p className="font-bold text-lg">
                     {formatCurrency(calculateTotals().misc_external_value)}
                   </p>
@@ -1091,6 +1094,24 @@ export default function ProjectEstimationPage() {
                   <p className="text-muted-foreground">Shopping Service Value</p>
                   <p className="font-bold text-lg">
                     {formatCurrency(calculateTotals().shopping_service_value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Discount</p>
+                  <p className="font-bold text-xl text-green-700">
+                    {formatCurrency(calculateTotals().item_discount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">KG Charges %</p>
+                  <p className="font-bold text-xl text-green-700">
+                    {formatCurrency(calculateTotals().service_charge)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">GST Amount</p>
+                  <p className="font-bold text-xl text-green-700">
+                    {formatCurrency(calculateTotals().gst_amount)}
                   </p>
                 </div>
                 <div>

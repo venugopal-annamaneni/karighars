@@ -177,6 +177,21 @@ export default function ProjectEstimationsPage() {
       },
     },
     {
+      accessorKey: 'item_discount_amount',
+      header: 'Discount',
+      enableGrouping: false,
+      cell: ({ row }) => (
+        <div>
+          <div>{formatCurrency(row.original.item_discount_amount || 0)}</div>
+          <div className="text-xs text-red-500">({row.original.item_discount_percentage}%)</div>
+        </div>
+      ),
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+    {
       accessorKey: 'karighar_charges_amount',
       header: 'KG Charges',
       enableGrouping: false,
@@ -192,13 +207,13 @@ export default function ProjectEstimationsPage() {
       },
     },
     {
-      accessorKey: 'discount_amount',
-      header: 'Discount',
+      accessorKey: 'discount_kg_charges_amount',
+      header: 'Discount on KG Charges',
       enableGrouping: false,
       cell: ({ row }) => (
         <div>
-          <div>{formatCurrency(row.original.discount_amount || 0)}</div>
-          <div className="text-xs text-red-500">({row.original.discount_percentage}%)</div>
+          <div>{formatCurrency(row.original.discount_kg_charges_amount || 0)}</div>
+          <div className="text-xs text-red-500">({row.original.discount_kg_charges_percentage}%)</div>
         </div>
       ),
       aggregationFn: 'sum',
