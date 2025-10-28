@@ -39,38 +39,7 @@ export default function BizModelsPage() {
     }
   });
 
-  const [categories, setCategories] = useState([
-    {
-      id: 'woodwork',
-      category_name: 'Woodwork',
-      kg_label: 'Design and Consultation',
-      max_item_discount_percentage: 20,
-      kg_percentage: 10,
-      max_kg_discount_percentage: 50,
-      pay_to_vendor_directly: false,
-      sort_order: 1
-    },
-    {
-      id: 'misc',
-      category_name: 'Misc',
-      kg_label: 'Service Charges',
-      max_item_discount_percentage: 20,
-      kg_percentage: 8,
-      max_kg_discount_percentage: 40,
-      pay_to_vendor_directly: false,
-      sort_order: 2
-    },
-    {
-      id: 'shopping',
-      category_name: 'Shopping',
-      kg_label: 'Shopping Service Charges',
-      max_item_discount_percentage: 20,
-      kg_percentage: 5,
-      max_kg_discount_percentage: 30,
-      pay_to_vendor_directly: true,
-      sort_order: 3
-    }
-  ]);
+  const [categories, setCategories] = useState([]);
 
   const [stages, setStages] = useState([
     { stage_code: '', stage_name: '', sequence_order: 1, description: '' }
