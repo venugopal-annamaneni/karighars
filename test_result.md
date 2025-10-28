@@ -45,73 +45,143 @@
 
 ## Test Cases for Backend Agent
 
-### Test Scenario 1: Invoice Upload
-**Endpoint**: `POST /api/projects/{id}/invoices`
-**Description**: Test uploading a new invoice for a project
+### Test Scenario 1: Create BizModel with Dynamic Category Milestones
+**Endpoint**: `POST /api/biz-models`
+**Description**: Test creating a new BizModel with dynamic category-based milestones
 **Test Data**:
-- Use an existing project with positive balance
-- Invoice amount should be less than available amount (payments_received - invoiced_amount)
-- Include invoice document URL
+```json
+{
+  "code": "TEST_DYNAMIC_V1",
+  "name": "Test Dynamic Categories Model",
+  "description": "Testing dynamic milestone categories",
+  "gst_percentage": 18,
+  "is_active": true,
+  "status": "draft",
+  "category_rates": {
+    "categories": [
+      {
+        "id": "woodwork",
+        "category_name": "Woodwork",
+        "kg_label": "Design & Consultation",
+        "max_item_discount_percentage": 20,
+        "kg_percentage": 10,
+        "max_kg_discount_percentage": 50,
+        "pay_to_vendor_directly": false,
+        "sort_order": 1
+      },
+      {
+        "id": "misc",
+        "category_name": "Misc",
+        "kg_label": "Service Charges",
+        "max_item_discount_percentage": 20,
+        "kg_percentage": 8,
+        "max_kg_discount_percentage": 40,
+        "pay_to_vendor_directly": false,
+        "sort_order": 2
+      },
+      {
+        "id": "shopping",
+        "category_name": "Shopping",
+        "kg_label": "Shopping Charges",
+        "max_item_discount_percentage": 20,
+        "kg_percentage": 5,
+        "max_kg_discount_percentage": 30,
+        "pay_to_vendor_directly": true,
+        "sort_order": 3
+      }
+    ]
+  },
+  "stages": [
+    {
+      "stage_code": "2D",
+      "stage_name": "2D Design",
+      "sequence_order": 1,
+      "description": "Initial design phase"
+    }
+  ],
+  "milestones": [
+    {
+      "milestone_code": "ADVANCE_10",
+      "milestone_name": "Advance Payment",
+      "direction": "inflow",
+      "stage_code": "2D",
+      "description": "10% advance",
+      "sequence_order": 1,
+      "category_percentages": {
+        "woodwork": 10,
+        "misc": 10,
+        "shopping": 0
+      }
+    },
+    {
+      "milestone_code": "DESIGN_30",
+      "milestone_name": "Design Approval",
+      "direction": "inflow",
+      "stage_code": "2D",
+      "description": "30% on design approval",
+      "sequence_order": 2,
+      "category_percentages": {
+        "woodwork": 40,
+        "misc": 40,
+        "shopping": 0
+      }
+    },
+    {
+      "milestone_code": "SHOPPING_100",
+      "milestone_name": "Shopping Complete",
+      "direction": "inflow",
+      "stage_code": "SHOPPING",
+      "description": "100% shopping charges",
+      "sequence_order": 3,
+      "category_percentages": {
+        "woodwork": 40,
+        "misc": 40,
+        "shopping": 100
+      }
+    }
+  ]
+}
+```
 
 **Expected Result**:
-- Invoice created with status 'pending'
-- Document inserted into documents table
-- Activity log created
+- BizModel created successfully
+- `category_rates` stored as JSONB with all 3 categories
+- Milestones created with `category_percentages` JSONB structure
+- Each milestone has dynamic category mapping (not hardcoded columns)
 
-### Test Scenario 2: Credit Note Creation
-**Endpoint**: `POST /api/projects/{id}/invoices`
-**Description**: Test creating a credit note with negative amount
-**Test Data**:
-- Use same project from Test 1
-- Invoice amount should be negative (e.g., -10000)
-- Include credit note number (e.g., CN-123)
-
-**Expected Result**:
-- Credit note created successfully
-- Negative amount accepted (validation should allow it)
-- Status is 'pending'
-
-### Test Scenario 3: Invoice Approval
-**Endpoint**: `POST /api/projects/{id}/invoices/{invoiceId}/approve`
-**Description**: Test approving a pending invoice
-**Authentication**: Admin role required
+### Test Scenario 2: Verify Database Schema
+**Description**: Verify that `biz_model_milestones` table has the correct structure
+**Test Query**:
+```sql
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'biz_model_milestones' 
+AND column_name IN ('category_percentages', 'woodwork_percentage', 'misc_percentage', 'shopping_percentage');
+```
 
 **Expected Result**:
-- Invoice status changes to 'approved'
-- Project's invoiced_amount increases by invoice_amount
-- Document entry created in documents table
-- Activity log created
+- `category_percentages` column exists with type `jsonb`
+- Old columns (`woodwork_percentage`, `misc_percentage`, `shopping_percentage`) should NOT exist
 
-### Test Scenario 4: Credit Note Approval
-**Endpoint**: `POST /api/projects/{id}/invoices/{invoiceId}/approve`
-**Description**: Test approving a credit note (negative invoice)
-
-**Expected Result**:
-- Credit note status changes to 'approved'
-- Project's invoiced_amount DECREASES (negative amount added)
-- Document type should be 'credit_note'
-- Activity log created
-
-### Test Scenario 5: Fetch Invoices
-**Endpoint**: `GET /api/projects/{id}/invoices`
-**Description**: Fetch all invoices for a project
+### Test Scenario 3: Fetch BizModel with Milestones
+**Endpoint**: `GET /api/biz-models`
+**Description**: Fetch BizModels and verify milestone structure
+**Authentication**: Any authenticated user
 
 **Expected Result**:
-- Returns array of invoices including credit notes
-- Includes user names for uploaded_by, approved_by, cancelled_by
-- Sorted by created_at DESC
+- Returns array of BizModels
+- Each milestone has `category_percentages` JSONB field
+- No flat category percentage fields in response
 
-### Test Scenario 6: Over-Invoicing Detection
-**Description**: Verify that when invoiced_amount > final_value, the system detects it
-**Test Steps**:
-1. Create a project with an estimation (final_value = 100000)
-2. Upload and approve invoices totaling 120000
-3. Check if over-invoicing is detected in project data
+### Test Scenario 4: Create BizModel with 4 Categories
+**Endpoint**: `POST /api/biz-models`
+**Description**: Test with more than 3 categories (e.g., add "Civil" category)
+**Test Data**: Similar to Scenario 1 but with 4 categories and corresponding milestone percentages
 
 **Expected Result**:
-- Project's invoiced_amount should be 120000
-- Frontend should show OverInvoicedAlert when accessing project
-- Credit note should be suggested
+- BizModel created successfully with 4 categories
+- Milestones support all 4 categories in `category_percentages`
+- System is truly dynamic (not limited to 3 categories)
 
 ---
 
