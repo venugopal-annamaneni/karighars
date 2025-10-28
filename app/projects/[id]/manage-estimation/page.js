@@ -805,34 +805,38 @@ export default function ProjectEstimationPage() {
     }).format(amount || 0);
   };
 
-  const getDefaultCharges = (itemCategory) => {
-    switch (itemCategory) {
-      case ESTIMATION_CATEGORY.WOODWORK:
-        return bizModel.design_charge_percentage;
-      case ESTIMATION_CATEGORY.MISC_EXTERNAL:
-      case ESTIMATION_CATEGORY.MISC_INTERNAL:
-        return bizModel.service_charge_percentage;
-      case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
-        return bizModel.shopping_charge_percentage;
-      default:
-        return 0;
+  // Helper function to get category config from JSONB
+  const getCategoryConfig = (itemCategory) => {
+    if (!bizModel.category_rates || !bizModel.category_rates.categories) {
+      return null;
+    }
 
-    }
-  }
-  const getMaxDiscount = (index) => {
-    const itemCategory = data[index].category;
-    switch (itemCategory) {
-      case ESTIMATION_CATEGORY.WOODWORK:
-        return bizModel.max_design_charge_discount_percentage;
-      case ESTIMATION_CATEGORY.MISC_INTERNAL:
-      case ESTIMATION_CATEGORY.MISC_EXTERNAL:
-        return bizModel.max_service_charge_discount_percentage;
-      case ESTIMATION_CATEGORY.SHOPPING_SERVICE:
-        return bizModel.max_shopping_charge_discount_percentage;
-      default:
-        return 0;
-    }
-  }
+    // Map estimation categories to category_rates IDs
+    const categoryMap = {
+      [ESTIMATION_CATEGORY.WOODWORK]: 'woodwork',
+      [ESTIMATION_CATEGORY.MISC_INTERNAL]: 'misc',
+      [ESTIMATION_CATEGORY.MISC_EXTERNAL]: 'misc',
+      [ESTIMATION_CATEGORY.SHOPPING_SERVICE]: 'shopping'
+    };
+
+    const categoryId = categoryMap[itemCategory];
+    return bizModel.category_rates.categories.find(c => c.id === categoryId);
+  };
+
+  const getDefaultCharges = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.kg_percentage || 0;
+  };
+
+  const getMaxItemDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_item_discount_percentage || 0;
+  };
+
+  const getMaxKGDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_kg_discount_percentage || 0;
+  };
 
   if (status === 'loading' || loading || itemsLoading) {
     return (
