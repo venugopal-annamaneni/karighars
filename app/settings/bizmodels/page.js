@@ -242,7 +242,7 @@ export default function BizModelsPage() {
         }
 
         setStages(data.stages.length > 0 ? data.stages : [{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
-        setMilestones(data.milestones.length > 0 ? data.milestones : [{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
+        setMilestones(data.milestones.length > 0 ? data.milestones : [{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, category_percentages: {} }]);
 
         setEditingModelId(modelId);
         setShowCreateDialog(true);
