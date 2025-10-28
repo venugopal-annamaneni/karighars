@@ -484,7 +484,7 @@ CREATE INDEX idx_project_base_rates_active ON project_base_rates(project_id, act
 CREATE UNIQUE INDEX idx_project_base_rates_one_active ON project_base_rates(project_id) WHERE active = true;
 
 COMMENT ON TABLE project_base_rates IS 'Project-specific base rate configurations with approval workflow';
-COMMENT ON COLUMN project_base_rates.category_rates IS 'JSONB structure matching biz_models.category_rates: {"categories": [{"id": "woodwork", "category_name": "Woodwork", "kg_label": "Design and Consultation", "max_item_discount_percentage": 20, "kg_percentage": 10, "max_kg_discount_percentage": 50}]}';
+COMMENT ON COLUMN project_base_rates.category_rates IS 'JSONB structure matching biz_models.category_rates: {"categories": [{"id": "woodwork", "category_name": "Woodwork", "kg_label": "Design and Consultation", "max_item_discount_percentage": 20, "kg_percentage": 10, "max_kg_discount_percentage": 50, "pay_to_vendor_directly": false, "sort_order": 1}]}. Includes vendor payment flag and display order.';
 COMMENT ON COLUMN project_base_rates.active IS 'Only one row can be active per project at a time';
 COMMENT ON COLUMN project_base_rates.status IS 'requested: pending approval, approved: approved, rejected: denied';
 
