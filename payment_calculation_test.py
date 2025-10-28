@@ -53,7 +53,6 @@ def get_test_project_data():
             WHERE bm.category_rates IS NOT NULL 
             AND pe.category_breakdown IS NOT NULL 
             AND pe.final_value > 0
-            AND pe.status = 'finalized'
             ORDER BY p.created_at DESC
             LIMIT 1;
         """)
