@@ -49,6 +49,7 @@ export default function ProjectEstimationPage() {
       quantity: 1,
       unit_price: 0,
       karighar_charges_percentage: 0,
+      karighar_charges_discount_percentage: 0,
       discount_percentage: 0,
       gst_percentage: 0,
       vendor_type: ''
@@ -284,7 +285,7 @@ export default function ProjectEstimationPage() {
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className={`h-8 text-sm ${readOnly ? "border border-gray-300 bg-gray-100 text-gray-400" : ""}`}
+        className={`h-8 text-sm border ${readOnly ? "border-gray-300 bg-gray-100 text-gray-400" : "border-gray-300"}`}
         data-row={row.index}
         data-col={column.id}
       />
@@ -878,7 +879,7 @@ export default function ProjectEstimationPage() {
                           .map(header => (
                             <th
                               key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap "
                               style={{ minWidth: header.column.columnDef.size }}
                             >
                               {header.isPlaceholder
@@ -895,11 +896,11 @@ export default function ProjectEstimationPage() {
                   <tbody>
                     {table.getRowModel().rows.length == 0 && (
                       <tr className="border-b hover:bg-slate-50">
-                        <td colSpan={3} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                        <td colSpan={3} className='h-14 p-2 border-r border-slate-200 bg-slate-100 text-center'> - </td>
                       </tr>
                     )}
                     {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                      <tr key={row.id} className="border-b bg-slate-50 ">
                         {row
                           .getVisibleCells()
                           .filter(cell =>
@@ -908,7 +909,7 @@ export default function ProjectEstimationPage() {
                           .map(cell => (
                             <td
                               key={cell.id}
-                              className="h-14 p-2 border-r border-slate-200 bg-slate-200"
+                              className="h-14 p-2 border-r border-slate-200 "
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
@@ -940,7 +941,7 @@ export default function ProjectEstimationPage() {
                           .map(header => (
                             <th
                               key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-100"
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap "
                               style={{ minWidth: header.column.columnDef.size }}
                             >
                               {header.isPlaceholder
@@ -957,11 +958,11 @@ export default function ProjectEstimationPage() {
                   <tbody>
                     {table.getRowModel().rows.length == 0 && (
                       <tr className="border-b hover:bg-slate-50">
-                        <td colSpan={9} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+                        <td colSpan={9} className='h-14 p-2 border-r border-slate-200 text-center'> Zero line items in estimation </td>
                       </tr>
                     )}
                     {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                      <tr key={row.id} className="border-b bg-slate-50">
                         {row
                           .getVisibleCells()
                           .filter(
@@ -971,7 +972,7 @@ export default function ProjectEstimationPage() {
                               )
                           )
                           .map(cell => (
-                            <td key={cell.id} className="h-14 p-2 bg-white border-r border-slate-200">
+                            <td key={cell.id} className="h-14 p-2 bg-white border-r ">
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           ))}
@@ -998,7 +999,7 @@ export default function ProjectEstimationPage() {
                           .map(header => (
                             <th
                               key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200"
+                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap"
                               style={{ minWidth: header.column.columnDef.size }}
                             >
                               {flexRender(
@@ -1012,19 +1013,19 @@ export default function ProjectEstimationPage() {
                   </thead>
                   <tbody>
                     {table.getRowModel().rows.length == 0 && (
-                      <tr className="border-b hover:bg-slate-50">
-                        <td colSpan={2} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> - </td>
+                      <tr className="border-b bg-slate-50">
+                        <td colSpan={2} className='h-14 p-2 border-r border-slate-200 text-center'> - </td>
                       </tr>
                     )}
                     {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                      <tr key={row.id} className="border-b bg-slate-50">
                         {row
                           .getVisibleCells()
                           .filter(cell =>
                             ["item_total", "actions"].includes(cell.column.id)
                           )
                           .map(cell => (
-                            <td key={cell.id} className="h-14 p-2 text-right font-semibold border-b-2 border-slate-300 whitespace-nowrap bg-slate-200">
+                            <td key={cell.id} className="h-14 p-2 text-right font-semibold border-b-2 border-slate-300 whitespace-nowrap">
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           ))}
