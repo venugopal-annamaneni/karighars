@@ -205,32 +205,7 @@ export default function BizModelsPage() {
             categories: []
           }
         });
-        setCategories([
-          {
-            id: 'woodwork',
-            category_name: 'Woodwork',
-            kg_label: 'Design and Consultation',
-            max_item_discount_percentage: 20,
-            kg_percentage: 10,
-            max_kg_discount_percentage: 50
-          },
-          {
-            id: 'misc',
-            category_name: 'Misc',
-            kg_label: 'Service Charges',
-            max_item_discount_percentage: 20,
-            kg_percentage: 8,
-            max_kg_discount_percentage: 40
-          },
-          {
-            id: 'shopping',
-            category_name: 'Shopping',
-            kg_label: 'Shopping Service Charges',
-            max_item_discount_percentage: 20,
-            kg_percentage: 5,
-            max_kg_discount_percentage: 30
-          }
-        ]);
+        setCategories([]);
         setStages([{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
         setMilestones([{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
       } else {
