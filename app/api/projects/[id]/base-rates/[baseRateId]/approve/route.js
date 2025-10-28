@@ -38,29 +38,71 @@ export async function POST(request, { params }) {
 
     const requestedRate = baseRateCheck.rows[0];
 
-    // Deep check: Verify UI values match latest DB values
-    const fieldsToCheck = [
-      'service_charge_percentage',
-      'max_service_charge_discount_percentage',
-      'design_charge_percentage',
-      'max_design_charge_discount_percentage',
-      'shopping_charge_percentage',
-      'max_shopping_charge_discount_percentage',
-      'gst_percentage'
-    ];
+    // Deep check: Verify UI values match latest DB values for category_rates
+    if (body.category_rates && body.category_rates.categories) {
+      const bodyCategories = body.category_rates.categories;
+      const dbCategories = requestedRate.category_rates.categories;
 
-    for (const field of fieldsToCheck) {
-      if (body[field] !== undefined && parseFloat(body[field]) !== parseFloat(requestedRate[field])) {
+      // Check if number of categories match
+      if (bodyCategories.length !== dbCategories.length) {
         return NextResponse.json(
-          { 
-            error: 'Base rate values have been modified. Please refresh and review before approving.',
-            field: field,
-            expectedValue: requestedRate[field],
-            receivedValue: body[field]
-          },
+          { error: 'Category structure has been modified. Please refresh and review.' },
           { status: 409 }
         );
       }
+
+      // Deep check each category
+      for (let i = 0; i < bodyCategories.length; i++) {
+        const bodyCategory = bodyCategories[i];
+        const dbCategory = dbCategories.find(c => c.id === bodyCategory.id);
+
+        if (!dbCategory) {
+          return NextResponse.json(
+            { 
+              error: 'Category mismatch detected. Please refresh.',
+              category: bodyCategory.id
+            },
+            { status: 409 }
+          );
+        }
+
+        // Check each field
+        const fieldsToCheck = [
+          'kg_percentage',
+          'max_kg_discount_percentage',
+          'max_item_discount_percentage'
+        ];
+
+        for (const field of fieldsToCheck) {
+          if (bodyCategory[field] !== undefined && 
+              parseFloat(bodyCategory[field]) !== parseFloat(dbCategory[field])) {
+            return NextResponse.json(
+              { 
+                error: 'Base rate values have been modified. Please refresh and review before approving.',
+                category: dbCategory.category_name,
+                field: field,
+                expectedValue: dbCategory[field],
+                receivedValue: bodyCategory[field]
+              },
+              { status: 409 }
+            );
+          }
+        }
+      }
+    }
+
+    // Check GST percentage
+    if (body.gst_percentage !== undefined && 
+        parseFloat(body.gst_percentage) !== parseFloat(requestedRate.gst_percentage)) {
+      return NextResponse.json(
+        { 
+          error: 'GST percentage has been modified. Please refresh.',
+          field: 'gst_percentage',
+          expectedValue: requestedRate.gst_percentage,
+          receivedValue: body.gst_percentage
+        },
+        { status: 409 }
+      );
     }
 
     // All checks passed, proceed with approval in a transaction
