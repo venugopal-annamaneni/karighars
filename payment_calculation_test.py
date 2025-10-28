@@ -577,7 +577,8 @@ def test_api_error_handling():
             response = requests.get(
                 f"{API_BASE}/projects/{test_case['project_id']}/calculate-payment",
                 params=params,
-                timeout=30
+                timeout=30,
+                allow_redirects=False
             )
             
             expected = test_case['expected_status']
