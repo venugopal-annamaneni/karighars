@@ -353,32 +353,6 @@ export default function CustomerPaymentsPage() {
                 </div>
               )}
 
-
-
-                  {paymentData.calculation.remaining_amount === 0 && (
-                    <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-                      ⚠️ Target milestone percentage already collected. No additional payment expected.
-                    </div>
-                  )}
-
-
-                  <div className='grid grid-cols-3 md:grid-col-3 gap-3 bg-white p-4 rounded-lg'>
-                    <div>
-                      <p className="text-sm font-medium text-green-900">💰 Target Receivable</p>
-                      <p className="text-2xl font-bold text-green-700">₹{parseFloat(paymentData.calculation.target_total).toLocaleString('en-IN')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">💰 Total Paid</p>
-                      <p className="text-2xl font-bold text-blue-700">₹{parseFloat(paymentData.calculation.collected_total).toLocaleString('en-IN')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-red-900">💰 Expected Receiable</p>
-                      <p className="text-2xl font-bold text-red-700">₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {paymentData.milestone_id && !paymentData.calculation && (
                 <div className="text-sm text-muted-foreground">Loading calculation...</div>
               )}
