@@ -176,6 +176,9 @@ export default function BizModelsPage() {
           ...newModel,
           is_editing: isEditing,
           base_model_id: editingModelId,
+          category_rates: {
+            categories: categories.filter(c => c.category_name && c.kg_label)
+          },
           stages: stages.filter(s => s.stage_code && s.stage_name),
           milestones: milestones.filter(m => m.milestone_code && m.milestone_name)
         })
@@ -192,15 +195,38 @@ export default function BizModelsPage() {
           code: '',
           name: '',
           description: '',
-          gst_percentage: 0,
-          design_charge_percentage: 0,
-          max_design_charge_discount_percentage: 0,
-          service_charge_percentage: 0,
-          max_service_charge_discount_percentage: 0,
-          shopping_charge_percentage: 0,
-          max_shopping_charge_discount_percentage: 0,
+          gst_percentage: 18,
           is_active: true,
+          category_rates: {
+            categories: []
+          }
         });
+        setCategories([
+          {
+            id: 'woodwork',
+            category_name: 'Woodwork',
+            kg_label: 'Design and Consultation',
+            max_item_discount_percentage: 20,
+            kg_percentage: 10,
+            max_kg_discount_percentage: 50
+          },
+          {
+            id: 'misc',
+            category_name: 'Misc',
+            kg_label: 'Service Charges',
+            max_item_discount_percentage: 20,
+            kg_percentage: 8,
+            max_kg_discount_percentage: 40
+          },
+          {
+            id: 'shopping',
+            category_name: 'Shopping',
+            kg_label: 'Shopping Service Charges',
+            max_item_discount_percentage: 20,
+            kg_percentage: 5,
+            max_kg_discount_percentage: 30
+          }
+        ]);
         setStages([{ stage_code: '', stage_name: '', sequence_order: 1, description: '' }]);
         setMilestones([{ milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }]);
       } else {
