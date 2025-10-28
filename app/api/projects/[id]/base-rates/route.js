@@ -57,9 +57,16 @@ export async function POST(request, { params }) {
   const body = await request.json();
 
   // Validation
-  if (!body.service_charge_percentage || !body.design_charge_percentage || !body.shopping_charge_percentage || !body.gst_percentage) {
+  if (!body.category_rates || !body.category_rates.categories || !Array.isArray(body.category_rates.categories)) {
     return NextResponse.json(
-      { error: 'All rate percentages are required' },
+      { error: 'Invalid category_rates structure' },
+      { status: 400 }
+    );
+  }
+
+  if (!body.gst_percentage) {
+    return NextResponse.json(
+      { error: 'GST percentage is required' },
       { status: 400 }
     );
   }
@@ -92,24 +99,14 @@ export async function POST(request, { params }) {
       
       const updateResult = await query(
         `UPDATE project_base_rates SET
-          service_charge_percentage = $1,
-          max_service_charge_discount_percentage = $2,
-          design_charge_percentage = $3,
-          max_design_charge_discount_percentage = $4,
-          shopping_charge_percentage = $5,
-          max_shopping_charge_discount_percentage = $6,
-          gst_percentage = $7,
-          comments = $8,
+          category_rates = $1,
+          gst_percentage = $2,
+          comments = $3,
           updated_at = now()
-         WHERE id = $9
+         WHERE id = $4
          RETURNING *`,
         [
-          body.service_charge_percentage,
-          body.max_service_charge_discount_percentage,
-          body.design_charge_percentage,
-          body.max_design_charge_discount_percentage,
-          body.shopping_charge_percentage,
-          body.max_shopping_charge_discount_percentage,
+          JSON.stringify(body.category_rates),
           body.gst_percentage,
           body.comments || null,
           existingId
@@ -132,27 +129,17 @@ export async function POST(request, { params }) {
       const insertResult = await query(
         `INSERT INTO project_base_rates (
           project_id,
-          service_charge_percentage,
-          max_service_charge_discount_percentage,
-          design_charge_percentage,
-          max_design_charge_discount_percentage,
-          shopping_charge_percentage,
-          max_shopping_charge_discount_percentage,
+          category_rates,
           gst_percentage,
           status,
           active,
           created_by,
           comments
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *`,
         [
           projectId,
-          body.service_charge_percentage,
-          body.max_service_charge_discount_percentage,
-          body.design_charge_percentage,
-          body.max_design_charge_discount_percentage,
-          body.shopping_charge_percentage,
-          body.max_shopping_charge_discount_percentage,
+          JSON.stringify(body.category_rates),
           body.gst_percentage,
           'requested',
           false,
