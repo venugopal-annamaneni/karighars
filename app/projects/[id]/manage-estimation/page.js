@@ -1219,34 +1219,40 @@ export default function ProjectEstimationPage() {
 }
 
 const EstimationSummary = ({totals}) => {
+  // Get categories from bizModel (available in parent scope)
+  const categories = bizModel.category_rates?.categories || [];
+  
+  // Helper to get grid columns based on category count
+  const getCategoryGridCols = (count) => {
+    if (count <= 3) return 'md:grid-cols-3';
+    if (count === 4) return 'md:grid-cols-4';
+    if (count === 5 || count === 6) return 'md:grid-cols-3';
+    return 'md:grid-cols-4'; // 4xN grid for 7+
+  };
+  
   return (
     <div className="mt-6 p-4 bg-slate-50 rounded-lg">
       <h3 className="font-semibold mb-3">Estimation Summary</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div>
-          <p className="text-muted-foreground">Woodwork Value</p>
-          <p className="font-bold text-lg">
-            {formatCurrency(totals.woodwork_value)}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Misc External Value</p>
-          <p className="font-bold text-lg">
-            {formatCurrency(totals.misc_external_value)}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Misc Internal Value</p>
-          <p className="font-bold text-lg">
-            {formatCurrency(totals.misc_internal_value)}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Shopping Service Value</p>
-          <p className="font-bold text-lg">
-            {formatCurrency(totals.shopping_service_value)}
-          </p>
-        </div>
+      
+      {/* Dynamic Category Breakdown */}
+      <div className={`grid gap-4 text-sm ${getCategoryGridCols(categories.length)}`}>
+        {categories
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          .map(category => {
+            const categoryData = totals.category_breakdown?.[category.id] || {};
+            return (
+              <div key={category.id}>
+                <p className="text-muted-foreground">{category.category_name} Value</p>
+                <p className="font-bold text-lg">
+                  {formatCurrency(categoryData.subtotal || 0)}
+                </p>
+              </div>
+            );
+          })}
+      </div>
+      
+      {/* High-level Totals */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4 pt-4 border-t border-slate-300">
         <div>
           <p className="text-muted-foreground">Discount</p>
           <p className="font-bold text-xl text-green-700">
