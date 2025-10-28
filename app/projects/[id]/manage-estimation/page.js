@@ -666,7 +666,7 @@ export default function ProjectEstimationPage() {
       misc_external_value: miscExternalSubtotal,
       shopping_service_value: shoppingServiceSubtotal,
       service_charge: serviceCharge,
-      discount: discount,
+      discount: totalDiscount,
       gst_amount: totalGst,
       final_value: grandTotal
     };
