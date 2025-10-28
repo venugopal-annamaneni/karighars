@@ -178,20 +178,13 @@ export default function CustomerPaymentsPage() {
       }
 
       const data = await res.json();
-      // Pre-fill with expected amounts
-      const woodworkAmt = data.target_woodwork_amount?.toFixed(2) || 0;
-      const miscAmt = data.target_misc_amount?.toFixed(2) || 0;
-      const shoppingAmt = data.target_shopping_amount?.toFixed(2) || 0;
-      const totalAmt = data.expected_total.toFixed(2) || 0;
-
+      // data.categories is now dynamic: { "woodwork": {total, target_percentage, target_amount}, ... }
+      
       setPaymentData(prev => ({
         ...prev,
         milestone_id: milestoneId,
-        woodwork_amount: woodworkAmt,
-        misc_amount: miscAmt,
-        shopping_amount: shoppingAmt,
-        amount: totalAmt,
-        expected_amount: totalAmt,
+        amount: data.expected_total.toFixed(2),
+        expected_amount: data.expected_total,
         calculation: data
       }));
 
