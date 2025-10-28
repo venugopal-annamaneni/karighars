@@ -600,24 +600,32 @@ export default function ProjectEstimationPage() {
     let woodworkKGCharges = 0;
     let woodworkItemDiscounts = 0;
     let woodworkKGDiscounts = 0;
+    let woodworkGst = 0;
+    let woodworkAmountBeforeGst = 0;
 
     let miscInternalSubtotal = 0;
     let miscInternalTotal = 0;
     let miscInternalKGCharges = 0;
     let miscInternalItemDiscounts = 0;
     let miscInternalKGDiscounts = 0;
+    let miscInternalGst = 0;
+    let miscInternalAmountBeforeGst = 0;
 
     let miscExternalSubtotal = 0;
     let miscExternalTotal = 0;
     let miscExternalKGCharges = 0;
     let miscExternalItemDiscounts = 0;
     let miscExternalKGDiscounts = 0;
+    let miscExternalGst = 0;
+    let miscExternalAmountBeforeGst = 0;
 
     let shoppingServiceSubtotal = 0;
     let shoppingServiceTotal = 0;
     let shoppingKGCharges = 0;
     let shoppingItemDiscounts = 0;
     let shoppingKGDiscounts = 0;
+    let shoppingGst = 0;
+    let shoppingAmountBeforeGst = 0;
 
     let totalGst = 0;
 
@@ -629,25 +637,32 @@ export default function ProjectEstimationPage() {
         woodworkKGCharges += itemCalc.karighar_charges_amount;
         woodworkItemDiscounts += itemCalc.item_discount_amount;
         woodworkKGDiscounts += itemCalc.kg_discount_amount;
+        woodworkAmountBeforeGst += itemCalc.amount_before_gst;
+        woodworkGst += itemCalc.gst_amount;
         woodworkTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.MISC_INTERNAL) {
         miscInternalSubtotal += itemCalc.subtotal;
         miscInternalKGCharges += itemCalc.karighar_charges_amount;
         miscInternalItemDiscounts += itemCalc.item_discount_amount;
         miscInternalKGDiscounts += itemCalc.kg_discount_amount;
+        miscInternalAmountBeforeGst += itemCalc.amount_before_gst;
+        miscInternalGst += itemCalc.gst_amount;
         miscInternalTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.MISC_EXTERNAL) {
         miscExternalSubtotal += itemCalc.subtotal;
         miscExternalKGCharges += itemCalc.karighar_charges_amount;
         miscExternalItemDiscounts += itemCalc.item_discount_amount;
         miscExternalKGDiscounts += itemCalc.kg_discount_amount;
+        miscExternalAmountBeforeGst += itemCalc.amount_before_gst;
+        miscExternalGst += itemCalc.gst_amount;
         miscExternalTotal += itemCalc.item_total;
       } else if (item.category === ESTIMATION_CATEGORY.SHOPPING_SERVICE) {
-        // For shopping, the subtotal is paid to vendor directly
         shoppingServiceSubtotal += itemCalc.subtotal;
         shoppingKGCharges += itemCalc.karighar_charges_amount;
         shoppingItemDiscounts += itemCalc.item_discount_amount;
         shoppingKGDiscounts += itemCalc.kg_discount_amount;
+        shoppingAmountBeforeGst += itemCalc.amount_before_gst;
+        shoppingGst += itemCalc.gst_amount;
         shoppingServiceTotal += itemCalc.item_total;
       }
 
@@ -659,18 +674,70 @@ export default function ProjectEstimationPage() {
     const kgDiscount = woodworkKGDiscounts + miscInternalKGDiscounts + miscExternalKGDiscounts + shoppingKGDiscounts;
     const totalDiscount = itemDiscount + kgDiscount;
     const grandTotal = woodworkTotal + miscInternalTotal + miscExternalTotal + shoppingServiceTotal;
+    const totalItemsValue = woodworkSubtotal - woodworkItemDiscounts + miscInternalSubtotal - miscInternalItemDiscounts + miscExternalSubtotal - miscExternalItemDiscounts + shoppingServiceSubtotal - shoppingItemDiscounts;
+
+    // Build category_breakdown JSONB
+    const categoryBreakdown = {
+      woodwork: {
+        subtotal: woodworkSubtotal,
+        item_discount_amount: woodworkItemDiscounts,
+        discounted_subtotal: woodworkSubtotal - woodworkItemDiscounts,
+        kg_charges_gross: woodworkKGCharges + woodworkKGDiscounts,
+        kg_charges_discount: woodworkKGDiscounts,
+        kg_charges_net: woodworkKGCharges,
+        amount_before_gst: woodworkAmountBeforeGst,
+        gst_amount: woodworkGst,
+        total: woodworkTotal
+      },
+      misc_internal: {
+        subtotal: miscInternalSubtotal,
+        item_discount_amount: miscInternalItemDiscounts,
+        discounted_subtotal: miscInternalSubtotal - miscInternalItemDiscounts,
+        kg_charges_gross: miscInternalKGCharges + miscInternalKGDiscounts,
+        kg_charges_discount: miscInternalKGDiscounts,
+        kg_charges_net: miscInternalKGCharges,
+        amount_before_gst: miscInternalAmountBeforeGst,
+        gst_amount: miscInternalGst,
+        total: miscInternalTotal
+      },
+      misc_external: {
+        subtotal: miscExternalSubtotal,
+        item_discount_amount: miscExternalItemDiscounts,
+        discounted_subtotal: miscExternalSubtotal - miscExternalItemDiscounts,
+        kg_charges_gross: miscExternalKGCharges + miscExternalKGDiscounts,
+        kg_charges_discount: miscExternalKGDiscounts,
+        kg_charges_net: miscExternalKGCharges,
+        amount_before_gst: miscExternalAmountBeforeGst,
+        gst_amount: miscExternalGst,
+        total: miscExternalTotal
+      },
+      shopping_service: {
+        subtotal: shoppingServiceSubtotal,
+        item_discount_amount: shoppingItemDiscounts,
+        discounted_subtotal: shoppingServiceSubtotal - shoppingItemDiscounts,
+        kg_charges_gross: shoppingKGCharges + shoppingKGDiscounts,
+        kg_charges_discount: shoppingKGDiscounts,
+        kg_charges_net: shoppingKGCharges,
+        amount_before_gst: shoppingAmountBeforeGst,
+        gst_amount: shoppingGst,
+        total: shoppingServiceTotal
+      }
+    };
 
     return {
+      category_breakdown: categoryBreakdown,
+      total_items_value: totalItemsValue,
+      total_kg_charges: serviceCharge,
+      total_discount_amount: totalDiscount,
+      service_charge: serviceCharge,
+      discount: totalDiscount,
+      gst_amount: totalGst,
+      final_value: grandTotal,
+      // For display only
       woodwork_value: woodworkSubtotal,
       misc_internal_value: miscInternalSubtotal,
       misc_external_value: miscExternalSubtotal,
-      shopping_service_value: shoppingServiceSubtotal,
-      service_charge: serviceCharge,
-      item_discount: itemDiscount,
-      kg_discount: kgDiscount,
-      discount: totalDiscount,
-      gst_amount: totalGst,
-      final_value: grandTotal
+      shopping_service_value: shoppingServiceSubtotal
     };
   };
 
