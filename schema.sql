@@ -224,50 +224,78 @@ CREATE TABLE documents (
 COMMENT ON COLUMN documents.related_entity IS 'Entity type: customer, project, payment, vendor';
 COMMENT ON COLUMN documents.related_id IS 'ID of the related entity';
 
+-- Sequence
+CREATE SEQUENCE IF NOT EXISTS estimation_items_id_seq;
+
+-- Table Definition
 CREATE TABLE estimation_items (
+    -- Identifiers & Relations
     id INTEGER NOT NULL DEFAULT nextval('estimation_items_id_seq'::regclass),
-    estimation_id INTEGER,
-    room_name VARCHAR(255) NOT NULL,
-    category TEXT,
-    description TEXT NOT NULL,
-    unit VARCHAR(20) NOT NULL DEFAULT 'sqft',
-    width DECIMAL(10,2),
-    height DECIMAL(10,2),
-    quantity NUMERIC(18,4) DEFAULT 1,
-    unit_price NUMERIC(20,4) DEFAULT 0,
-    total NUMERIC(22,2),
-    vendor_type TEXT,
+    estimation_id INTEGER REFERENCES project_estimations(id) ON DELETE CASCADE,
+    
+    -- Classification
+    category TEXT CHECK (category = ANY (ARRAY['woodwork', 'misc_internal', 'misc_external', 'shopping_service'])),
+    room_name VARCHAR NOT NULL,
+    vendor_type TEXT CHECK (vendor_type = ANY (ARRAY['PI', 'Aristo', 'Other'])),
+
+    -- Item details
+    item_name TEXT NOT NULL,
+    unit TEXT NOT NULL CHECK (unit = ANY (ARRAY['sqft', 'no', 'lumpsum'])),
+    width NUMERIC,
+    height NUMERIC,
+    quantity NUMERIC DEFAULT 1,
+    unit_price NUMERIC DEFAULT 0,
+    subtotal NUMERIC DEFAULT 0,
+
+    -- Charges and Discounts
+    karighar_charges_percentage NUMERIC DEFAULT 10,
+    karighar_charges_amount NUMERIC DEFAULT 0,
+
+    -- Item-level discount (applied BEFORE KG charges)
+    item_discount_percentage NUMERIC DEFAULT 0,
+    item_discount_amount NUMERIC DEFAULT 0,
+
+    -- Karighar charges discount (applied ON KG charges)
+    discount_kg_charges_percentage NUMERIC DEFAULT 0,
+    discount_kg_charges_amount NUMERIC DEFAULT 0,
+
+    -- Taxation
+    gst_percentage NUMERIC DEFAULT 18,
+    gst_amount NUMERIC DEFAULT 0,
+
+    -- Computed Totals
+    amount_before_gst NUMERIC DEFAULT 0,
+    item_total NUMERIC DEFAULT 0,
+    total NUMERIC,
+
+    -- Legacy columns (can be removed after full migration)
+    discount_percentage NUMERIC DEFAULT 0,
+    discount_amount NUMERIC DEFAULT 0,
+
+    -- Timestamps
     created_at TIMESTAMPTZ DEFAULT now(),
-    karighar_charges_percentage NUMERIC(5,2) DEFAULT 10,
-    discount_percentage NUMERIC(5,2) DEFAULT 0,
-    gst_percentage NUMERIC(5,2) DEFAULT 18,
-    subtotal NUMERIC(20,2) DEFAULT 0,
-    karighar_charges_amount NUMERIC(20,2) DEFAULT 0,
-    discount_amount NUMERIC(20,2) DEFAULT 0,
-    amount_before_gst NUMERIC(20,2) DEFAULT 0,
-    gst_amount NUMERIC(20,2) DEFAULT 0,
-    item_total NUMERIC(20,2) DEFAULT 0,
-    PRIMARY KEY (id),
-    FOREIGN KEY (estimation_id) REFERENCES project_estimations(id) ON DELETE CASCADE,
-    CHECK ((vendor_type = ANY (ARRAY['PI'::text, 'Aristo'::text, 'Other'::text]))),
-    CHECK ((category = ANY (ARRAY['woodwork'::text, 'misc_internal'::text, 'misc_external'::text, 'shopping_service'::text]))),
-    CHECK ((unit = ANY (ARRAY['sqft'::text, 'no'::text, 'lumpsum'::text])))
+    updated_at TIMESTAMPTZ,
+
+    PRIMARY KEY (id)
 );
 
-COMMENT ON COLUMN estimation_items.room_name IS 'Room or section name (e.g., Living Room, Kitchen) - mandatory for organization';
-COMMENT ON COLUMN estimation_items.unit IS 'Unit of measurement: sqft (area with width×height), no (count), lumpsum (fixed)';
-COMMENT ON COLUMN estimation_items.width IS 'Width dimension - required only when unit = sqft';
-COMMENT ON COLUMN estimation_items.height IS 'Height dimension - required only when unit = sqft';
-COMMENT ON COLUMN estimation_items.quantity IS 'Quantity - auto-calculated (width × height) for sqft, manual input for no/lumpsum';
+-- Column Comments
+COMMENT ON COLUMN estimation_items.quantity IS 'Quantity - auto-calculated (width x height) for sqft, manual input for no/lumpsum';
+COMMENT ON COLUMN estimation_items.unit IS 'Unit of measurement: sqft (area), no (count), lumpsum (fixed)';
 COMMENT ON COLUMN estimation_items.karighar_charges_percentage IS 'KG charges percentage - D&C for woodwork, Service charge for misc/shopping';
-COMMENT ON COLUMN estimation_items.discount_percentage IS 'Discount percentage on (subtotal + karighar_charges) for woodwork/misc, only on karighar_charges for shopping';
+COMMENT ON COLUMN estimation_items.item_discount_percentage IS 'Discount percentage on subtotal (applied before KG charges)';
+COMMENT ON COLUMN estimation_items.item_discount_amount IS 'Discount amount calculated on item subtotal';
+COMMENT ON COLUMN estimation_items.discount_kg_charges_percentage IS 'Discount percentage applied on Karighar charges portion';
+COMMENT ON COLUMN estimation_items.discount_kg_charges_amount IS 'Discount amount calculated on Karighar charges portion';
 COMMENT ON COLUMN estimation_items.gst_percentage IS 'GST percentage applicable on this item';
 COMMENT ON COLUMN estimation_items.subtotal IS 'Quantity × Unit Price';
 COMMENT ON COLUMN estimation_items.karighar_charges_amount IS 'Subtotal × karighar_charges_percentage';
-COMMENT ON COLUMN estimation_items.discount_amount IS 'Discount amount calculated';
-COMMENT ON COLUMN estimation_items.amount_before_gst IS 'Amount after karighar charges and discount, before GST';
+COMMENT ON COLUMN estimation_items.amount_before_gst IS 'Amount after discounts and KG charges, before GST';
 COMMENT ON COLUMN estimation_items.gst_amount IS 'GST amount';
 COMMENT ON COLUMN estimation_items.item_total IS 'Final item total including all charges and GST';
+COMMENT ON COLUMN estimation_items.room_name IS 'Room or section name (e.g., Living Room, Kitchen) - mandatory';
+COMMENT ON COLUMN estimation_items.width IS 'Width dimension - used only when unit = sqft';
+COMMENT ON COLUMN estimation_items.height IS 'Height dimension - used only when unit = sqft';
 
 CREATE TABLE financial_event_definitions (
     id INTEGER NOT NULL DEFAULT nextval('financial_event_definitions_id_seq'::regclass),
