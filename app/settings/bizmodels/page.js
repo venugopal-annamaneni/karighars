@@ -77,7 +77,7 @@ export default function BizModelsPage() {
   ]);
 
   const [milestones, setMilestones] = useState([
-    { milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, woodwork_percentage: 0, misc_percentage: 0 }
+    { milestone_code: '', milestone_name: '', direction: 'inflow', stage_code: '', description: '', sequence_order: 1, category_percentages: {} }
   ]);
 
   useEffect(() => {
