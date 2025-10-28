@@ -547,51 +547,47 @@ export default function ProjectEstimationPage() {
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unit_price) || 0;
     const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
-    const discountPerc = parseFloat(item.discount_percentage) || 0;
+    const itemDiscountPerc = parseFloat(item.item_discount_percentage) || 0;
+    const kgDiscountPerc = parseFloat(item.discount_kg_charges_percentage) || 0;
     const gstPerc = parseFloat(item.gst_percentage) || 0;
 
     // Step 1: Calculate subtotal
-    let subtotal = 0;
-    if (item.category === 'shopping_service')
-      subtotal = quantity * unitPrice;
-    else
-      subtotal = quantity * unitPrice;
+    const subtotal = quantity * unitPrice;
 
-    // Step 2: Calculate karighar charges
-    let karigharChargesAmount = 0;
-    if (item.category === 'shopping_service')
-      karigharChargesAmount = (subtotal * karigharChargesPerc) / 100;
-    else
-      karigharChargesAmount = subtotal * karigharChargesPerc / 100;
+    // Step 2: Apply item discount (BEFORE KG charges)
+    const itemDiscountAmount = (subtotal * itemDiscountPerc) / 100;
+    const discountedSubtotal = subtotal - itemDiscountAmount;
 
-    // Step 3: Calculate discount
-    let discountAmount = 0;
-    if (item.category === 'shopping_service') {
-      //discountAmount = (karigharChargesAmount * discountPerc) / 100;
-      discountAmount = (subtotal * discountPerc) / 100;
-    } else {
-      //discountAmount = ((subtotal + karigharChargesAmount) * discountPerc) / 100;
-      discountAmount = (subtotal * discountPerc) / 100;
-    }
+    // Step 3: Calculate KG charges (on discounted subtotal)
+    const kgChargesGross = (discountedSubtotal * karigharChargesPerc) / 100;
 
-    // Step 4: Calculate amount before GST
+    // Step 4: Apply KG discount (ON KG charges only)
+    const kgDiscountAmount = (kgChargesGross * kgDiscountPerc) / 100;
+    const kgChargesNet = kgChargesGross - kgDiscountAmount;
+
+    // Step 5: Calculate amount before GST
     let amountBeforeGst = 0;
     if (item.category === 'shopping_service') {
-      amountBeforeGst = karigharChargesAmount - discountAmount;
+      // For shopping: Only KG charges (customer pays vendor directly for items)
+      amountBeforeGst = kgChargesNet;
     } else {
-      amountBeforeGst = subtotal + karigharChargesAmount - discountAmount;
+      // For woodwork/misc: Full amount
+      amountBeforeGst = discountedSubtotal + kgChargesNet;
     }
 
-    // Step 5: Calculate GST
+    // Step 6: Calculate GST
     const gstAmount = (amountBeforeGst * gstPerc) / 100;
 
-    // Step 6: Final item total
+    // Step 7: Final item total
     const itemTotal = amountBeforeGst + gstAmount;
 
     return {
       subtotal,
-      karighar_charges_amount: karigharChargesAmount,
-      discount_amount: discountAmount,
+      item_discount_amount: itemDiscountAmount,
+      discounted_subtotal: discountedSubtotal,
+      karighar_charges_gross: kgChargesGross,
+      kg_discount_amount: kgDiscountAmount,
+      karighar_charges_amount: kgChargesNet,
       amount_before_gst: amountBeforeGst,
       gst_amount: gstAmount,
       item_total: itemTotal
