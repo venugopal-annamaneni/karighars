@@ -556,10 +556,10 @@ export default function ProjectEstimationsPage() {
                         <p className="text-sm text-muted-foreground">Total Subtotal</p>
                         <p className="text-lg font-bold">
                           {formatCurrency(
-                            parseFloat(estimation.woodwork_value || 0) + 
-                            parseFloat(estimation.misc_internal_value || 0) + 
-                            parseFloat(estimation.misc_external_value || 0) + 
-                            parseFloat(estimation.shopping_service_value || 0)
+                            parseFloat(estimation.category_breakdown?.woodwork?.total || 0) + 
+                            parseFloat(estimation.category_breakdown?.misc_internal?.total || 0) + 
+                            parseFloat(estimation.category_breakdown?.misc_external?.total || 0) + 
+                            parseFloat(estimation.category_breakdown?.shopping_service?.total || 0)
                           )}
                         </p>
                       </div>
