@@ -325,39 +325,33 @@ export default function CustomerPaymentsPage() {
                   ⚠️ No milestones configured for this project's BizModel.".
                 </div>
               )}
-              {paymentData.calculation && (
+              {paymentData.calculation && paymentData.calculation.categories && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                  {/* Woodwork Breakdown */}
-                  {paymentData.calculation.target_woodwork_amount > 0 && (
-                    <div className="border-b border-blue-200 pb-2">
-                      <p className="text-xs font-semibold text-green-800 mb-1">🪵 Woodwork Component:</p>
-                      <div className="text-xs text-green-700 space-y-1 ml-3">
-                        <div>Total Value: ₹{parseFloat(paymentData.calculation.woodwork_total).toLocaleString('en-IN')}</div>
-                        <div>Target: {paymentData.calculation.target_woodwork_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_woodwork_amount).toLocaleString('en-IN')}</div>
+                  {Object.entries(paymentData.calculation.categories)
+                    .filter(([catId, catData]) => catData.target_amount > 0)
+                    .sort((a, b) => (a[1].sort_order || 0) - (b[1].sort_order || 0))
+                    .map(([categoryId, categoryData]) => (
+                      <div key={categoryId} className="border-b border-green-200 pb-2 last:border-0">
+                        <p className="text-xs font-semibold text-green-800 mb-1">
+                          {getCategoryIcon(categoryId)} {categoryData.category_name}:
+                        </p>
+                        <div className="text-xs text-green-700 space-y-1 ml-3">
+                          <div>Total Value: ₹{parseFloat(categoryData.total).toLocaleString('en-IN')}</div>
+                          <div>Target: {categoryData.target_percentage.toFixed(1)}% → ₹{parseFloat(categoryData.target_amount).toLocaleString('en-IN')}</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
 
-                  {/* Misc Breakdown */}
-                  {paymentData.calculation.target_misc_amount > 0 && (
-                    <div className="border-b border-blue-200 pb-2">
-                      <p className="text-xs font-semibold text-green-800 mb-1">🔧 Misc Component:</p>
-                      <div className="text-xs text-green-700 space-y-1 ml-3">
-                        <div>Total Value: ₹{parseFloat(paymentData.calculation.misc_total).toLocaleString('en-IN')}</div>
-                        <div>Target: {paymentData.calculation.target_misc_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_misc_amount).toLocaleString('en-IN')}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentData.calculation.target_shopping_amount > 0 && (
-                    <div className="border-b border-blue-200 pb-2">
-                      <p className="text-xs font-semibold text-green-800 mb-1"><ShoppingBasketIcon /> Shopping Component:</p>
-                      <div className="text-xs text-green-700 space-y-1 ml-3">
-                        <div>Total Value: ₹{parseFloat(paymentData.calculation.shopping_total).toLocaleString('en-IN')}</div>
-                        <div>Target: {paymentData.calculation.target_shopping_percentage.toFixed(1)}% → ₹{(paymentData.calculation.target_shopping_amount).toLocaleString('en-IN')}</div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="pt-2 border-t-2 border-green-300">
+                    <p className="text-sm font-bold text-green-900">
+                      💰 Total Expected: ₹{parseFloat(paymentData.calculation.expected_total).toLocaleString('en-IN')}
+                    </p>
+                    <p className="text-xs text-green-700 mt-1">
+                      Already Collected: ₹{parseFloat(paymentData.calculation.collected_total).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                </div>
+              )}
 
 
 
