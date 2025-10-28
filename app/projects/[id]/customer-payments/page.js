@@ -140,8 +140,6 @@ export default function CustomerPaymentsPage() {
           milestone_id: '',
           payment_type: '',
           amount: '',
-          woodwork_amount: '',
-          misc_amount: '',
           mode: 'bank',
           reference_number: '',
           remarks: ''
