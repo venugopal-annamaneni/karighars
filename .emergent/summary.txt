@@ -1,5 +1,9 @@
 <analysis>
-The trajectory details the AI engineer's work on the KG Interiors finance application, starting with an overview of previous development. The initial tasks involved resolving database connection issues, confirming and then removing a  column check constraint in the  table, and deleting redundant documentation files. A significant portion of the work focused on revamping the estimation calculation logic to include item-level discounts, D&C charges, and separate service charges for different categories (woodwork, misc, shopping_service). This necessitated extensive changes to the  schema, estimation page UI, and backend calculation APIs. Following this, the payment calculation logic was simplified to only track total amounts for milestones, removing category-specific splits from . Most recently, a comprehensive Invoice Management feature was implemented, involving new database tables (), dedicated API endpoints, a new frontend page (), and integration into the project layout. This also introduced an Over-Invoiced alert and functionality to create credit notes from it. The current work involves finalizing the  component, specifically addressing closing tags.
+The trajectory details the AI engineer's work on the KG Interiors finance application, moving from initial bug fixes and invoice management to significant feature additions. Initially, the AI engineer resolved a syntax error in the  and finalized the Invoice Management feature, including the  and credit note functionality, which was declared fully functional after backend testing.
+
+Following this, the AI engineer implemented a major Rooms/Sections feature for estimation items. This involved substantial database schema changes to  (adding , , , ), updating backend APIs () to handle these new fields and conditionally calculate , and a complete overhaul of the frontend UI. For the frontend,  (read-only display) was migrated to TanStack Table with row grouping and CSV export, while  (editable form) was also transitioned to an editable TanStack Table, but explicitly *without* grouping, incorporating inline editing, add/delete/duplicate row functionality, auto-calculations, validation, and keyboard navigation. This migration saw a brief, incorrect attempt to use AG-Grid, which was swiftly corrected and replaced with TanStack Table as AG-Grid Community Edition does not support row grouping.
+
+The latest major feature implemented is Project Base Rates, enabling project-specific rate overrides with an approval workflow. This involved creating a new  database table, adding  to the  table, modifying the project creation API () to automatically copy BizModel rates into an initial  entry, and creating new API endpoints for managing these rates (viewing, requesting changes, approving, rejecting). The  was updated to fetch rates from the active  entry. A new UI page () was created for managing these rates, and a Base Rates tab was added to the project layout. The user's last action was a , after the AI engineer completed the Project Base Rates UI.
 </analysis>
 
 <product_requirements>
@@ -10,16 +14,15 @@ KG Interiors requires a finance management platform to replace Excel, providing 
 *   Customizable BizModel system with payment milestones and project stages.
 *   Flexible payment overrides, Sales Order ID generation, Service Charge/Discount in estimations.
 *   Project Ledger, Dashboard with charts, User/BizModel management UIs.
-
-**Recent and ongoing work explicitly requested by the user and implemented:**
-1.  **Customer KYC & GST:** Initial schema updates. GST calculation moved to estimator level.
-2.  **Document Management:** Upload Payment Receipts and Project Invoices, display all documents within project tabs.
-3.  **Payment Workflow Refinement:** Payments active after Finance uploads a receipt.
-4.  **Milestone-based Payments:** Auto-calculate receivables based on BizModel milestones. Milestones filtered by project stage, with a new  milestone.
-5.  **BizModel Versioning:** Automatic version upgrades, draft models not selectable, status toggle.  removed.
-6.  **Overpayment Handling:** Detect overpayment on estimation revision, requires admin approval, generates reversal entries ( in ), allows Finance to upload document, reflects in ledger.
-7.  **Advanced Item-Level Calculations:** Introduced item-level discounts, Design & Consultation (D&C) charges on woodwork, and Service charges on misc/shopping, with discounts on these charges. Shopping items now only track KG's service charge.
-8.  **Invoice Management:** New feature to upload project invoices, manage their status (pending/approved/cancelled), track  in projects, and generate Credit Notes for over-invoiced scenarios.
+*   Customer KYC & GST with GST calculation at estimator level.
+*   Document Management for payment receipts and project invoices.
+*   Payment workflow refinement, milestone-based payments with  milestone.
+*   BizModel versioning,  removal.
+*   Overpayment handling, generating  entries, admin approval.
+*   Advanced item-level calculations: item-level discounts, D&C charges on woodwork, Service charges on misc/shopping, with discounts. Shopping items track only KG's service charge.
+*   Invoice Management: upload/view/approve/cancel invoices, track , generate credit notes for over-invoiced scenarios.
+*   Estimation Item Rooms/Sections: Group estimation items by room and category. Quantity can be derived from Width x Height for 'sqft' units, or manually entered for 'no'/'lumpsum'. Room names are mandatory free text. Categories ordered Woodwork → Misc → Shopping.
+*   Project Base Rates: Project-specific override for BizModel rates (service, design, shopping, GST percentages) with an approval workflow. An initial active rate is copied from BizModel on project creation. Estimators can request changes, which admins can approve/reject. Estimations use the currently active project base rates.
 </product_requirements>
 
 <key_technical_concepts>
@@ -28,6 +31,7 @@ KG Interiors requires a finance management platform to replace Excel, providing 
 -   **Styling:** Tailwind CSS and Shadcn UI components.
 -   **Database:** Direct SQL queries via  module, custom migrations.
 -   **State Management:** React hooks (, ).
+-   **Data Tables:** TanStack Table (for advanced table functionalities like grouping, editing, CSV export).
 -   **File Management:** Backend API for document uploads.
 -   **Infrastructure:** Supervisor (process management), Kubernetes (deployment).
 -   **Security:** Handling SSL certificate issues for RDS connection.
@@ -38,96 +42,81 @@ The application uses a Next.js full-stack framework with a PostgreSQL database.
 
 
 
--   ****: Centralized API handler.
-    -   **Summary:** Was the monolithic API handler.
-    -   **Changes:** Refactored and its functionality distributed into granular, REST-style API files (e.g., ).
--   ****: Project estimation form.
-    -   **Summary:** Critical for creating/modifying project estimations and their detailed financial calculations.
-    -   **Changes:** Complete rewrite of calculation logic to support item-level discounts, Design & Consultation (D&C) charges on woodwork, Service Charges on misc/shopping, and discounts on these charges. UI updated to include new input fields and display.
--   ****: Project detail page.
-    -   **Summary:** Displays project information, estimations, ledger, and customer payments.
-    -   **Changes:** Payment dialog updated to simplify payment collection (total amount only, no category split). Financial Summary card updated to display .
--   ****: Project-specific layout with navigation tabs.
-    -   **Summary:** Provides the common layout and navigation for project-related pages.
-    -   **Changes:** Added a new Invoices tab. Integrated  detection logic.
--   ****: BizModel management UI.
-    -   **Summary:** Manages BizModels.
-    -   **Changes:** Removed  from UI in previous cycles.
--   ****: Main database schema.
+-   ****: Main database schema definition.
     -   **Summary:** Defines PostgreSQL schema and reflects all database structure changes.
     -   **Changes:**
-        -   Removed  constraint from .
-        -   Added , , , , , , , , ,  to .
-        -   Updated  CHECK constraint to include .
-        -   Removed , ,  from .
-        -   Created new table  with columns: uid=0(root) gid=0(root) groups=0(root), , , , , , , , , , , , , , .
-        -   Added  column to .
--   ****: Environment variables.
-    -   **Summary:** Stores sensitive configurations.
-    -   **Changes:** Debugged and confirmed  for PostgreSQL connection.
+        -   Added  (VARCHAR, NOT NULL),  (VARCHAR, NOT NULL, CHECK ('sqft', 'no', 'lumpsum'), DEFAULT 'sqft'),  (DECIMAL, NULL),  (DECIMAL, NULL) to .
+        -   Added  (INTEGER, REFERENCES ) to .
+        -   Created new table  with columns: uid=0(root) gid=0(root) groups=0(root), , , , , , , , ,  (VARCHAR, CHECK ('requested', 'approved', 'rejected'), DEFAULT 'approved'),  (BOOLEAN, DEFAULT 'false'), , , , , , , , . A unique index ensures only one active rate per project.
+-   ****: API for creating new projects.
+    -   **Summary:** Handles the creation of new project records.
+    -   **Changes:** Modified POST handler to incorporate a database transaction. Upon project creation, it now fetches the associated BizModel's rate percentages and creates an initial entry in the  table, setting its status to 'approved' and active to , then updates the new  record with this .
 -   ****: API for project estimations.
     -   **Summary:** Handles CRUD for project estimations and their item details.
-    -   **Changes:** Rewritten POST/PUT handlers to process and store new item-level calculation fields (item discounts, D&C, service charges).
--   ****: API for calculating milestone payments.
-    -   **Summary:** Calculates the expected payment for a given milestone.
-    -   **Changes:** Completely rewritten to work with new item-level totals, correctly distinguishing between  milestone (only shopping service items) and regular milestones (woodwork/misc, excluding shopping). Returns simplified  and detailed  for UI.
--   ****: API for customer payments.
-    -   **Summary:** Manages customer payment records.
-    -   **Changes:** Updated POST route to only store  (total payment), removing category-specific splits (, ). Renamed  payment type to .
--   ****: API for single customer payment.
-    -   **Summary:** Handles operations for individual customer payment records.
-    -   **Changes:** Renamed  references to .
--   ****: UI for customer payments.
-    -   **Summary:** Displays and allows management of customer payments.
-    -   **Changes:** Renamed  references to .
--   ****: UI for project documents.
-    -   **Summary:** Displays project documents.
-    -   **Changes:** Removed invoice upload section (functionality moved to new  page). Renamed  references to .
--   ****: Alert component for overpayment.
-    -   **Summary:** Displays an alert when overpayment is detected.
-    -   **Changes:** Renamed  references to .
--   ** (NEW, renamed from )**: Main page for invoice management.
-    -   **Summary:** Allows Finance to upload, view, approve, and cancel project invoices. Also supports creation of credit notes for over-invoiced scenarios.
-    -   **Changes:** Implemented invoice upload form with validation (invoice amount cannot exceed ). Displays a list of invoices with status and actions. Handles credit note document uploads.
--   ** (NEW)**: API for project invoices.
-    -   **Summary:** Handles fetching and creating project invoices.
-    -   **Changes:** Implements GET (fetch all invoices for project) and POST (upload new invoice, insert document into  table).
--   ** (NEW)**: API for approving invoices.
-    -   **Summary:** Endpoint for approving a specific project invoice.
-    -   **Changes:** Updates invoice status to 'approved', increments , and inserts credit note documents into  table if applicable.
--   ** (NEW)**: API for cancelling invoices.
-    -   **Summary:** Endpoint for cancelling a specific project invoice.
-    -   **Changes:** Updates invoice status to 'cancelled'.
--   ** (NEW)**: Alert component for over-invoicing.
-    -   **Summary:** Displays a critical alert when the  exceeds . Includes functionality to create a credit note.
-    -   **Changes:** New component created.
--   ****: Central alert display component.
-    -   **Summary:** Displays different types of alerts based on context.
-    -   **Changes:** Registered the new  type.
--   ****: Application constants.
-    -   **Summary:** Stores various constant values like alert types.
-    -   **Changes:** Added  constant.
--   **Deleted files**: , , , , , , , , , .
+    -   **Changes:** POST/PUT handlers updated to accept , , , . It now conditionally calculates  as  if  is 'sqft', otherwise uses the directly provided .
+-   ** (NEW)**: API for managing project base rates.
+    -   **Summary:** Provides endpoints to fetch all base rate entries for a project and to allow estimators to request new rate changes.
+    -   **Changes:** Implements GET (fetches all base rates) and POST (creates a new base rate entry with  and ).
+-   ** (NEW)**: API to fetch the active base rate.
+    -   **Summary:** Endpoint to retrieve the single active base rate configuration for a specific project.
+    -   **Changes:** Implements GET to query  for the row where  matches and  is .
+-   ** (NEW)**: API for approving base rate requests.
+    -   **Summary:** Endpoint for administrators to approve a pending project base rate change.
+    -   **Changes:** Implements POST logic to atomically: set all other base rates for the project to , update the target base rate to  and , and finally update the  to reference this newly active rate.
+-   ** (NEW)**: API for rejecting base rate requests.
+    -   **Summary:** Endpoint for administrators to reject a pending project base rate change.
+    -   **Changes:** Implements POST logic to update the target base rate's  to 'rejected' and  to .
+-   ****: Project detail page.
+    -   **Summary:** Displays project information and a summary of estimations.
+    -   **Changes:** The display of estimation items was completely refactored to use **TanStack Table** for a read-only view. It now groups items by Room and then by Category, includes a CSV export feature, sorting, filtering, and displays conditional width/height for 'sqft' units.
+-   ****: Project estimation form.
+    -   **Summary:** Critical for creating/modifying project estimations and their detailed financial calculations.
+    -   **Changes:** Completely rewritten to use an **editable TanStack Table** (flat view, *without* grouping, as per user's specific request for editable mode). It supports inline editing for all fields, conditional display of width/height based on , add/delete/duplicate rows, auto-calculation of quantity, real-time item total calculations, client-side validation, save functionality, and basic keyboard navigation. Also, updated to fetch base rates from the newly implemented   API endpoint instead of the .
+-   ** (NEW)**: UI page for managing project base rates.
+    -   **Summary:** Provides an interface for viewing the active project base rates, historical rate change requests, and for estimators to submit new rate change requests.
+    -   **Changes:** New page created to display base rate information.
+-   ****: Project-specific layout with navigation tabs.
+    -   **Summary:** Provides the common layout and navigation for project-related pages.
+    -   **Changes:** Added a new Base Rates tab to the project navigation.
+-   ** (NEW)**: Document for tracking test results.
+    -   **Summary:** Used to store user problem statements, testing data, and previous agent communications related to testing.
+    -   **Changes:** Created during the trajectory.
+-   ** (NEW, then deleted)**: SQL script for truncating data.
+    -   **Summary:** Contained SQL commands to clear project-related data for testing/reinitialization.
+    -   **Changes:** Created and executed, then deleted.
+-   ** (NEW, then deleted)**: SQL migration script.
+    -   **Summary:** Defined SQL commands to add , , ,  columns to .
+    -   **Changes:** Created, modified several times due to syntax errors, executed, then deleted.
+-   ** (NEW, then deleted)**: Node.js script to execute SQL migrations.
+    -   **Summary:** Used to programmatically run SQL migration files against the PostgreSQL database.
+    -   **Changes:** Created, modified to handle SSL certificate issues and migration order, executed, then deleted.
+-   ** (NEW, then deleted)**: SQL migration script.
+    -   **Summary:** Defined SQL commands to create the  table and add  to .
+    -   **Changes:** Created and executed, then deleted.
 </code_architecture>
 
 <pending_tasks>
 -   Complete customer detail/edit page UI () to display and update KYC and bank details.
--   Implement UI for Finance team to display all uploaded documents (Payment receipts and Invoices) within the project tab's Documents section (beyond just receipts/credit notes).
--   Finalize the implementation of the  component by resolving the closing tags issue.
+-   Implement UI for Finance team to display all uploaded documents (Payment receipts and Invoices) within the project tab's Documents section.
 -   Implement the logic for creating a credit note from the Over-Invoiced alert window to update the project's .
--   Ensure the document upload functionality for credit notes (from over-invoiced alert) is fully integrated into the  table.
+-   Refine the  API to allow estimators to *update* an existing pending base rate request, rather than always creating a new one.
+-   Implement pre-approval validation in the  API () to deep check the UI values to latest DB before marking it approved.
+-   Finalize the UI implementation for the  including the form for requesting changes, and the approve/reject buttons for admin roles.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was implementing the Invoice Management feature and related Over-Invoiced Alerts. The implementation covered:
-1.  **Invoice Amount Validation**: Added logic to  to ensure the uploaded invoice amount does not exceed . UI was updated to display .
-2.  **Document Storage**: Updated the POST handler in  to also insert invoice documents into the  table. The  route () was also updated to store credit note documents.
-3.  **Over-Invoiced Alert**: A new component, , was created. This alert is triggered from  when  exceeds . The alert type  was registered in  and defined in .
-4.  **Credit Note Handling**: The  was updated to visually distinguish credit notes (negative invoices) in the list.
+Immediately before this summary request, the AI engineer had just completed the implementation of the Project Base Rates feature. This involved:
+1.  **Database Updates**: Creating the  table and adding the  column to the  table, managed via SQL migrations.
+2.  **Project Creation API ()**: Modified to automatically create an initial  and   entry by copying values from the selected BizModel when a new project is created, all within a database transaction.
+3.  **New Base Rates APIs**: Created dedicated API endpoints for fetching all base rates (), fetching the active base rate (), submitting new rate change requests (), and for admin approval/rejection (, ).
+4.  **Estimation Logic Update ()**: Modified to fetch the relevant rate model from the *active*  entry instead of directly from the .
+5.  **New UI Page ()**: A new frontend page was created to display and manage the project's base rates.
+6.  **Navigation Integration ()**: A new Base Rates tab was added to the project-specific navigation.
 
-The very last action in the trajectory () indicates the AI engineer is currently addressing an issue with closing tags in the  file, which is part of the UI implementation for the new invoice management features. This suggests the  and its integration with the invoice listing is still being finalized.
+The AI engineer generated a summary document () stating the full implementation of the Base Rates feature (both backend and UI) was complete, and is now ready for manual testing by the user. The last action in the trajectory was a user request for a , which was completed successfully.
 </current_work>
 
 <optional_next_step>
-Fix the closing tags issue in  and ensure the  and invoice listing UI are correctly rendered.
+Refine the Project Base Rates API for updating pending requests and implement pre-approval validation.
 </optional_next_step>
+
