@@ -251,11 +251,11 @@ CREATE TABLE estimation_items (
     karighar_charges_percentage NUMERIC DEFAULT 10,
     karighar_charges_amount NUMERIC DEFAULT 0,
 
-    -- Item-level discount (applied BEFORE KG charges)
+    -- Item-level discount
     item_discount_percentage NUMERIC DEFAULT 0,
     item_discount_amount NUMERIC DEFAULT 0,
 
-    -- Karighar charges discount (applied ON KG charges)
+    -- Karighar charges discount
     discount_kg_charges_percentage NUMERIC DEFAULT 0,
     discount_kg_charges_amount NUMERIC DEFAULT 0,
 
@@ -267,10 +267,6 @@ CREATE TABLE estimation_items (
     amount_before_gst NUMERIC DEFAULT 0,
     item_total NUMERIC DEFAULT 0,
     total NUMERIC,
-
-    -- Legacy columns (can be removed after full migration)
-    discount_percentage NUMERIC DEFAULT 0,
-    discount_amount NUMERIC DEFAULT 0,
 
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT now(),
