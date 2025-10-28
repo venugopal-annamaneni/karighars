@@ -50,6 +50,18 @@ export default function CustomerPaymentsPage() {
   });
   const { fetchProjectData, project, estimation, loading } = useProjectData();
 
+  // Helper function for category icons
+  const getCategoryIcon = (categoryId) => {
+    const iconMap = {
+      'woodwork': '🪵',
+      'misc': '🔧',
+      'shopping': '🛒',
+      'civil': '🏗️',
+      'default': '📦'
+    };
+    return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
+  };
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
