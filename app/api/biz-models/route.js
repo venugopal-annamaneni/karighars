@@ -38,10 +38,23 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Validate category_rates structure
+    if (!body.category_rates || !body.category_rates.categories || !Array.isArray(body.category_rates.categories)) {
+      return NextResponse.json({ error: 'Invalid category_rates structure' }, { status: 400 });
+    }
+
     const result = await query(
-      `INSERT INTO biz_models (code, name, description, service_charge_percentage, max_service_charge_discount_percentage,design_charge_percentage,max_design_charge_discount_percentage,shopping_charge_percentage,max_shopping_charge_discount_percentage, is_active, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [body.code, body.name, body.description, body.service_charge_percentage, body.max_service_charge_discount_percentage, body.design_charge_percentage, body.max_design_charge_discount_percentage, body.shopping_charge_percentage, body.max_shopping_charge_discount_percentage, body.is_active, body.status || BIZMODEL_STATUS.DRAFT]
+      `INSERT INTO biz_models (code, name, description, gst_percentage, category_rates, is_active, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [
+        body.code, 
+        body.name, 
+        body.description, 
+        body.gst_percentage || 18,
+        JSON.stringify(body.category_rates),
+        body.is_active, 
+        body.status || BIZMODEL_STATUS.DRAFT
+      ]
     );
 
     // Add stages if provided
