@@ -364,12 +364,6 @@ CREATE TABLE project_estimations (
     final_value NUMERIC(20,2) DEFAULT 0,
     gst_amount NUMERIC(12,2) DEFAULT 0.00,
     
-    -- Legacy category columns (can be removed after full migration)
-    woodwork_value NUMERIC(20,2) DEFAULT 0,
-    misc_internal_value NUMERIC(20,2) DEFAULT 0,
-    misc_external_value NUMERIC(20,2) DEFAULT 0,
-    shopping_service_value NUMERIC(20,2) DEFAULT 0,
-    
     -- Status and approval
     status TEXT DEFAULT 'draft'::text,
     requires_approval BOOLEAN DEFAULT false,
