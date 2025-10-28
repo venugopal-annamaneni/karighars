@@ -547,6 +547,32 @@ export default function BizModelsPage() {
                               <p className="text-xs text-muted-foreground">Max discount on KG charges</p>
                             </div>
                           </div>
+                          <div className="grid md:grid-cols-2 gap-3 mt-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Sort Order</Label>
+                              <Input
+                                type="number"
+                                placeholder="1"
+                                value={category.sort_order}
+                                onChange={(e) => updateCategory(index, 'sort_order', parseInt(e.target.value))}
+                                className="h-9"
+                              />
+                              <p className="text-xs text-muted-foreground">Display order (1, 2, 3...)</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Payment Type</Label>
+                              <div className="flex items-center space-x-2 h-9 pt-1">
+                                <input
+                                  type="checkbox"
+                                  checked={category.pay_to_vendor_directly || false}
+                                  onChange={(e) => updateCategory(index, 'pay_to_vendor_directly', e.target.checked)}
+                                  className="h-4 w-4"
+                                />
+                                <span className="text-sm">Customer pays vendor directly</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">If checked, only KG charges billed to customer</p>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
