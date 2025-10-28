@@ -104,17 +104,9 @@ export async function POST(request) {
 
     const newProject = projectResult.rows[0];
 
-    // Step 2: Fetch biz_model rates
+    // Step 2: Fetch biz_model rates (category_rates JSONB)
     const bizModelResult = await query(
-      `SELECT 
-        service_charge_percentage,
-        max_service_charge_discount_percentage,
-        design_charge_percentage,
-        max_design_charge_discount_percentage,
-        shopping_charge_percentage,
-        max_shopping_charge_discount_percentage,
-        gst_percentage
-       FROM biz_models WHERE id = $1`,
+      `SELECT category_rates, gst_percentage FROM biz_models WHERE id = $1`,
       [bizModelId]
     );
 
@@ -124,31 +116,21 @@ export async function POST(request) {
 
     const bizModel = bizModelResult.rows[0];
 
-    // Step 3: Create base_rate entry (approved and active)
+    // Step 3: Create base_rate entry (approved and active) with category_rates
     const baseRateResult = await query(
       `INSERT INTO project_base_rates (
         project_id,
-        service_charge_percentage,
-        max_service_charge_discount_percentage,
-        design_charge_percentage,
-        max_design_charge_discount_percentage,
-        shopping_charge_percentage,
-        max_shopping_charge_discount_percentage,
+        category_rates,
         gst_percentage,
         status,
         active,
         created_by,
         approved_by,
         approved_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now()) RETURNING id`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, now()) RETURNING id`,
       [
         newProject.id,
-        bizModel.service_charge_percentage,
-        bizModel.max_service_charge_discount_percentage,
-        bizModel.design_charge_percentage,
-        bizModel.max_design_charge_discount_percentage,
-        bizModel.shopping_charge_percentage,
-        bizModel.max_shopping_charge_discount_percentage,
+        bizModel.category_rates,
         bizModel.gst_percentage,
         'approved',
         true,
