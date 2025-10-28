@@ -874,16 +874,8 @@ export default function ProjectEstimationPage() {
       return null;
     }
 
-    // Map estimation categories to category_rates IDs
-    const categoryMap = {
-      [ESTIMATION_CATEGORY.WOODWORK]: 'woodwork',
-      [ESTIMATION_CATEGORY.MISC_INTERNAL]: 'misc',
-      [ESTIMATION_CATEGORY.MISC_EXTERNAL]: 'misc',
-      [ESTIMATION_CATEGORY.SHOPPING_SERVICE]: 'shopping'
-    };
-
-    const categoryId = categoryMap[itemCategory];
-    return bizModel.category_rates.categories.find(c => c.id === categoryId);
+    // Direct lookup - estimation_items.category already stores the category ID
+    return bizModel.category_rates.categories.find(c => c.id === itemCategory);
   };
 
   const getDefaultCharges = (itemCategory) => {
