@@ -485,7 +485,8 @@ def test_integration_bizmodel_to_payment():
         response = requests.get(
             f"{API_BASE}/projects/{project_data['project_id']}/calculate-payment",
             params={'milestone_id': milestone['id']},
-            timeout=30
+            timeout=30,
+            allow_redirects=False
         )
         
         if response.status_code in [401, 307, 302]:
