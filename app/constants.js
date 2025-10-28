@@ -53,13 +53,6 @@ export const ESTIMATION_STATUS = {
   APPROVED: 'approved'
 }
 
-export const ESTIMATION_CATEGORY = {
-  WOODWORK: 'woodwork',
-  MISC_INTERNAL: "misc_internal",
-  MISC_EXTERNAL: "misc_external",
-  SHOPPING_SERVICE: "shopping_service"
-}
-
 export const ALERT_TYPE = {
   OVERPAYMENT_ALERT: "overpayment_alert",
   OVER_INVOICED_ALERT: "over_invoiced_alert"
