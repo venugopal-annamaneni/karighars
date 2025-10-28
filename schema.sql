@@ -124,7 +124,7 @@ CREATE TABLE biz_models (
 );
 
 COMMENT ON COLUMN biz_models.status IS 'Status of business model: draft or published. Only published models can be used in projects.';
-COMMENT ON COLUMN biz_models.category_rates IS 'JSONB structure: {"categories": [{"id": "woodwork", "category_name": "Woodwork", "kg_label": "Design and Consultation", "max_item_discount_percentage": 20, "kg_percentage": 10, "max_kg_discount_percentage": 50}]}. Flexible category-based pricing rules.';
+COMMENT ON COLUMN biz_models.category_rates IS 'JSONB structure: {"categories": [{"id": "woodwork", "category_name": "Woodwork", "kg_label": "Design and Consultation", "max_item_discount_percentage": 20, "kg_percentage": 10, "max_kg_discount_percentage": 50, "pay_to_vendor_directly": false, "sort_order": 1}]}. Flexible category-based pricing rules with vendor payment flag and display order.';
 
 CREATE TABLE customer_kyc (
     id INTEGER NOT NULL DEFAULT nextval('customer_kyc_id_seq'::regclass),
