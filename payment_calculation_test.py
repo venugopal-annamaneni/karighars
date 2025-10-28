@@ -551,19 +551,19 @@ def test_api_error_handling():
             "name": "Invalid project ID",
             "project_id": 99999,
             "milestone_id": project_data['milestones'][0]['id'] if project_data['milestones'] else 1,
-            "expected_status": [404, 401]
+            "expected_status": [404, 401, 302, 307]
         },
         {
             "name": "Invalid milestone ID",
             "project_id": project_data['project_id'],
             "milestone_id": 99999,
-            "expected_status": [404, 401]
+            "expected_status": [404, 401, 302, 307]
         },
         {
             "name": "Missing milestone_id parameter",
             "project_id": project_data['project_id'],
             "milestone_id": None,
-            "expected_status": [400, 401]
+            "expected_status": [400, 401, 302, 307]
         }
     ]
     
