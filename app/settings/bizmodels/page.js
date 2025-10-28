@@ -175,8 +175,7 @@ export default function BizModelsPage() {
       description: '',
       is_mandatory: true,
       sequence_order: milestones.length + 1,
-      woodwork_percentage: 0,
-      misc_percentage: 0
+      category_percentages: {}
     }]);
   };
 
@@ -187,6 +186,15 @@ export default function BizModelsPage() {
   const updateMilestone = (index, field, value) => {
     const updated = [...milestones];
     updated[index][field] = value;
+    setMilestones(updated);
+  };
+
+  const updateMilestoneCategoryPercentage = (milestoneIndex, categoryId, percentage) => {
+    const updated = [...milestones];
+    if (!updated[milestoneIndex].category_percentages) {
+      updated[milestoneIndex].category_percentages = {};
+    }
+    updated[milestoneIndex].category_percentages[categoryId] = parseFloat(percentage) || 0;
     setMilestones(updated);
   };
 
