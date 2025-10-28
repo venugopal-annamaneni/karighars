@@ -52,143 +52,100 @@
 
 ## Test Cases for Backend Agent
 
-### Test Scenario 1: Create BizModel with Dynamic Category Milestones
-**Endpoint**: `POST /api/biz-models`
-**Description**: Test creating a new BizModel with dynamic category-based milestones
-**Test Data**:
+### Phase 2: Payment Calculation with Dynamic Categories
+
+### Test Scenario 1: Calculate Payment with Dynamic Categories
+**Endpoint**: `GET /api/projects/{id}/calculate-payment?milestone_id={milestoneId}`
+**Description**: Test payment calculation with dynamic category system
+**Prerequisites**:
+- Create a project with a BizModel that has 3 categories (woodwork, misc, shopping)
+- Create an estimation with `category_breakdown` JSONB
+- Select a milestone with `category_percentages` JSONB
+
+**Expected Result**:
+- Response contains `categories` object with dynamic category data
+- Each category has: `category_name`, `sort_order`, `total`, `target_percentage`, `target_amount`
+- Response includes `target_total`, `collected_total`, `expected_total`
+- No hardcoded fields like `woodwork_total`, `misc_total`, `shopping_total`
+
+**Example Expected Response**:
 ```json
 {
-  "code": "TEST_DYNAMIC_V1",
-  "name": "Test Dynamic Categories Model",
-  "description": "Testing dynamic milestone categories",
-  "gst_percentage": 18,
-  "is_active": true,
-  "status": "draft",
-  "category_rates": {
-    "categories": [
-      {
-        "id": "woodwork",
-        "category_name": "Woodwork",
-        "kg_label": "Design & Consultation",
-        "max_item_discount_percentage": 20,
-        "kg_percentage": 10,
-        "max_kg_discount_percentage": 50,
-        "pay_to_vendor_directly": false,
-        "sort_order": 1
-      },
-      {
-        "id": "misc",
-        "category_name": "Misc",
-        "kg_label": "Service Charges",
-        "max_item_discount_percentage": 20,
-        "kg_percentage": 8,
-        "max_kg_discount_percentage": 40,
-        "pay_to_vendor_directly": false,
-        "sort_order": 2
-      },
-      {
-        "id": "shopping",
-        "category_name": "Shopping",
-        "kg_label": "Shopping Charges",
-        "max_item_discount_percentage": 20,
-        "kg_percentage": 5,
-        "max_kg_discount_percentage": 30,
-        "pay_to_vendor_directly": true,
-        "sort_order": 3
-      }
-    ]
+  "milestone_code": "ADVANCE_10",
+  "milestone_name": "Advance Payment",
+  "categories": {
+    "woodwork": {
+      "category_name": "Woodwork",
+      "sort_order": 1,
+      "total": 100000,
+      "target_percentage": 10,
+      "target_amount": 10000
+    },
+    "misc": {
+      "category_name": "Misc",
+      "sort_order": 2,
+      "total": 50000,
+      "target_percentage": 10,
+      "target_amount": 5000
+    },
+    "shopping": {
+      "category_name": "Shopping",
+      "sort_order": 3,
+      "total": 75000,
+      "target_percentage": 0,
+      "target_amount": 0
+    }
   },
-  "stages": [
-    {
-      "stage_code": "2D",
-      "stage_name": "2D Design",
-      "sequence_order": 1,
-      "description": "Initial design phase"
-    }
-  ],
-  "milestones": [
-    {
-      "milestone_code": "ADVANCE_10",
-      "milestone_name": "Advance Payment",
-      "direction": "inflow",
-      "stage_code": "2D",
-      "description": "10% advance",
-      "sequence_order": 1,
-      "category_percentages": {
-        "woodwork": 10,
-        "misc": 10,
-        "shopping": 0
-      }
-    },
-    {
-      "milestone_code": "DESIGN_30",
-      "milestone_name": "Design Approval",
-      "direction": "inflow",
-      "stage_code": "2D",
-      "description": "30% on design approval",
-      "sequence_order": 2,
-      "category_percentages": {
-        "woodwork": 40,
-        "misc": 40,
-        "shopping": 0
-      }
-    },
-    {
-      "milestone_code": "SHOPPING_100",
-      "milestone_name": "Shopping Complete",
-      "direction": "inflow",
-      "stage_code": "SHOPPING",
-      "description": "100% shopping charges",
-      "sequence_order": 3,
-      "category_percentages": {
-        "woodwork": 40,
-        "misc": 40,
-        "shopping": 100
-      }
-    }
-  ]
+  "target_total": 15000,
+  "collected_total": 0,
+  "expected_total": 15000
 }
 ```
 
-**Expected Result**:
-- BizModel created successfully
-- `category_rates` stored as JSONB with all 3 categories
-- Milestones created with `category_percentages` JSONB structure
-- Each milestone has dynamic category mapping (not hardcoded columns)
-
-### Test Scenario 2: Verify Database Schema
-**Description**: Verify that `biz_model_milestones` table has the correct structure
-**Test Query**:
-```sql
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'biz_model_milestones' 
-AND column_name IN ('category_percentages', 'woodwork_percentage', 'misc_percentage', 'shopping_percentage');
-```
+### Test Scenario 2: Calculate Payment with 4 Categories
+**Endpoint**: `GET /api/projects/{id}/calculate-payment?milestone_id={milestoneId}`
+**Description**: Test with a BizModel having 4 categories (add "Civil")
+**Prerequisites**:
+- Create a project with 4 categories in BizModel
+- Milestone has percentages for all 4 categories
 
 **Expected Result**:
-- `category_percentages` column exists with type `jsonb`
-- Old columns (`woodwork_percentage`, `misc_percentage`, `shopping_percentage`) should NOT exist
+- Response contains all 4 categories in the `categories` object
+- Calculations are correct for all 4 categories
+- System is not hardcoded to 3 categories
 
-### Test Scenario 3: Fetch BizModel with Milestones
-**Endpoint**: `GET /api/biz-models`
-**Description**: Fetch BizModels and verify milestone structure
-**Authentication**: Any authenticated user
-
-**Expected Result**:
-- Returns array of BizModels
-- Each milestone has `category_percentages` JSONB field
-- No flat category percentage fields in response
-
-### Test Scenario 4: Create BizModel with 4 Categories
-**Endpoint**: `POST /api/biz-models`
-**Description**: Test with more than 3 categories (e.g., add "Civil" category)
-**Test Data**: Similar to Scenario 1 but with 4 categories and corresponding milestone percentages
+### Test Scenario 3: Verify No Hardcoded Fields
+**Endpoint**: `GET /api/projects/{id}/calculate-payment?milestone_id={milestoneId}`
+**Description**: Verify old hardcoded fields are removed
 
 **Expected Result**:
-- BizModel created successfully with 4 categories
-- Milestones support all 4 categories in `category_percentages`
-- System is truly dynamic (not limited to 3 categories)
+- Response does NOT contain: `woodwork_total`, `misc_total`, `shopping_total`
+- Response does NOT contain: `target_woodwork_amount`, `target_misc_amount`, `target_shopping_amount`
+- Only contains dynamic `categories` object
+
+### Test Scenario 4: Payment Calculation with Zero Percentages
+**Endpoint**: `GET /api/projects/{id}/calculate-payment?milestone_id={milestoneId}`
+**Description**: Test milestone where some categories have 0% target
+**Test Data**: Milestone with `{"woodwork": 10, "misc": 0, "shopping": 100}`
+
+**Expected Result**:
+- Categories with 0% should have `target_amount: 0`
+- Total should only include non-zero categories
+- All categories still present in response
+
+### Test Scenario 5: Integration with BizModel
+**Description**: End-to-end test from BizModel to payment calculation
+**Test Steps**:
+1. Create BizModel with dynamic categories
+2. Create project using that BizModel
+3. Create estimation (ensures `category_breakdown` populated)
+4. Call calculate-payment API
+5. Verify response matches BizModel category structure
+
+**Expected Result**:
+- Categories in payment response match BizModel categories
+- Sort order is preserved
+- All category metadata is correct
 
 ---
 
