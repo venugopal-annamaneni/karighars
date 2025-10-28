@@ -2,7 +2,7 @@
 
 ## Current Configuration
 
-**Application URL:** https://interiorfinance.preview.emergentagent.com
+**Application URL:** https://kg-finance-app.preview.emergentagent.com
 
 **OAuth Credentials:**
 - Client ID: `912678435959-s152i7nqggkk2qh7jkl0ivngfnmik0d2.apps.googleusercontent.com`
@@ -20,13 +20,13 @@ Find the client ID: `912678435959-s152i7nqggkk2qh7jkl0ivngfnmik0d2`
 **CRITICAL:** Add this exact URI to "Authorized redirect URIs":
 
 ```
-https://interiorfinance.preview.emergentagent.com/api/auth/callback/google
+https://kg-finance-app.preview.emergentagent.com/api/auth/callback/google
 ```
 
 ### 4. Also Add (Optional but Recommended)
 For JavaScript origins:
 ```
-https://interiorfinance.preview.emergentagent.com
+https://kg-finance-app.preview.emergentagent.com
 ```
 
 ### 5. Save Changes
@@ -35,7 +35,7 @@ Click "Save" at the bottom of the page.
 ## Testing Access
 
 After configuring the redirect URI, test by:
-1. Going to: https://interiorfinance.preview.emergentagent.com
+1. Going to: https://kg-finance-app.preview.emergentagent.com
 2. Click "Sign In" button
 3. Sign in with Google account
 
@@ -61,7 +61,7 @@ tail -f /var/log/supervisor/nextjs.out.log
 If you're using a different email, it will be created automatically with 'sales' role on first login.
 
 ## Current Error
-You're getting: `https://interiorfinance.preview.emergentagent.com/auth/error?error=AccessDenied`
+You're getting: `https://kg-finance-app.preview.emergentagent.com/auth/error?error=AccessDenied`
 
 This is because either:
 1. ❌ The redirect URI is not configured in Google Cloud Console
