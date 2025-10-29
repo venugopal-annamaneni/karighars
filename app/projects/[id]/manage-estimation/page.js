@@ -643,6 +643,68 @@ export default function ProjectEstimationPage() {
 }
 
 
+
+// ===== OVERALL SUMMARY COMPONENT =====
+const OverallSummary = ({ totals, baseRates }) => {
+  const categories = baseRates.category_rates?.categories || [];
+  
+  const getCategoryGridCols = (count) => {
+    if (count <= 3) return 'md:grid-cols-3';
+    if (count === 4) return 'md:grid-cols-4';
+    if (count === 5 || count === 6) return 'md:grid-cols-3';
+    return 'md:grid-cols-4';
+  };
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Estimation Overview</CardTitle>
+        <CardDescription>Summary of all categories</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Category Breakdown */}
+        <div className={`grid gap-4 ${getCategoryGridCols(categories.length)}`}>
+          {categories
+            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+            .map(category => {
+              const categoryData = totals.category_breakdown?.[category.id] || {};
+              return (
+                <div key={category.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="text-xs text-muted-foreground mb-1">{category.category_name}</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {formatCurrency(categoryData.total || 0)}
+                  </p>
+                </div>
+              );
+            })}
+        </div>
+        
+        {/* High-Level Totals */}
+        <div className="grid md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-slate-300">
+          <div>
+            <p className="text-sm text-muted-foreground">Total Items Value</p>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.items_value || 0)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Total Discount</p>
+            <p className="text-xl font-bold text-red-600">
+              -{formatCurrency((totals.items_discount || 0) + (totals.kg_charges_discount || 0))}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">GST</p>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.gst_amount || 0)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Final Value</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.final_value || 0)}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // ✅ Drop-in Optimized EditableEstimationItems
 export const EditableEstimationItems = memo(function EditableEstimationItems({
   data,
