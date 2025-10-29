@@ -34,9 +34,9 @@ import { mkConfig, generateCsv, download } from 'export-to-csv';
 
 // Helper to get grid columns based on category count
 const getCategoryGridCols = (count) => {
-  // if (count <= 3) return 'md:grid-cols-3';
-  // if (count === 4) return 'md:grid-cols-4';
-  // if (count === 5 || count === 6) return 'md:grid-cols-3';
+  if (count <= 3) return 'md:grid-cols-3';
+  if (count === 4) return 'md:grid-cols-4';
+  if (count === 5 || count === 6) return 'md:grid-cols-3';
   return 'md:grid-cols-4'; // 4xN grid for 7+
 };
 
@@ -47,8 +47,6 @@ export default function ProjectEstimationsPage() {
   const projectId = params.id;
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
-  const [grouping, setGrouping] = useState([]);
-  const [expanded, setExpanded] = useState({});
   const [projectBaseRates, setProjectBaseRates] = useState(null);
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
@@ -67,11 +65,11 @@ export default function ProjectEstimationsPage() {
 
   useEffect(() => {
     if (projectId) {
-      fetchProjectBaseRates();
+      fetchProjectAuxData();
     }
   }, [projectId]);
 
-  const fetchProjectBaseRates = async () => {
+  const fetchProjectAuxData = async () => {
     try {
       const res = await fetch(`/api/projects/${projectId}/base-rates/active`);
       if (res.ok) {
@@ -102,248 +100,7 @@ export default function ProjectEstimationsPage() {
     }
   };
 
-  // TanStack Table Column Definitions
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'room_name',
-      header: 'Room/Section',
-      enableGrouping: true,
-      cell: ({ getValue }) => getValue(),
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      enableGrouping: true,
-      cell: ({ getValue }) => {
-        const value = getValue();
-        // Get category name from projectBaseRates
-        const category = projectBaseRates?.category_rates?.categories?.find(c => c.id === value);
-        return category?.category_name || value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
-      },
-      sortingFn: (rowA, rowB) => {
-        const categories = projectBaseRates?.category_rates?.categories || [];
-        
-        // Build sort order map from category_rates
-        const categoryOrder = {};
-        categories.forEach(cat => {
-          categoryOrder[cat.id] = cat.sort_order || 999;
-        });
-        
-        const a = categoryOrder[rowA.original.category] || 999;
-        const b = categoryOrder[rowB.original.category] || 999;
-        return a - b;
-      },
-    },
-    {
-      accessorKey: 'item_name',
-      header: 'Item',
-      enableGrouping: false,
-      cell: ({ getValue }) => <div className="min-w-[100px]">{getValue()}</div>,
-    },
-    {
-      accessorKey: 'unit',
-      header: 'Unit',
-      enableGrouping: false,
-      cell: ({ getValue }) => <span className="capitalize">{getValue()}</span>,
-    },
-    {
-      accessorKey: 'width',
-      header: 'Width',
-      enableGrouping: false,
-      cell: ({ row }) => {
-        if (row.original.unit === 'sqft' && row.original.width) {
-          return parseFloat(row.original.width).toFixed(2);
-        }
-        return '-';
-      },
-    },
-    {
-      accessorKey: 'height',
-      header: 'Height',
-      enableGrouping: false,
-      cell: ({ row }) => {
-        if (row.original.unit === 'sqft' && row.original.height) {
-          return parseFloat(row.original.height).toFixed(2);
-        }
-        return '-';
-      },
-    },
-    {
-      accessorKey: 'quantity',
-      header: 'Quantity',
-      enableGrouping: false,
-      cell: ({ row }) => {
-        const qty = parseFloat(row.original.quantity).toFixed(2);
-        if (row.original.unit === 'sqft' && row.original.width && row.original.height) {
-          return (
-            <div className='min-w-[100px]'>
-              <div className="font-medium">{qty}</div>
-              <div className="text-xs text-blue-600">
-                ({row.original.width} × {row.original.height})
-              </div>
-            </div>
-          );
-        }
-        return qty;
-      },
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <div className="font-bold">{parseFloat(getValue()).toFixed(2)}</div>;
-      },
-    },
-    {
-      accessorKey: 'unit_price',
-      header: 'Unit Price',
-      enableGrouping: false,
-      cell: ({ getValue }) => formatCurrency(getValue() || 0),
-    },
-    {
-      accessorKey: 'subtotal',
-      header: 'Subtotal',
-      enableGrouping: false,
-      cell: ({ getValue }) => <span className="font-medium">{formatCurrency(getValue() || 0)}</span>,
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
-      },
-    },
-    {
-      accessorKey: 'item_discount_amount',
-      header: 'Discount',
-      enableGrouping: false,
-      cell: ({ row }) => (
-        <div>
-          <div>{formatCurrency(row.original.item_discount_amount || 0)}</div>
-          <div className="text-xs text-red-500">({row.original.item_discount_percentage}%)</div>
-        </div>
-      ),
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
-      },
-    },
-    {
-      accessorKey: 'karighar_charges_amount',
-      header: 'KG Charges',
-      enableGrouping: false,
-      cell: ({ row }) => (
-        <div>
-          <div>{formatCurrency(row.original.karighar_charges_amount || 0)}</div>
-          <div className="text-xs text-red-500">({row.original.karighar_charges_percentage}%)</div>
-        </div>
-      ),
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
-      },
-    },
-    {
-      accessorKey: 'discount_kg_charges_amount',
-      header: 'Discount on KG Charges',
-      enableGrouping: false,
-      cell: ({ row }) => (
-        <div>
-          <div>{formatCurrency(row.original.discount_kg_charges_amount || 0)}</div>
-          <div className="text-xs text-red-500">({row.original.discount_kg_charges_percentage}%)</div>
-        </div>
-      ),
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
-      },
-    },
-    {
-      accessorKey: 'gst_percentage',
-      header: 'GST%',
-      enableGrouping: false,
-      cell: ({ getValue }) => `${getValue()}%`,
-    },
-    {
-      accessorKey: 'item_total',
-      header: 'Item Total',
-      enableGrouping: false,
-      cell: ({ getValue }) => (
-        <span className="font-bold text-green-700">{formatCurrency(getValue() || 0)}</span>
-      ),
-      aggregationFn: 'sum',
-      aggregatedCell: ({ getValue }) => {
-        return <span className="font-bold text-green-700 text-lg">{formatCurrency(getValue() || 0)}</span>;
-      },
-    },
-  ], []);
 
-  // TanStack Table Instance
-  const table = useReactTable({
-    data: estimationItems,
-    columns,
-    state: {
-      grouping,
-      expanded,
-    },
-    onGroupingChange: setGrouping,
-    onExpandedChange: setExpanded,
-    getExpandedRowModel: getExpandedRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    aggregationFns: {
-      sum: (columnId, leafRows) => {
-        return leafRows.reduce((sum, row) => {
-          const value = row.getValue(columnId);
-          return sum + (parseFloat(value) || 0);
-        }, 0);
-      },
-    },
-  });
-
-  // CSV Export Function
-  const onExportCSV = () => {
-    const csvConfig = mkConfig({
-      filename: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
-      useKeysAsHeaders: true,
-      fieldSeparator: ',',
-    });
-
-    let csvData = [];
-    if (estimationItems.length > 0) {
-      csvData = estimationItems.map(item => ({
-        room_name: item.room_name,
-        category: item.category,
-        item_name: item.item_name,
-        unit: item.unit,
-        width: item.width || '-',
-        height: item.height || '-',
-        quantity: item.quantity,
-        unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
-        subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
-        karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
-        discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
-        gst_percentage: item.gst_percentage,
-        item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
-      }));
-    } else {
-      csvData = [{
-        room_name: "",
-        category: "",
-        item_name: "",
-        unit: "",
-        width: "",
-        height: "",
-        quantity: "",
-        unit_price: "",
-        subtotal: "",
-        karighar_charges_amount: "",
-        discount_amount: "",
-        gst_percentage: "",
-        item_total: "",
-      }]
-    }
-
-    const csv = generateCsv(csvConfig)(csvData);
-    download(csvConfig)(csv);
-    toast.success('CSV exported successfully!');
-  };
 
   if (status === 'loading' || loading || estimationLoading) {
     return (
@@ -358,17 +115,16 @@ export default function ProjectEstimationsPage() {
 
   if (!session || !project) return null;
 
-
-  const getStageColor = (stage) => {
-    switch (stage) {
-      case PROJECT_STAGES.ONBOARDING: return 'bg-blue-100 text-blue-700';
-      case PROJECT_STAGES['2D']: return 'bg-purple-100 text-purple-700';
-      case PROJECT_STAGES['3D']: return 'bg-amber-100 text-amber-700';
-      case PROJECT_STAGES.EXEC: return 'bg-green-100 text-green-700';
-      case PROJECT_STAGES.HANDOVER: return 'bg-slate-100 text-slate-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
+  // const getStageColor = (stage) => {
+  //   switch (stage) {
+  //     case PROJECT_STAGES.ONBOARDING: return 'bg-blue-100 text-blue-700';
+  //     case PROJECT_STAGES['2D']: return 'bg-purple-100 text-purple-700';
+  //     case PROJECT_STAGES['3D']: return 'bg-amber-100 text-amber-700';
+  //     case PROJECT_STAGES.EXEC: return 'bg-green-100 text-green-700';
+  //     case PROJECT_STAGES.HANDOVER: return 'bg-slate-100 text-slate-700';
+  //     default: return 'bg-gray-100 text-gray-700';
+  //   }
+  // };
 
   return (
     <div>
@@ -411,13 +167,26 @@ export default function ProjectEstimationsPage() {
                     ?.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
                     .map(category => {
                       const categoryData = estimation.category_breakdown?.[category.id] || {};
+                      debugger;
                       return (
                         <div key={category.id} className="bg-slate-50 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-1">
                             <span>{getCategoryIcon(category.id)}</span>
                             <p className="text-sm text-muted-foreground">{category.category_name}</p>
                           </div>
-                          <p className="text-xl font-bold">{formatCurrency(categoryData?.subtotal || 0)}</p>
+                          {category.pay_to_vendor_directly && (
+                            <div>
+                              <p className={`text-xl font-bold line-through text-muted-foreground`}>
+                                {formatCurrency(categoryData?.subtotal || 0)}
+                              </p>
+                              <span className='text-xs text-blue-500'>Paid to Vendors Directly</span>
+                            </div>
+                          )}
+                          {!category.pay_to_vendor_directly && (
+                            <p className={`text-xl font-bold`}>
+                              {formatCurrency(categoryData?.subtotal || 0)}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -455,130 +224,8 @@ export default function ProjectEstimationsPage() {
 
 
               <div className="space-y-4">
-                {/* Export Button */}
-                <div className="flex justify-end">
-                  <Button
-                    onClick={onExportCSV}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export to CSV
-                  </Button>
-                </div>
-
                 {/* TanStack Table */}
-                <div className="border rounded-lg overflow-auto" style={{ maxHeight: '600px' }}>
-                  <table className="w-full text-sm border-collapse">
-                    <thead className="sticky top-0 bg-slate-100 z-10">
-                      {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map(header => (
-                            <th
-                              key={header.id}
-                              className="p-3 text-left font-semibold border-b-2 border-slate-300"
-                              style={{ minWidth: header.column.id === 'item_name' ? '200px' : '100px' }}
-                            >
-                              {header.isPlaceholder ? null : (
-                                <div
-                                  className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                                  onClick={header.column.getToggleSortingHandler()}
-                                >
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                  {{
-                                    asc: ' 🔼',
-                                    desc: ' 🔽',
-                                  }[header.column.getIsSorted()] ?? null}
-                                </div>
-                              )}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
-                    <tbody>
-                      {table.getRowModel().rows.length == 0 && (
-                        <tr className="border-b hover:bg-slate-50">
-                          <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
-                        </tr>
-                      )}
-                      {table.getRowModel().rows.map(row => {
-                        // Determine row styling based on grouping level
-                        let rowClassName = '';
-                        let isGroupRow = row.getIsGrouped();
-
-                        if (isGroupRow) {
-                          const depth = row.depth;
-                          if (depth === 0) {
-                            // Room level
-                            rowClassName = 'bg-blue-100 font-bold text-blue-900';
-                          } else if (depth === 1) {
-                            // Category level
-                            rowClassName = 'bg-slate-100 font-semibold text-slate-700';
-                          }
-                        }
-
-                        return (
-                          <tr key={row.id} className={`border-b hover:bg-slate-50 ${rowClassName}`}>
-                            {row.getVisibleCells().map((cell, cellIndex) => {
-                              const isFirstCell = cellIndex === 0;
-                              const paddingLeft = `${row.depth * 20 + 12}px`;
-
-                              return (
-                                <td
-                                  key={cell.id}
-                                  className="p-3"
-                                  style={isFirstCell ? { paddingLeft } : {}}
-                                >
-                                  {isFirstCell && row.getCanExpand() && (
-                                    <button
-                                      onClick={row.getToggleExpandedHandler()}
-                                      className="inline-flex items-center mr-2"
-                                    >
-                                      {row.getIsExpanded() ? (
-                                        <ChevronDown className="h-4 w-4" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4" />
-                                      )}
-                                    </button>
-                                  )}
-                                  {cell.getIsGrouped() ? (
-                                    // Render group cell
-                                    <>
-                                      {flexRender(
-                                        cell.column.columnDef.cell,
-                                        cell.getContext()
-                                      )}{' '}
-                                      <span className="text-xs text-muted-foreground">
-                                        ({row.subRows.length})
-                                      </span>
-                                    </>
-                                  ) : cell.getIsAggregated() ? (
-                                    // Render aggregated cell
-                                    flexRender(
-                                      cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )
-                                  ) : cell.getIsPlaceholder() ? null : (
-                                    // Render regular cell
-                                    flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )
-                                  )}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <EstimationItemsTable project={project} estimation={estimation} projectBaseRates={projectBaseRates} estimationItems={estimationItems} />
               </div>
 
             </div>
@@ -658,4 +305,379 @@ export default function ProjectEstimationsPage() {
       </Dialog>
     </div>
   );
+}
+
+
+
+const EstimationItemsTable = ({ project, estimation, projectBaseRates, estimationItems }) => {
+  const [grouping, setGrouping] = useState([]);
+  const [expanded, setExpanded] = useState({});
+  // TanStack Table Column Definitions
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'room_name',
+      header: 'Room/Section',
+      enableGrouping: true,
+      cell: ({ getValue }) => getValue(),
+    },
+    {
+      accessorKey: 'category',
+      header: 'Category',
+      enableGrouping: true,
+      cell: ({ getValue }) => {
+        const value = getValue();
+        // Get category name from projectBaseRates
+        const category = projectBaseRates?.category_rates?.categories?.find(c => c.id === value);
+        return category?.category_name || value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      },
+      sortingFn: (rowA, rowB) => {
+        const categories = projectBaseRates?.category_rates?.categories || [];
+
+        // Build sort order map from category_rates
+        const categoryOrder = {};
+        categories.forEach(cat => {
+          categoryOrder[cat.id] = cat.sort_order || 999;
+        });
+
+        const a = categoryOrder[rowA.original.category] || 999;
+        const b = categoryOrder[rowB.original.category] || 999;
+        return a - b;
+      },
+    },
+    {
+      accessorKey: 'item_name',
+      header: 'Item',
+      enableGrouping: false,
+      cell: ({ getValue }) => <div className="min-w-[100px]">{getValue()}</div>,
+    },
+    {
+      accessorKey: 'unit',
+      header: 'Unit',
+      enableGrouping: false,
+      cell: ({ getValue }) => <span className="capitalize">{getValue()}</span>,
+    },
+    {
+      accessorKey: 'width',
+      header: 'Width',
+      enableGrouping: false,
+      cell: ({ row }) => {
+        if (row.original.unit === 'sqft' && row.original.width) {
+          return parseFloat(row.original.width).toFixed(2);
+        }
+        return '-';
+      },
+    },
+    {
+      accessorKey: 'height',
+      header: 'Height',
+      enableGrouping: false,
+      cell: ({ row }) => {
+        if (row.original.unit === 'sqft' && row.original.height) {
+          return parseFloat(row.original.height).toFixed(2);
+        }
+        return '-';
+      },
+    },
+    {
+      accessorKey: 'quantity',
+      header: 'Quantity',
+      enableGrouping: false,
+      cell: ({ row }) => {
+        const qty = parseFloat(row.original.quantity).toFixed(2);
+        if (row.original.unit === 'sqft' && row.original.width && row.original.height) {
+          return (
+            <div className='min-w-[100px] w-full text-right block'>
+              <div className="font-medium">{qty}</div>
+              <div className="text-xs text-blue-600">
+                ({row.original.width} × {row.original.height})
+              </div>
+            </div>
+          );
+        }
+        return <span className='w-full text-right block'>{qty}</span>;
+      },
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <div className="font-bold w-full text-right block">{parseFloat(getValue()).toFixed(2)}</div>;
+      },
+    },
+    {
+      accessorKey: 'unit_price',
+      header: 'Unit Price',
+      enableGrouping: false,
+      cell: ({ getValue }) => <span className='w-full text-right block'>{formatCurrency(getValue() || 0)}</span>,
+    },
+    {
+      accessorKey: 'subtotal',
+      header: 'Subtotal',
+      enableGrouping: false,
+      cell: ({ getValue }) => <span className="font-medium w-full text-right block">{formatCurrency(getValue() || 0)}</span>,
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold w-full text-right block">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+    {
+      accessorKey: 'item_discount_amount',
+      header: 'Discount',
+      enableGrouping: false,
+      cell: ({ row }) => (
+        <div>
+          <div className='w-full text-right block'>{formatCurrency(row.original.item_discount_amount || 0)}</div>
+          <div className="text-xs text-red-500 w-full text-right block">({row.original.item_discount_percentage}%)</div>
+        </div>
+      ),
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+    {
+      accessorKey: 'karighar_charges_amount',
+      header: 'KG Charges',
+      enableGrouping: false,
+      cell: ({ row }) => (
+        <div>
+          <div className='w-full text-right block'>{formatCurrency(row.original.karighar_charges_amount || 0)}</div>
+          <div className="text-xs text-red-500 w-full text-right block">({row.original.karighar_charges_percentage}%)</div>
+        </div>
+      ),
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+    {
+      accessorKey: 'discount_kg_charges_amount',
+      header: 'Discount on KG Charges',
+      enableGrouping: false,
+      cell: ({ row }) => (
+        <div>
+          <div className='w-full text-right block'>{formatCurrency(row.original.discount_kg_charges_amount || 0)}</div>
+          <div className="text-xs text-red-500 w-full text-right block">({row.original.discount_kg_charges_percentage}%)</div>
+        </div>
+      ),
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold w-full text-right block">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+    {
+      accessorKey: 'gst_percentage',
+      header: 'GST%',
+      enableGrouping: false,
+      cell: ({ getValue }) => <span className='w-full text-right block'>`${getValue()}%`</span>,
+    },
+    {
+      accessorKey: 'item_total',
+      header: 'Item Total',
+      enableGrouping: false,
+      cell: ({ getValue }) => (
+        <span className="font-bold text-green-700 w-full text-right block">{formatCurrency(getValue() || 0)}</span>
+      ),
+      aggregationFn: 'sum',
+      aggregatedCell: ({ getValue }) => {
+        return <span className="font-bold text-green-700 w-full text-right block">{formatCurrency(getValue() || 0)}</span>;
+      },
+    },
+  ], []);
+
+  // TanStack Table Instance
+  const table = useReactTable({
+    data: estimationItems,
+    columns,
+    state: {
+      grouping,
+      expanded,
+    },
+    onGroupingChange: setGrouping,
+    onExpandedChange: setExpanded,
+    getExpandedRowModel: getExpandedRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    aggregationFns: {
+      sum: (columnId, leafRows) => {
+        return leafRows.reduce((sum, row) => {
+          const value = row.getValue(columnId);
+          return sum + (parseFloat(value) || 0);
+        }, 0);
+      },
+    },
+  });
+
+  // CSV Export Function
+  const onExportCSV = () => {
+    const csvConfig = mkConfig({
+      filename: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
+      useKeysAsHeaders: true,
+      fieldSeparator: ',',
+    });
+
+    let csvData = [];
+    if (estimationItems.length > 0) {
+      csvData = estimationItems.map(item => ({
+        room_name: item.room_name,
+        category: item.category,
+        item_name: item.item_name,
+        unit: item.unit,
+        width: item.width || '-',
+        height: item.height || '-',
+        quantity: item.quantity,
+        unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
+        subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
+        karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
+        discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
+        gst_percentage: item.gst_percentage,
+        item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
+      }));
+    } else {
+      csvData = [{
+        room_name: "",
+        category: "",
+        item_name: "",
+        unit: "",
+        width: "",
+        height: "",
+        quantity: "",
+        unit_price: "",
+        subtotal: "",
+        karighar_charges_amount: "",
+        discount_amount: "",
+        gst_percentage: "",
+        item_total: "",
+      }]
+    }
+
+    const csv = generateCsv(csvConfig)(csvData);
+    download(csvConfig)(csv);
+    toast.success('CSV exported successfully!');
+  };
+  return (
+    <div className='space-y-4'>
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <Button
+          onClick={onExportCSV}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export to CSV
+        </Button>
+      </div>
+      <div className="border rounded-lg overflow-auto" style={{ maxHeight: '600px' }}>
+        <table className="w-full text-sm border-collapse">
+          <thead className="sticky top-0 bg-slate-100 z-10">
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th
+                    key={header.id}
+                    className="p-3 text-left font-semibold border-b-2 border-slate-300"
+                    style={{ minWidth: header.column.id === 'item_name' ? '200px' : '100px' }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: ' 🔼',
+                          desc: ' 🔽',
+                        }[header.column.getIsSorted()] ?? null}
+                      </div>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.length == 0 && (
+              <tr className="border-b hover:bg-slate-50">
+                <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+              </tr>
+            )}
+            {table.getRowModel().rows.map(row => {
+              // Determine row styling based on grouping level
+              let rowClassName = '';
+              let isGroupRow = row.getIsGrouped();
+
+              if (isGroupRow) {
+                const depth = row.depth;
+                if (depth === 0) {
+                  // Room level
+                  rowClassName = 'bg-blue-100 font-bold text-blue-900';
+                } else if (depth === 1) {
+                  // Category level
+                  rowClassName = 'bg-slate-100 font-semibold text-slate-700';
+                }
+              }
+
+              return (
+                <tr key={row.id} className={`border-b hover:bg-slate-50 ${rowClassName}`}>
+                  {row.getVisibleCells().map((cell, cellIndex) => {
+                    const isFirstCell = cellIndex === 0;
+                    const paddingLeft = `${row.depth * 20 + 12}px`;
+
+                    return (
+                      <td
+                        key={cell.id}
+                        className="p-3"
+                        style={isFirstCell ? { paddingLeft } : {}}
+                      >
+                        {isFirstCell && row.getCanExpand() && (
+                          <button
+                            onClick={row.getToggleExpandedHandler()}
+                            className="inline-flex items-center mr-2"
+                          >
+                            {row.getIsExpanded() ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                        {cell.getIsGrouped() ? (
+                          // Render group cell
+                          <>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}{' '}
+                            <span className="text-xs text-muted-foreground">
+                              ({row.subRows.length})
+                            </span>
+                          </>
+                        ) : cell.getIsAggregated() ? (
+                          // Render aggregated cell
+                          flexRender(
+                            cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        ) : cell.getIsPlaceholder() ? null : (
+                          // Render regular cell
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
