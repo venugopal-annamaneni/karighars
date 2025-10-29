@@ -292,21 +292,6 @@ export default function ProjectEstimationPage() {
     };
   };
 
-  // Helper function for category icons
-  const getCategoryIcon = (categoryId) => {
-    const iconMap = {
-      'woodwork': '🪵',
-      'misc': '🔧',
-      'misc_internal': '🔧',
-      'misc_external': '🔨',
-      'shopping': '🛒',
-      'shopping_service': '🛒',
-      'civil': '🏗️',
-      'default': '📦'
-    };
-    return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
-  };
-
   // Helper function to update items for a specific category
   const updateCategoryItems = useCallback((categoryId, updatedItems) => {
     setData(prevData => {
