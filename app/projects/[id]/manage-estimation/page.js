@@ -443,24 +443,32 @@ export default function ProjectEstimationPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Line Items */}
+        
+        {/* Overall Summary - Top */}
+        <OverallSummary totals={calculateTotals()} baseRates={baseRates} />
+
+        {/* Category-based Tables */}
+        {baseRates.category_rates?.categories
+          ?.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          .map(category => {
+            const categoryItems = data.filter(item => item.category === category.id);
+            return (
+              <CategoryEstimationTable
+                key={category.id}
+                category={category}
+                items={categoryItems}
+                onItemsChange={(updatedItems) => updateCategoryItems(category.id, updatedItems)}
+                baseRates={baseRates}
+                calculateItemTotal={calculateItemTotal}
+                emptyItem={emptyItem}
+              />
+            );
+          })}
+
+        {/* Keyboard Shortcuts Help */}
         <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Estimation Items</CardTitle>
-                <CardDescription>Add all project items with pricing details</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* TanStack Table */}
-            {/* Fixed Column Layout */}
-            <EditableEstimationItems data={data} setData={setData} totals={calculateTotals()} emptyItem={emptyItem} baseRates={baseRates} calculateItemTotal={calculateItemTotal} />
-
-
-            {/* Keyboard Shortcuts Help */}
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
+          <CardContent className="pt-4">
+            <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
               <strong>⌨️ Keyboard Shortcuts:</strong>
               <span className="ml-2">Tab = Next cell</span>
               <span className="ml-2">•</span>
@@ -468,11 +476,11 @@ export default function ProjectEstimationPage() {
               <span className="ml-2">•</span>
               <span className="ml-2">Esc = Cancel edit</span>
             </div>
-
-            {/* Totals Summary */}
-            <EstimationSummary totals={calculateTotals()} baseRates={baseRates} />
           </CardContent>
         </Card>
+
+        {/* Overall Summary - Bottom */}
+        <OverallSummary totals={calculateTotals()} baseRates={baseRates} />
 
         {/* Footer */}
         <Card>
