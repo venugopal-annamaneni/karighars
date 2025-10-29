@@ -705,6 +705,147 @@ const OverallSummary = ({ totals, baseRates }) => {
   );
 };
 
+
+// ===== CATEGORY ESTIMATION TABLE COMPONENT =====
+const CategoryEstimationTable = memo(function CategoryEstimationTable({
+  category,
+  items,
+  onItemsChange,
+  baseRates,
+  calculateItemTotal,
+  emptyItem
+}) {
+  // Calculate category totals
+  const categoryTotals = useMemo(() => {
+    const fields = ['subtotal', 'item_discount_amount', 'karighar_charges_amount', 
+                    'discount_kg_charges_amount', 'gst_amount', 'item_total'];
+    const sums = {};
+    fields.forEach(field => {
+      sums[field] = items.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
+    });
+    return sums;
+  }, [items]);
+
+  // Local handlers for this category
+  const addItem = () => {
+    const newItem = { 
+      ...emptyItem, 
+      id: Date.now() + Math.random(),
+      category: category.id 
+    };
+    onItemsChange([...items, newItem]);
+  };
+
+  const removeItem = (index) => {
+    const updated = items.filter((_, i) => i !== index);
+    onItemsChange(updated);
+  };
+
+  const duplicateItem = (index) => {
+    const itemToCopy = items[index];
+    const duplicated = {
+      ...itemToCopy,
+      id: Date.now() + Math.random()
+    };
+    const updated = [...items];
+    updated.splice(index + 1, 0, duplicated);
+    onItemsChange(updated);
+  };
+
+  const updateItem = useCallback((index, field, value) => {
+    const updated = [...items];
+    updated[index][field] = value;
+    onItemsChange(updated);
+  }, [items, onItemsChange]);
+
+  // Reuse EditableEstimationItems but pass category-specific data
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <span>{getCategoryIcon(category.id)}</span>
+              <span>{category.category_name}</span>
+            </CardTitle>
+            <CardDescription>
+              {category.kg_label}: {category.kg_percentage}% | Max Item Disc: {category.max_item_discount_percentage}%
+            </CardDescription>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={addItem}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+            <p className="text-muted-foreground mb-3">
+              No items in {category.category_name} yet
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={addItem}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add First {category.category_name} Item
+            </Button>
+          </div>
+        ) : (
+          <>
+            <EditableEstimationItems 
+              data={items} 
+              setData={onItemsChange} 
+              totals={categoryTotals} 
+              emptyItem={{...emptyItem, category: category.id}} 
+              baseRates={baseRates} 
+              calculateItemTotal={calculateItemTotal}
+              showAddButton={false}
+            />
+            
+            {/* Category Summary */}
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-semibold text-green-900 mb-3">{category.category_name} Summary</h4>
+              <div className="grid md:grid-cols-6 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Subtotal</p>
+                  <p className="font-bold text-green-700">
+                    {category.pay_to_vendor_directly && (
+                      <span className="line-through text-muted-foreground mr-2">
+                        {formatCurrency(categoryTotals.subtotal || 0)}
+                      </span>
+                    )}
+                    {!category.pay_to_vendor_directly && formatCurrency(categoryTotals.subtotal || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Item Disc.</p>
+                  <p className="font-bold text-red-600">-{formatCurrency(categoryTotals.item_discount_amount || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">KG Charges</p>
+                  <p className="font-bold text-blue-600">{formatCurrency(categoryTotals.karighar_charges_amount || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">KG Disc.</p>
+                  <p className="font-bold text-red-600">-{formatCurrency(categoryTotals.discount_kg_charges_amount || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">GST</p>
+                  <p className="font-bold text-slate-700">{formatCurrency(categoryTotals.gst_amount || 0)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total</p>
+                  <p className="font-bold text-lg text-green-700">{formatCurrency(categoryTotals.item_total || 0)}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
+
+
 // ✅ Drop-in Optimized EditableEstimationItems
 export const EditableEstimationItems = memo(function EditableEstimationItems({
   data,
