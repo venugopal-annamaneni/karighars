@@ -1202,9 +1202,11 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
         <div className="text-sm text-muted-foreground">
           Total Items: {data.length}
         </div>
-        <Button type="button" onClick={addItem} variant="outline" size="sm" className="gap-2">
-          <Plus className="h-4 w-4" /> Add Item
-        </Button>
+        {showAddButton && (
+          <Button type="button" onClick={addItem} variant="outline" size="sm" className="gap-2">
+            <Plus className="h-4 w-4" /> Add Item
+          </Button>
+        )}
       </div>
 
       <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
