@@ -862,6 +862,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
   emptyItem,
   baseRates,
   calculateItemTotal,
+  showAddButton = true,
 }) {
   const tableContainerRef = useRef(null);
   const cellRefs = useRef({});
