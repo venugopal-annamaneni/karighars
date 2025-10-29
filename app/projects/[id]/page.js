@@ -76,7 +76,7 @@ export default function ProjectEstimationsPage() {
       const res = await fetch(`/api/projects/${projectId}/base-rates/active`);
       if (res.ok) {
         const data = await res.json();
-        setProjectBaseRates(data);
+        setProjectBaseRates(data.activeRate);
       }
     } catch (error) {
       console.error('Error fetching project base rates:', error);
