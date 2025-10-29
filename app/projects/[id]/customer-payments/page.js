@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DOCUMENT_TYPE, PAYMENT_STATUS, REVERSAL_PAYMENT_TYPE, USER_ROLE } from '@/app/constants';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, getCategoryIcon } from '@/lib/utils';
 import {
   AlertTriangle,
   FileText,
@@ -49,19 +49,7 @@ export default function CustomerPaymentsPage() {
     remarks: '',
   });
   const { fetchProjectData, project, estimation, loading } = useProjectData();
-
-  // Helper function for category icons
-  const getCategoryIcon = (categoryId) => {
-    const iconMap = {
-      'woodwork': '🪵',
-      'misc': '🔧',
-      'shopping': '🛒',
-      'civil': '🏗️',
-      'default': '📦'
-    };
-    return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
-  };
-
+  
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
@@ -176,7 +164,6 @@ export default function CustomerPaymentsPage() {
       }
 
       const data = await res.json();
-      // data.categories is now dynamic: { "woodwork": {total, target_percentage, target_amount}, ... }
       
       setPaymentData(prev => ({
         ...prev,
@@ -306,7 +293,7 @@ export default function CustomerPaymentsPage() {
                           const catPercentages = milestone.category_percentages || {};
                           const percentageDisplay = Object.entries(catPercentages)
                             .filter(([catId, pct]) => pct > 0)
-                            .map(([catId, pct]) => `${catId.toUpperCase().substring(0, 1)}: ${pct}%`)
+                            .map(([catId, pct]) => `${catId.toUpperCase()}: ${pct}%`)
                             .join(', ') || 'No percentages';
                           
                           return (
@@ -329,8 +316,8 @@ export default function CustomerPaymentsPage() {
                     .filter(([catId, catData]) => catData.target_amount > 0)
                     .sort((a, b) => (a[1].sort_order || 0) - (b[1].sort_order || 0))
                     .map(([categoryId, categoryData]) => (
-                      <div key={categoryId} className="border-b border-green-200 pb-2 last:border-0">
-                        <p className="text-xs font-semibold text-green-800 mb-1">
+                      <div key={categoryId} className="divide-y-2 divide-green-200 pb-2 last:border-0">
+                        <p className="text-xs font-semibold text-green-800 m-1">
                           {getCategoryIcon(categoryId)} {categoryData.category_name}:
                         </p>
                         <div className="text-xs text-green-700 space-y-1 ml-3">
@@ -362,7 +349,7 @@ export default function CustomerPaymentsPage() {
                     <Label>Amount Collected (₹) *</Label>
                     <Input
                       type="number"
-                      step="0.01"
+                      step="100"
                       placeholder="0"
                       value={paymentData.amount || ''}
                       onChange={(e) => {

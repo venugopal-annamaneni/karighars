@@ -109,6 +109,7 @@ export default function ProjectEstimationPage() {
       if (!baseRateRes.ok) {
         throw new Error('Failed to fetch active base rates');
       }
+      debugger;
       const baseRateData = await baseRateRes.json();
       setBizModel(baseRateData.activeRate); // Keep same state name for compatibility
 
@@ -604,6 +605,31 @@ export default function ProjectEstimationPage() {
     };
   };
 
+  // Helper function to get category config from JSONB
+  const getCategoryConfig = (itemCategory) => {
+    if (!bizModel.category_rates || !bizModel.category_rates.categories) {
+      return null;
+    }
+
+    // Direct lookup - estimation_items.category already stores the category ID
+    return bizModel.category_rates.categories.find(c => c.id === itemCategory);
+  };
+
+  const getDefaultCharges = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.kg_percentage || 0;
+  };
+
+  const getMaxItemDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_item_discount_percentage || 0;
+  };
+
+  const getMaxKGDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_kg_discount_percentage || 0;
+  };
+
   const calculateTotals = () => {
     // Get available categories from bizModel
     const categories = bizModel.category_rates?.categories || [];
@@ -791,32 +817,6 @@ export default function ProjectEstimationPage() {
   };
 
   const totals = calculateTotals();
-
-  
-  // Helper function to get category config from JSONB
-  const getCategoryConfig = (itemCategory) => {
-    if (!bizModel.category_rates || !bizModel.category_rates.categories) {
-      return null;
-    }
-
-    // Direct lookup - estimation_items.category already stores the category ID
-    return bizModel.category_rates.categories.find(c => c.id === itemCategory);
-  };
-
-  const getDefaultCharges = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.kg_percentage || 0;
-  };
-
-  const getMaxItemDiscount = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.max_item_discount_percentage || 0;
-  };
-
-  const getMaxKGDiscount = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.max_kg_discount_percentage || 0;
-  };
 
   if (status === 'loading' || loading || itemsLoading) {
     return (
@@ -1046,7 +1046,7 @@ export default function ProjectEstimationPage() {
             </div>
 
             {/* Totals Summary */}
-            <EstimationSummary totals={calculateTotals()}/>
+            <EstimationSummary totals={calculateTotals()} bizModel={bizModel}/>
           </CardContent>
         </Card>
 
@@ -1218,15 +1218,16 @@ export default function ProjectEstimationPage() {
   );
 }
 
-const EstimationSummary = ({totals}) => {
+const EstimationSummary = ({totals, bizModel}) => {
+  debugger;
   // Get categories from bizModel (available in parent scope)
   const categories = bizModel.category_rates?.categories || [];
   
   // Helper to get grid columns based on category count
   const getCategoryGridCols = (count) => {
-    if (count <= 3) return 'md:grid-cols-3';
-    if (count === 4) return 'md:grid-cols-4';
-    if (count === 5 || count === 6) return 'md:grid-cols-3';
+    // if (count <= 3) return 'md:grid-cols-3';
+    // if (count === 4) return 'md:grid-cols-4';
+    // if (count === 5 || count === 6) return 'md:grid-cols-3';
     return 'md:grid-cols-4'; // 4xN grid for 7+
   };
   

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PROJECT_STAGES, USER_ROLE } from '@/app/constants';
-import { formatCurrency, UIFriendly } from '@/lib/utils';
+import { formatCurrency, getCategoryIcon, UIFriendly } from '@/lib/utils';
 import {
   Edit,
   FileText,
@@ -32,26 +32,11 @@ import {
 } from '@tanstack/react-table';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 
-// Helper function for category icons
-const getCategoryIcon = (categoryId) => {
-  const iconMap = {
-    'woodwork': '🪵',
-    'misc': '🔧',
-    'misc_internal': '🔧',
-    'misc_external': '🔨',
-    'shopping': '🛒',
-    'shopping_service': '🛒',
-    'civil': '🏗️',
-    'default': '📦'
-  };
-  return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
-};
-
 // Helper to get grid columns based on category count
 const getCategoryGridCols = (count) => {
-  if (count <= 3) return 'md:grid-cols-3';
-  if (count === 4) return 'md:grid-cols-4';
-  if (count === 5 || count === 6) return 'md:grid-cols-3';
+  // if (count <= 3) return 'md:grid-cols-3';
+  // if (count === 4) return 'md:grid-cols-4';
+  // if (count === 5 || count === 6) return 'md:grid-cols-3';
   return 'md:grid-cols-4'; // 4xN grid for 7+
 };
 
@@ -88,6 +73,7 @@ export default function ProjectEstimationsPage() {
 
   const fetchProjectBaseRates = async () => {
     try {
+      debugger;
       const res = await fetch(`/api/projects/${projectId}/base-rates/active`);
       if (res.ok) {
         const data = await res.json();
@@ -426,6 +412,7 @@ export default function ProjectEstimationsPage() {
                   {projectBaseRates.category_rates.categories
                     ?.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
                     .map(category => {
+                      debugger;
                       const categoryData = estimation.category_breakdown?.[category.id] || {};
                       return (
                         <div key={category.id} className="bg-slate-50 p-4 rounded-lg">
@@ -595,41 +582,6 @@ export default function ProjectEstimationsPage() {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Grand Totals Summary */}
-                {/* <div className="border rounded-lg overflow-hidden bg-slate-50 p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Subtotal</p>
-                        <p className="text-lg font-bold">
-                          {formatCurrency(
-                            parseFloat(estimation.category_breakdown?.woodwork?.total || 0) + 
-                            parseFloat(estimation.category_breakdown?.misc_internal?.total || 0) + 
-                            parseFloat(estimation.category_breakdown?.misc_external?.total || 0) + 
-                            parseFloat(estimation.category_breakdown?.shopping_service?.total || 0)
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Service Charges</p>
-                        <p className="text-lg font-bold text-green-600">
-                          {formatCurrency(parseFloat(estimation.service_charge || 0))}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Discounts</p>
-                        <p className="text-lg font-bold text-red-600">
-                          {formatCurrency(parseFloat(estimation.discount || 0))}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Grand Total</p>
-                        <p className="text-xl font-bold text-green-700">
-                          {formatCurrency(estimation.final_value)}
-                        </p>
-                      </div>
-                    </div>
-                  </div> */}
               </div>
 
             </div>

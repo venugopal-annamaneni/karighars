@@ -78,6 +78,7 @@ export default function BizModelsPage() {
   const fetchModelDetails = async (modelId) => {
     try {
       const res = await fetch(`/api/biz-models/${modelId}`);
+      debugger;
       if (res.ok) {
         const data = await res.json();
         setModelDetails(data);
@@ -111,8 +112,18 @@ export default function BizModelsPage() {
   };
 
   const updateCategory = (index, field, value) => {
+    debugger;
     const updated = [...categories];
     updated[index][field] = value;
+    if (field === "category_name") {
+      const slug = value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")   // Replace non-alphanumeric with hyphens
+        .replace(/^-+|-+$/g, "");      // Remove leading/trailing hyphens
+
+      updated[index].id = slug;
+    }
     setCategories(updated);
   };
 
@@ -168,6 +179,7 @@ export default function BizModelsPage() {
   };
 
   const handleCreateModel = async () => {
+    debugger;
     try {
       const isEditing = editingModelId !== null;
       const api = isEditing ? `/api/biz-models/${editingModelId}` : '/api/biz-models';
@@ -812,8 +824,9 @@ export default function BizModelsPage() {
                     <div className="space-y-3">
                       {modelDetails.milestones
                         .filter((m) => m.direction === 'inflow')
-                        .map((milestone) => (
-                          <div
+                        .map((milestone) => {
+                          debugger;
+                          return <div
                             key={milestone.id}
                             className="p-3 border border-green-200 bg-green-50 rounded-lg"
                           >
@@ -838,7 +851,7 @@ export default function BizModelsPage() {
                               ))}
                             </div>
                           </div>
-                        ))}
+                        })}
                     </div>
                   </CardContent>
                 </Card>
@@ -905,7 +918,7 @@ export default function BizModelsPage() {
                         <p className="text-lg font-medium">{modelDetails.model.gst_percentage}%</p>
                       </div>
                     </div>
-                    
+
                     <div className="border-t pt-4 mt-4">
                       <h3 className="font-semibold mb-3">Categories & Rates</h3>
                       <div className="grid md:grid-cols-2 gap-4">
