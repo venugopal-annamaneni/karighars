@@ -276,6 +276,32 @@ export default function ProjectEstimationPage() {
     };
   };
 
+  // Helper function for category icons
+  const getCategoryIcon = (categoryId) => {
+    const iconMap = {
+      'woodwork': '🪵',
+      'misc': '🔧',
+      'misc_internal': '🔧',
+      'misc_external': '🔨',
+      'shopping': '🛒',
+      'shopping_service': '🛒',
+      'civil': '🏗️',
+      'default': '📦'
+    };
+    return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
+  };
+
+  // Helper function to update items for a specific category
+  const updateCategoryItems = useCallback((categoryId, updatedItems) => {
+    setData(prevData => {
+      // Remove old items from this category
+      const otherCategoryItems = prevData.filter(item => item.category !== categoryId);
+      // Add updated items from this category
+      return [...otherCategoryItems, ...updatedItems];
+    });
+  }, []);
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
