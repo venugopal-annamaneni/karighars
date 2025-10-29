@@ -119,10 +119,16 @@ export default function ProjectEstimationPage() {
               height: item.height || '',
               quantity: parseFloat(item.quantity),
               unit_price: parseFloat(item.unit_price),
+              subtotal: parseFloat(item.subtotal) || 0,
               karighar_charges_percentage: parseFloat(item.karighar_charges_percentage),
+              karighar_charges_amount: parseFloat(item.karighar_charges_amount) || 0,
               item_discount_percentage: parseFloat(item.item_discount_percentage || 0),
+              item_discount_amount: parseFloat(item.item_discount_amount) || 0,
               discount_kg_charges_percentage: parseFloat(item.discount_kg_charges_percentage || 0),
+              discount_kg_charges_amount: parseFloat(item.discount_kg_charges_amount) || 0,
               gst_percentage: parseFloat(item.gst_percentage),
+              gst_amount: parseFloat(item.gst_amount) || 0,
+              item_total: parseFloat(item.item_total) || 0,
               vendor_type: item.vendor_type
             })));
           }
@@ -138,10 +144,16 @@ export default function ProjectEstimationPage() {
         height: '',
         quantity: 1,
         unit_price: 0,
+        subtotal: 0,
         karighar_charges_percentage: 0,
+        karighar_charges_amount: 0,
         item_discount_percentage: 0,
+        item_discount_amount: 0,
         discount_kg_charges_percentage: 0,
+        discount_kg_charges_amount: 0,
         gst_percentage: baseRateData.activeRate.gst_percentage,
+        gst_amount: 0,
+        item_total: 0,
         vendor_type: ''
       });
 
@@ -444,7 +456,6 @@ export default function ProjectEstimationPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <form onSubmit={handleSubmit} className="space-y-6">
-        
         {/* Overall Summary - Top */}
         <OverallSummary totals={calculateTotals()} baseRates={baseRates} />
 
@@ -656,7 +667,7 @@ export default function ProjectEstimationPage() {
 // ===== OVERALL SUMMARY COMPONENT =====
 const OverallSummary = ({ totals, baseRates }) => {
   const categories = baseRates.category_rates?.categories || [];
-  
+
   const getCategoryGridCols = (count) => {
     if (count <= 3) return 'md:grid-cols-3';
     if (count === 4) return 'md:grid-cols-4';
@@ -687,7 +698,7 @@ const OverallSummary = ({ totals, baseRates }) => {
               );
             })}
         </div>
-        
+
         {/* High-Level Totals */}
         <div className="grid md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-slate-300">
           <div>
@@ -724,23 +735,37 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
   calculateItemTotal,
   emptyItem
 }) {
+
   // Calculate category totals
   const categoryTotals = useMemo(() => {
-    const fields = ['subtotal', 'item_discount_amount', 'karighar_charges_amount', 
-                    'discount_kg_charges_amount', 'gst_amount', 'item_total'];
-    const sums = {};
-    fields.forEach(field => {
-      sums[field] = items.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
-    });
+    const sums = {
+      subtotal: 0,
+      item_discount_amount: 0,
+      karighar_charges_amount: 0,
+      discount_kg_charges_amount: 0,
+      gst_amount: 0,
+      item_total: 0,
+    };
+
+    // derive totals using calculateItemTotal(item) so we always compute from inputs
+    for (const item of items) {
+      const calc = calculateItemTotal(item);
+      sums.subtotal += calc.subtotal || 0;
+      sums.item_discount_amount += calc.item_discount_amount || 0;
+      sums.karighar_charges_amount += calc.karighar_charges_amount || calc.karighar_charges_gross || 0;
+      sums.discount_kg_charges_amount += calc.kg_discount_amount || 0;
+      sums.gst_amount += calc.gst_amount || 0;
+      sums.item_total += calc.item_total || 0;
+    }
     return sums;
   }, [items]);
 
   // Local handlers for this category
   const addItem = () => {
-    const newItem = { 
-      ...emptyItem, 
+    const newItem = {
+      ...emptyItem,
       id: Date.now() + Math.random(),
-      category: category.id 
+      category: category.id
     };
     onItemsChange([...items, newItem]);
   };
@@ -800,16 +825,20 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
           </div>
         ) : (
           <>
-            <EditableEstimationItems 
-              data={items} 
-              setData={onItemsChange} 
-              totals={categoryTotals} 
-              emptyItem={{...emptyItem, category: category.id}} 
-              baseRates={baseRates} 
+            <EditableEstimationItems
+              data={items}
+              // Accept both updater-function or direct array and forward a real array to onItemsChange
+              setData={(updaterOrArray) => {
+                const next = typeof updaterOrArray === 'function' ? updaterOrArray(items) : updaterOrArray;
+                onItemsChange(Array.isArray(next) ? next : items); // safety: ensure array
+              }}
+              totals={categoryTotals}
+              emptyItem={{ ...emptyItem, category: category.id }}
+              baseRates={baseRates}
               calculateItemTotal={calculateItemTotal}
               showAddButton={false}
             />
-            
+
             {/* Category Summary */}
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-semibold text-green-900 mb-3">{category.category_name} Summary</h4>
@@ -923,6 +952,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
 
   const removeItem = useCallback(
     (index) => {
+      debugger;
       setData((prev) => prev.filter((_, i) => i !== index));
     },
     [setData]
@@ -1093,7 +1123,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
       {
         accessorKey: "item_discount_percentage", header: "Item Disc (%)", size: 110, cell: (ctx) => {
           const thisCategory = baseRates.category_rates.categories.find((cat) => cat.id === ctx.row.original.category)
-          return <EditableNumberCell {...ctx} readOnly={thisCategory.pay_to_vendor_directly}/>
+          return <EditableNumberCell {...ctx} readOnly={thisCategory.pay_to_vendor_directly} />
         }
       },
       { accessorKey: "karighar_charges_percentage", header: "KG Charges (%)", size: 120, cell: EditableNumberCell },
