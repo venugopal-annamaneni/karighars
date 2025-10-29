@@ -312,6 +312,23 @@ export default function ProjectEstimationsPage() {
 const EstimationItemsTable = ({ project, estimation, projectBaseRates, estimationItems }) => {
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
+  const totals = useMemo(() => {
+    const fields = [
+      'subtotal',
+      'item_discount_amount',
+      'karighar_charges_amount',
+      'discount_kg_charges_amount',
+      'gst_amount',
+      'item_total',
+    ];
+
+    const sums = {};
+    fields.forEach(field => {
+      sums[field] = estimationItems.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
+    });
+    return sums;
+  }, [estimationItems]);
+
   // TanStack Table Column Definitions
   const columns = useMemo(() => [
     {
@@ -466,7 +483,13 @@ const EstimationItemsTable = ({ project, estimation, projectBaseRates, estimatio
       accessorKey: 'gst_percentage',
       header: 'GST%',
       enableGrouping: false,
-      cell: ({ getValue }) => <span className='w-full text-right block'>`${getValue()}%`</span>,
+      //cell: ({ getValue }) => <span className='w-full text-right block'>{getValue()}%</span>,
+      cell: ({ row }) => (
+        <div>
+          <div className='w-full text-right block'>{formatCurrency(row.original.gst_amount || 0)}</div>
+          <div className="text-xs text-red-500 w-full text-right block">({row.original.gst_percentage}%)</div>
+        </div>
+      ),
     },
     {
       accessorKey: 'item_total',
@@ -630,7 +653,7 @@ const EstimationItemsTable = ({ project, estimation, projectBaseRates, estimatio
                     return (
                       <td
                         key={cell.id}
-                        className="p-3"
+                        className="p-3 align-top"
                         style={isFirstCell ? { paddingLeft } : {}}
                       >
                         {isFirstCell && row.getCanExpand() && (
@@ -676,6 +699,17 @@ const EstimationItemsTable = ({ project, estimation, projectBaseRates, estimatio
               );
             })}
           </tbody>
+          <tfoot className="bg-slate-100 font-semibold border-t-2 border-slate-300">
+            <tr>
+              <td colSpan={8} className="text-right p-3">&nbsp;</td>
+              <td className="text-right p-3">{formatCurrency(totals.subtotal)}</td>
+              <td className="text-right p-3 text-red-600">{formatCurrency(totals.item_discount_amount)}</td>
+              <td className="text-right p-3">{formatCurrency(totals.karighar_charges_amount)}</td>
+              <td className="text-right p-3 text-red-600">{formatCurrency(totals.discount_kg_charges_amount)}</td>
+              <td className="text-right p-3">{formatCurrency(totals.gst_amount)}</td>
+              <td className="text-right p-3 text-green-700 font-bold">{formatCurrency(totals.item_total)}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
