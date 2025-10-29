@@ -73,7 +73,6 @@ export default function ProjectEstimationsPage() {
 
   const fetchProjectBaseRates = async () => {
     try {
-      debugger;
       const res = await fetch(`/api/projects/${projectId}/base-rates/active`);
       if (res.ok) {
         const data = await res.json();
@@ -340,7 +339,6 @@ export default function ProjectEstimationsPage() {
         item_total: "",
       }]
     }
-    debugger;
 
     const csv = generateCsv(csvConfig)(csvData);
     download(csvConfig)(csv);
@@ -412,7 +410,6 @@ export default function ProjectEstimationsPage() {
                   {projectBaseRates.category_rates.categories
                     ?.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
                     .map(category => {
-                      debugger;
                       const categoryData = estimation.category_breakdown?.[category.id] || {};
                       return (
                         <div key={category.id} className="bg-slate-50 p-4 rounded-lg">

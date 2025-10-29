@@ -109,7 +109,6 @@ export default function ProjectEstimationPage() {
       if (!baseRateRes.ok) {
         throw new Error('Failed to fetch active base rates');
       }
-      debugger;
       const baseRateData = await baseRateRes.json();
       setBizModel(baseRateData.activeRate); // Keep same state name for compatibility
 
@@ -254,7 +253,6 @@ export default function ProjectEstimationPage() {
         onBlur();
         setTimeout(() => focusCell(table, row.index + 1, column.id), 0);
       } else if (e.key === "Tab") {
-        debugger;
         e.preventDefault();
         onBlur();
         const nextCol = visibleCols[currentColIndex + (e.shiftKey ? -1 : 1)];
@@ -782,7 +780,6 @@ export default function ProjectEstimationPage() {
   };
 
   const saveEstimation = async (data) => {
-    debugger;
     try {
       const res = await fetch(`/api/projects/${data.project_id}/estimations`, {
         method: 'POST',
@@ -1219,7 +1216,6 @@ export default function ProjectEstimationPage() {
 }
 
 const EstimationSummary = ({totals, bizModel}) => {
-  debugger;
   // Get categories from bizModel (available in parent scope)
   const categories = bizModel.category_rates?.categories || [];
   

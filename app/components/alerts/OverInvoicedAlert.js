@@ -63,8 +63,6 @@ export default function OverInvoicedAlert({ data, userRole, onClose }) {
   };
 
   const handleCreateCreditNote = async () => {
-    debugger;
-
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error('Please enter a valid amount');
       return;

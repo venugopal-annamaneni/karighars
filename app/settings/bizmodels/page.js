@@ -78,7 +78,6 @@ export default function BizModelsPage() {
   const fetchModelDetails = async (modelId) => {
     try {
       const res = await fetch(`/api/biz-models/${modelId}`);
-      debugger;
       if (res.ok) {
         const data = await res.json();
         setModelDetails(data);
@@ -112,9 +111,8 @@ export default function BizModelsPage() {
   };
 
   const updateCategory = (index, field, value) => {
-    debugger;
     const updated = [...categories];
-    updated[index][field] = value;
+
     if (field === "category_name") {
       const slug = value
         .toLowerCase()
@@ -122,10 +120,26 @@ export default function BizModelsPage() {
         .replace(/[^a-z0-9]+/g, "-")   // Replace non-alphanumeric with hyphens
         .replace(/^-+|-+$/g, "");      // Remove leading/trailing hyphens
 
+      // Check for duplicates (excluding the current index)
+      const isDuplicate = updated.some(
+        (cat, i) => i !== index && cat.category_name?.toLowerCase().trim() === value.toLowerCase().trim()
+      );
+
+      if (isDuplicate) {
+        toast(`Category name "${value}" already exists. Duplicate cateories are not allowed.`);
+        return;
+      }
+
+
+      updated[index].category_name = value;
       updated[index].id = slug;
+    } else {
+      updated[index][field] = value;
     }
+
     setCategories(updated);
   };
+
 
   const addStage = () => {
     setStages([...stages, {
@@ -179,7 +193,6 @@ export default function BizModelsPage() {
   };
 
   const handleCreateModel = async () => {
-    debugger;
     try {
       const isEditing = editingModelId !== null;
       const api = isEditing ? `/api/biz-models/${editingModelId}` : '/api/biz-models';
@@ -825,7 +838,6 @@ export default function BizModelsPage() {
                       {modelDetails.milestones
                         .filter((m) => m.direction === 'inflow')
                         .map((milestone) => {
-                          debugger;
                           return <div
                             key={milestone.id}
                             className="p-3 border border-green-200 bg-green-50 rounded-lg"
