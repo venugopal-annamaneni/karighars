@@ -34,6 +34,22 @@ import { toast } from 'sonner';
 
 
 
+
+// Helper function for category icons (global)
+const getCategoryIcon = (categoryId) => {
+  const iconMap = {
+    'woodwork': '🪵',
+    'misc': '🔧',
+    'misc_internal': '🔧',
+    'misc_external': '🔨',
+    'shopping': '🛒',
+    'shopping_service': '🛒',
+    'civil': '🏗️',
+    'default': '📦'
+  };
+  return iconMap[categoryId?.toLowerCase()] || iconMap['default'];
+};
+
 export default function ProjectEstimationPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
