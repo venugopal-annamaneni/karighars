@@ -1,5 +1,7 @@
 "use client";
 
+import { ESTIMATION_STATUS } from '@/app/constants';
+import { useProjectData } from "@/app/context/ProjectDataContext";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,22 +9,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ESTIMATION_STATUS } from '@/app/constants';
-import { AlertTriangle, Plus, Save, Trash2, Copy } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable
+} from '@tanstack/react-table';
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { AlertTriangle, Copy, Plus, Save, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { toast } from 'sonner';
-import { useProjectData } from "@/app/context/ProjectDataContext";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  flexRender,
-  createColumnHelper,
-} from '@tanstack/react-table';
-import { formatCurrency } from '@/lib/utils';
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { toast } from 'sonner';
+
 
 
 
@@ -38,25 +46,10 @@ export default function ProjectEstimationPage() {
   const [showOverpaymentModal, setShowOverpaymentModal] = useState(false);
   const [overpaymentData, setOverpaymentData] = useState(null);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
-  const [data, setData] = useState([
-    {
-      id: Date.now(),
-      room_name: '',
-      category: '',
-      item_name: '',
-      unit: 'sqft',
-      width: '',
-      height: '',
-      quantity: 1,
-      unit_price: 0,
-      karighar_charges_percentage: 0,
-      item_discount_percentage: 0,
-      discount_kg_charges_percentage: 0,
-      gst_percentage: 0,
-      vendor_type: ''
-    }
-  ]);
-  const [bizModel, setBizModel] = useState({
+  const [emptyItem, setEmptyItem] = useState({});
+
+  const [data, setData] = useState([emptyItem]);
+  const [baseRates, setbaseRates] = useState({
     gst_percentage: ''
   });
 
@@ -64,31 +57,8 @@ export default function ProjectEstimationPage() {
     remarks: '',
     status: ESTIMATION_STATUS.DRAFT,
   });
-  const [columnPinning, setColumnPinning] = useState({
-    left: ['room_name', 'category', 'item_name'], // first 3 columns
-    right: ['item_total', 'actions'], // last column
-  });
-
 
   const { fetchProjectData, project, estimation, loading } = useProjectData();
-  const tableContainerRef = useRef(null);
-
-  useEffect(() => {
-    const left = document.getElementById("left-fixed");
-    const right = document.getElementById("right-fixed");
-    const middle = document.getElementById("middle-scroll");
-
-    if (!middle || !left || !right) return;
-
-    const syncScroll = () => {
-      left.scrollTop = middle.scrollTop;
-      right.scrollTop = middle.scrollTop;
-    };
-
-    middle.addEventListener("scroll", syncScroll);
-    return () => middle.removeEventListener("scroll", syncScroll);
-  }, []);
-
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -110,7 +80,7 @@ export default function ProjectEstimationPage() {
         throw new Error('Failed to fetch active base rates');
       }
       const baseRateData = await baseRateRes.json();
-      setBizModel(baseRateData.activeRate); // Keep same state name for compatibility
+      setbaseRates(baseRateData.activeRate); // Keep same state name for compatibility
 
       // Load existing estimation if available
       if (estimation && estimation.id) {
@@ -142,6 +112,22 @@ export default function ProjectEstimationPage() {
           }
         }
       }
+      setEmptyItem({
+        id: Date.now(),
+        room_name: '',
+        category: '',
+        item_name: '',
+        unit: 'sqft',
+        width: '',
+        height: '',
+        quantity: 1,
+        unit_price: 0,
+        karighar_charges_percentage: 0,
+        item_discount_percentage: 0,
+        discount_kg_charges_percentage: 0,
+        gst_percentage: baseRateData.activeRate.gst_percentage,
+        vendor_type: ''
+      });
 
     } catch (error) {
       console.error('Error fetching project estimation items:', error);
@@ -151,405 +137,30 @@ export default function ProjectEstimationPage() {
     }
   };
 
-  const addItem = () => {
-    setData([...data, {
-      id: Date.now(),
-      room_name: '',
-      category: '',
-      item_name: '',
-      unit: 'sqft',
-      width: '',
-      height: '',
-      quantity: 1,
-      unit_price: 0,
-      karighar_charges_percentage: 0,
-      item_discount_percentage: 0,
-      discount_kg_charges_percentage: 0,
-      gst_percentage: bizModel.gst_percentage,
-      vendor_type: ''
-    }]);
-  };
-
-  const removeItem = (index) => {
-    const newData = data.filter((_, i) => i !== index);
-    setData(newData);
-  };
-
-  const updateItem = (index, field, value) => {
-    const newData = [...data];
-    newData[index][field] = value;
-
-    // Auto-calculate quantity for sqft unit
-    if (field === 'width' || field === 'height' || field === 'unit') {
-      const item = newData[index];
-      if (item.unit === 'sqft' && item.width && item.height) {
-        item.quantity = parseFloat(item.width) * parseFloat(item.height);
-      }
+  // Helper function to get category config from JSONB
+  const getCategoryConfig = (itemCategory) => {
+    if (!baseRates.category_rates || !baseRates.category_rates.categories) {
+      return null;
     }
 
-    if (field === "category") {
-      newData[index]["karighar_charges_percentage"] = getDefaultCharges(value)
-      newData[index]["gst_percentage"] = newData[index]["gst_percentage"].length > 0 ? newData[index]["gst_percentage"] : bizModel.gst_percentage;
-    }
-    setData(newData);
+    // Direct lookup - estimation_items.category already stores the category ID
+    return baseRates.category_rates.categories.find(c => c.id === itemCategory);
   };
 
-  const duplicateItem = (index) => {
-    const itemToDuplicate = { ...data[index], id: Date.now() };
-    const newData = [
-      ...data.slice(0, index + 1),
-      itemToDuplicate,
-      ...data.slice(index + 1)
-    ];
-    setData(newData);
-    toast.success('Item duplicated');
+  const getDefaultCharges = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.kg_percentage || 0;
   };
 
-  function registerCellRef(table, rowIndex, columnId, ref) {
-    const key = `${rowIndex}-${columnId}`;
-    table.options.meta.cellRefs[key] = ref;
-  }
-
-  function focusCell(table, rowIndex, columnId, retries = 5) {
-    const key = `${rowIndex}-${columnId}`;
-    const ref = table.options.meta.cellRefs[key];
-
-    if (ref?.current) {
-      // ✅ Focus immediately
-      ref.current.focus();
-      ref.current.select?.();
-      ref.current.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-    } else if (retries > 0) {
-      // ⏳ The next cell may not exist yet — try again shortly
-      queueMicrotask(() => focusCell(table, rowIndex, columnId, retries - 1));
-    }
-  }
-
-
-
-  // Editable Cell Components
-  const EditableTextCell = ({ getValue, row, column, table, type = "text", readOnly = false }) => {
-    const initialValue = getValue();
-    const [value, setValue] = useState(initialValue ?? "");
-    const inputRef = useRef(null);
-
-    // register ref immediately
-    registerCellRef(table, row.index, column.id, inputRef);
-
-    useEffect(() => {
-      setValue(initialValue ?? "");
-    }, [initialValue]);
-
-    const onBlur = () => {
-      table.options.meta?.updateData(row.index, column.id, value);
-    };
-
-    const onKeyDown = (e) => {
-      const visibleCols = table.getVisibleLeafColumns();
-      const currentColIndex = visibleCols.findIndex(c => c.id === column.id);
-
-      if (e.key === "Enter") {
-        e.preventDefault();
-        onBlur();
-        setTimeout(() => focusCell(table, row.index + 1, column.id), 0);
-      } else if (e.key === "Tab") {
-        e.preventDefault();
-        onBlur();
-        const nextCol = visibleCols[currentColIndex + (e.shiftKey ? -1 : 1)];
-        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
-        else focusCell(table, row.index + 1, visibleCols[0].id);
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setTimeout(focusCell(table, row.index + 1, column.id), 0);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setTimeout(focusCell(table, row.index - 1, column.id), 0);
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        const nextCol = visibleCols[currentColIndex + 1];
-        if (nextCol) setTimeout(focusCell(table, row.index, nextCol.id), 0);
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        const prevCol = visibleCols[currentColIndex - 1];
-        if (prevCol) setTimeout(focusCell(table, row.index, prevCol.id), 0);
-      } else if (e.key === "Escape") {
-        setValue(initialValue ?? "");
-        inputRef.current?.blur();
-      }
-    };
-
-    return (
-      <Input
-        readOnly={readOnly}
-        ref={inputRef}
-        type={type}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        className={`h-8 text-sm border ${readOnly ? "border-gray-300 bg-gray-100 text-gray-400" : "border-gray-300"}`}
-        data-row={row.index}
-        data-col={column.id}
-      />
-    );
+  const getMaxItemDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_item_discount_percentage || 0;
   };
 
-
-  const EditableNumberCell = ({ readOnly = false, ...props }) => {
-    return <EditableTextCell {...props} type="number" readOnly={readOnly} />;
+  const getMaxKGDiscount = (itemCategory) => {
+    const config = getCategoryConfig(itemCategory);
+    return config?.max_kg_discount_percentage || 0;
   };
-
-  const EditableSelectCell = ({ getValue, row, column, table, options }) => {
-    const initialValue = getValue();
-    const selectRef = useRef(null);
-
-    // ✅ Register ref immediately during render
-    registerCellRef(table, row.index, column.id, selectRef);
-
-    const onChange = (value) => {
-      table.options.meta?.updateData(row.index, column.id, value);
-    };
-
-    return (
-      <Select
-        value={initialValue}
-        onValueChange={onChange}
-      >
-        <SelectTrigger ref={selectRef} className="h-8 text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  };
-
-
-  // Column Definitions
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'room_name',
-      header: 'Room/Section',
-      size: 150,
-      cell: EditableTextCell,
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      size: 130,
-      cell: ({ getValue, row, column, table }) => {
-        // Get dynamic categories from bizModel
-        const categories = bizModel.category_rates?.categories || [];
-        const categoryOptions = categories
-          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-          .map(cat => ({
-            value: cat.id,
-            label: cat.category_name
-          }));
-
-        return (
-          <EditableSelectCell
-            getValue={getValue}
-            row={row}
-            column={column}
-            table={table}
-            options={categoryOptions}
-          />
-        );
-      },
-    },
-    {
-      accessorKey: 'item_name',
-      header: 'Item Name',
-      size: 180,
-      cell: EditableTextCell,
-    },
-    {
-      accessorKey: 'unit',
-      header: 'Unit',
-      size: 100,
-      cell: ({ getValue, row, column, table }) => (
-        <EditableSelectCell
-          getValue={getValue}
-          row={row}
-          column={column}
-          table={table}
-          options={[
-            { value: 'sqft', label: 'Sq.ft' },
-            { value: 'no', label: 'No' },
-            { value: 'lumpsum', label: 'Lumpsum' }
-          ]}
-        />
-      ),
-    },
-    {
-      accessorKey: 'width',
-      header: 'Width',
-      size: 90,
-      cell: ({ row, ...props }) => {
-        // if (row.original.unit === 'sqft') {
-        //   return <EditableNumberCell row={row} {...props} />;
-        // }
-        // return <EditableNumberCell row={row} {...props} />;
-        return <EditableNumberCell
-          row={row}
-          {...props}
-          readOnly={row.original.unit !== 'sqft'}
-        />
-      },
-    },
-    {
-      accessorKey: 'height',
-      header: 'Height',
-      size: 90,
-      cell: ({ row, ...props }) => {
-        // if (row.original.unit === 'sqft') {
-        //   return <EditableNumberCell row={row} {...props} />;
-        // }
-        // return <EditableNumberCell row={row} {...props} readOnly="true" />;
-        return <EditableNumberCell
-          row={row}
-          {...props}
-          readOnly={row.original.unit !== 'sqft'}
-        />
-      },
-    },
-    {
-      accessorKey: 'quantity',
-      header: 'Quantity',
-      size: 100,
-      cell: ({ row, getValue, ...props }) => {
-        // if (row.original.unit === 'sqft') {
-        //   const qty = getValue();
-        //   const { width, height } = row.original;
-        //   return (
-        //     <div className="text-sm">
-        //       <EditableNumberCell row={row} getValue={getValue} {...props} readOnly="true" />
-        //     </div>
-        //   );
-        // }
-        return <EditableNumberCell row={row} getValue={getValue} {...props} readOnly={row.original.unit === 'sqft'} />;
-      },
-    },
-    {
-      accessorKey: 'unit_price',
-      header: 'Unit Price (₹)',
-      size: 120,
-      cell: ({ row, getValue, ...props }) => {
-        return <EditableNumberCell row={row} getValue={getValue} {...props} />;
-      },
-    },
-    {
-      accessorKey: 'item_discount_percentage',
-      header: 'Item Disc (%)',
-      size: 110,
-      cell: EditableNumberCell,
-    },
-    {
-      accessorKey: 'karighar_charges_percentage',
-      header: 'KG Charges (%)',
-      size: 120,
-      cell: EditableNumberCell,
-    },
-    {
-      accessorKey: 'discount_kg_charges_percentage',
-      header: 'KG Disc (%)',
-      size: 110,
-      cell: EditableNumberCell,
-    },
-    {
-      accessorKey: 'gst_percentage',
-      header: 'GST (%)',
-      size: 90,
-      cell: EditableNumberCell,
-    },
-    {
-      accessorKey: 'vendor_type',
-      header: 'Vendor',
-      size: 100,
-      cell: ({ getValue, row, column, table }) => (
-        <EditableSelectCell
-          getValue={getValue}
-          row={row}
-          column={column}
-          table={table}
-          options={[
-            { value: 'PI', label: 'PI' },
-            { value: 'Aristo', label: 'Aristo' },
-            { value: 'Other', label: 'Other' }
-          ]}
-        />
-      ),
-    },
-    {
-      id: 'item_total',
-      header: 'Item Total',
-      size: 120,
-      cell: ({ row }) => {
-        const total = calculateItemTotal(row.original).item_total;
-        return (
-          <div className="font-medium text-green-700 text-sm">
-            {formatCurrency(total)}
-          </div>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      size: 100,
-      cell: ({ row }) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => duplicateItem(row.index)}
-            className="h-7 w-7 p-0"
-            title="Duplicate"
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => removeItem(row.index)}
-            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-            title="Delete"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-
-        </div>
-      ),
-    },
-  ], [data, bizModel]);
-
-  const cellRefs = useRef({});
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    state: {
-      columnPinning,
-    },
-    onColumnPinningChange: setColumnPinning,
-    meta: {
-      updateData: (rowIndex, columnId, value) => {
-        updateItem(rowIndex, columnId, value);
-      },
-      cellRefs: cellRefs.current, // <--- store refs
-    },
-  });
 
   const calculateItemTotal = (item) => {
     const quantity = parseFloat(item.quantity) || 0;
@@ -603,35 +214,10 @@ export default function ProjectEstimationPage() {
     };
   };
 
-  // Helper function to get category config from JSONB
-  const getCategoryConfig = (itemCategory) => {
-    if (!bizModel.category_rates || !bizModel.category_rates.categories) {
-      return null;
-    }
-
-    // Direct lookup - estimation_items.category already stores the category ID
-    return bizModel.category_rates.categories.find(c => c.id === itemCategory);
-  };
-
-  const getDefaultCharges = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.kg_percentage || 0;
-  };
-
-  const getMaxItemDiscount = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.max_item_discount_percentage || 0;
-  };
-
-  const getMaxKGDiscount = (itemCategory) => {
-    const config = getCategoryConfig(itemCategory);
-    return config?.max_kg_discount_percentage || 0;
-  };
-
   const calculateTotals = () => {
-    // Get available categories from bizModel
-    const categories = bizModel.category_rates?.categories || [];
-    
+    // Get available categories from baseRates
+    const categories = baseRates.category_rates?.categories || [];
+
     // Initialize dynamic accumulators for each category
     const categoryAccumulators = {};
     categories.forEach(cat => {
@@ -645,7 +231,7 @@ export default function ProjectEstimationPage() {
         total: 0
       };
     });
-    
+
     // High-level totals
     let totalItemsValue = 0;
     let totalItemsDiscount = 0;
@@ -653,12 +239,12 @@ export default function ProjectEstimationPage() {
     let totalKGDiscount = 0;
     let totalGST = 0;
     let grandTotal = 0;
-    
+
     // Accumulate dynamically for each item
     data.forEach(item => {
       const itemCalc = calculateItemTotal(item);
       const categoryId = item.category;
-      
+
       // Accumulate in the appropriate category bucket
       if (categoryAccumulators[categoryId]) {
         categoryAccumulators[categoryId].subtotal += itemCalc.subtotal;
@@ -669,7 +255,7 @@ export default function ProjectEstimationPage() {
         categoryAccumulators[categoryId].gst_amount += itemCalc.gst_amount;
         categoryAccumulators[categoryId].total += itemCalc.item_total;
       }
-      
+
       // Accumulate high-level totals
       totalItemsValue += itemCalc.subtotal;
       totalItemsDiscount += itemCalc.item_discount_amount;
@@ -813,7 +399,7 @@ export default function ProjectEstimationPage() {
     }
   };
 
-  const totals = calculateTotals();
+  //const totals = calculateTotals();
 
   if (status === 'loading' || loading || itemsLoading) {
     return (
@@ -839,197 +425,12 @@ export default function ProjectEstimationPage() {
                 <CardTitle>Estimation Items</CardTitle>
                 <CardDescription>Add all project items with pricing details</CardDescription>
               </div>
-              <Button type="button" onClick={addItem} variant="outline" size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Item
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {/* Action Buttons */}
-            <div className="w-full flex justify-end items-center mb-4">
-
-              <div className="text-sm text-muted-foreground">
-                Total Items: {data.length}
-              </div>
-            </div>
-
             {/* TanStack Table */}
             {/* Fixed Column Layout */}
-            <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
-              {/* LEFT FIXED (First 3 columns) */}
-              <div
-                id="left-fixed"
-                className="flex-none w-[420px] border-r overflow-hidden"
-                style={{ maxHeight: "600px", overflowY: "auto" }}
-              >
-                <table className="w-full text-sm border-collapse">
-                  <thead className="sticky top-0 bg-slate-100 z-20">
-                    {table.getHeaderGroups().map(headerGroup => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers
-                          .filter(h =>
-                            ["room_name", "category", "item_name"].includes(h.column.id)
-                          )
-                          .map(header => (
-                            <th
-                              key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap "
-                              style={{ minWidth: header.column.columnDef.size }}
-                            >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                            </th>
-                          ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {table.getRowModel().rows.length == 0 && (
-                      <tr className="border-b hover:bg-slate-50">
-                        <td colSpan={3} className='h-14 p-2 border-r border-slate-200 bg-slate-100 text-center'> - </td>
-                      </tr>
-                    )}
-                    {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b bg-slate-50 ">
-                        {row
-                          .getVisibleCells()
-                          .filter(cell =>
-                            ["room_name", "category", "item_name"].includes(cell.column.id)
-                          )
-                          .map(cell => (
-                            <td
-                              key={cell.id}
-                              className="h-14 p-2 border-r border-slate-200 "
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* SCROLLABLE MIDDLE SECTION */}
-              <div
-                ref={tableContainerRef}
-                id="middle-scroll"
-                className="flex-1 overflow-auto"
-                style={{ maxHeight: "600px" }}
-              >
-                <table className="w-full text-sm border-collapse">
-                  <thead className="sticky top-0 bg-slate-100 z-10">
-                    {table.getHeaderGroups().map(headerGroup => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers
-                          .filter(
-                            h =>
-                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
-                                h.column.id
-                              )
-                          )
-                          .map(header => (
-                            <th
-                              key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap "
-                              style={{ minWidth: header.column.columnDef.size }}
-                            >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                            </th>
-                          ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {table.getRowModel().rows.length == 0 && (
-                      <tr className="border-b hover:bg-slate-50">
-                        <td colSpan={9} className='h-14 p-2 border-r border-slate-200 text-center'> Zero line items in estimation </td>
-                      </tr>
-                    )}
-                    {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b bg-slate-50">
-                        {row
-                          .getVisibleCells()
-                          .filter(
-                            cell =>
-                              !["room_name", "category", "item_name", "item_total", "actions"].includes(
-                                cell.column.id
-                              )
-                          )
-                          .map(cell => (
-                            <td key={cell.id} className="h-14 p-2 bg-white border-r ">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* RIGHT FIXED (Last column) */}
-              <div
-                id="right-fixed"
-                className="flex-none w-[210px] border-l overflow-hidden"
-                style={{ maxHeight: "600px", overflowY: "auto" }}
-              >
-                <table className="w-full text-sm border-collapse">
-                  <thead className="sticky top-0 bg-slate-100 z-20">
-                    {table.getHeaderGroups().map(headerGroup => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers
-                          .filter(h =>
-                            ["item_total", "actions"].includes(h.column.id)
-                          )
-                          .map(header => (
-                            <th
-                              key={header.id}
-                              className="h-14 p-2 text-left font-semibold border-b-2 border-slate-300 whitespace-nowrap"
-                              style={{ minWidth: header.column.columnDef.size }}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                            </th>
-                          ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {table.getRowModel().rows.length == 0 && (
-                      <tr className="border-b bg-slate-50">
-                        <td colSpan={2} className='h-14 p-2 border-r border-slate-200 text-center'> - </td>
-                      </tr>
-                    )}
-                    {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} className="border-b bg-slate-50">
-                        {row
-                          .getVisibleCells()
-                          .filter(cell =>
-                            ["item_total", "actions"].includes(cell.column.id)
-                          )
-                          .map(cell => (
-                            <td key={cell.id} className="h-14 p-2 text-right font-semibold border-b-2 border-slate-300 whitespace-nowrap">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <EditableEstimationItems data={data} setData={setData} totals={calculateTotals()} emptyItem={emptyItem} baseRates={baseRates} calculateItemTotal={calculateItemTotal} />
 
 
             {/* Keyboard Shortcuts Help */}
@@ -1043,7 +444,7 @@ export default function ProjectEstimationPage() {
             </div>
 
             {/* Totals Summary */}
-            <EstimationSummary totals={calculateTotals()} bizModel={bizModel}/>
+            <EstimationSummary totals={calculateTotals()} baseRates={baseRates} />
           </CardContent>
         </Card>
 
@@ -1083,7 +484,7 @@ export default function ProjectEstimationPage() {
                     min="0"
                     max="100"
                     placeholder="Fetching GST% from Business Model..."
-                    value={bizModel.gst_percentage || 0}
+                    value={baseRates.gst_percentage || 0}
                   />
 
 
@@ -1215,10 +616,495 @@ export default function ProjectEstimationPage() {
   );
 }
 
-const EstimationSummary = ({totals, bizModel}) => {
-  // Get categories from bizModel (available in parent scope)
-  const categories = bizModel.category_rates?.categories || [];
-  
+
+// ✅ Drop-in Optimized EditableEstimationItems
+export const EditableEstimationItems = memo(function EditableEstimationItems({
+  data,
+  setData,
+  totals,
+  emptyItem,
+  baseRates,
+  calculateItemTotal,
+}) {
+  const tableContainerRef = useRef(null);
+  const cellRefs = useRef({});
+
+  const [columnPinning, setColumnPinning] = useState({
+    left: ["room_name", "category", "item_name"],
+    right: ["item_total", "actions"],
+  });
+
+  /** 🧩 Memoized & stable update function */
+  const updateItem = useCallback(
+    (index, field, value) => {
+      setData((prev) =>
+        prev.map((item, i) => {
+          if (i !== index) return item;
+          const updated = { ...item, [field]: value };
+
+          // Auto compute sqft qty
+          if (["width", "height", "unit"].includes(field)) {
+            if (updated.unit === "sqft" && updated.width && updated.height) {
+              updated.quantity =
+                parseFloat(updated.width) * parseFloat(updated.height);
+            }
+          }
+
+          // Auto populate charges on category change
+          if (field === "category") {
+            const cat = baseRates.category_rates?.categories?.find(
+              (c) => c.id === value
+            );
+            updated.karighar_charges_percentage = cat?.kg_percentage || 0;
+            if (!updated.gst_percentage)
+              updated.gst_percentage = baseRates.gst_percentage || 0;
+          }
+          return updated;
+        })
+      );
+    },
+    [setData, baseRates]
+  );
+
+  /** 🧩 Stable duplicate + remove functions */
+  const duplicateItem = useCallback(
+    (index) => {
+      setData((prev) => {
+        const clone = { ...prev[index], id: Date.now() };
+        toast.success("Item duplicated");
+        return [
+          ...prev.slice(0, index + 1),
+          clone,
+          ...prev.slice(index + 1),
+        ];
+      });
+    },
+    [setData]
+  );
+
+  const removeItem = useCallback(
+    (index) => {
+      setData((prev) => prev.filter((_, i) => i !== index));
+    },
+    [setData]
+  );
+
+  const addItem = useCallback(() => {
+    setData((prev) => [...prev, { ...emptyItem, id: Date.now() }]);
+  }, [setData, emptyItem]);
+
+  /** 🧠 Register + focus helpers */
+  function registerCellRef(table, rowIndex, columnId, ref) {
+    const key = `${rowIndex}-${columnId}`;
+    table.options.meta.cellRefs[key] = ref;
+  }
+
+  function focusCell(table, rowIndex, columnId, retries = 5) {
+    const key = `${rowIndex}-${columnId}`;
+    const ref = table.options.meta.cellRefs[key];
+    if (ref?.current) {
+      ref.current.focus();
+      ref.current.select?.();
+      ref.current.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    } else if (retries > 0) {
+      queueMicrotask(() => focusCell(table, rowIndex, columnId, retries - 1));
+    }
+  }
+
+  /** 🧠 Editable TextCell */
+  const EditableTextCell = memo(function EditableTextCell({
+    getValue,
+    row,
+    column,
+    table,
+    type = "text",
+    readOnly = false,
+  }) {
+    const inputRef = useRef(null);
+    registerCellRef(table, row.index, column.id, inputRef);
+    const [value, setValue] = useState(getValue() ?? "");
+    useEffect(() => setValue(getValue() ?? ""), [getValue]);
+
+    const onBlur = () => table.options.meta.updateData(row.index, column.id, value);
+
+    const onKeyDown = (e) => {
+      const visibleCols = table.getVisibleLeafColumns();
+      const idx = visibleCols.findIndex((c) => c.id === column.id);
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        onBlur();
+        setTimeout(() => focusCell(table, row.index + 1, column.id), 0);
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        onBlur();
+        const next = visibleCols[idx + (e.shiftKey ? -1 : 1)];
+        if (next) focusCell(table, row.index, next.id);
+        else focusCell(table, row.index + 1, visibleCols[0].id);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        focusCell(table, row.index + 1, column.id);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        focusCell(table, row.index - 1, column.id);
+      } else if (e.key === "Escape") {
+        setValue(getValue() ?? "");
+        inputRef.current?.blur();
+      }
+    };
+
+    return (
+      <Input
+        ref={inputRef}
+        type={type}
+        value={value}
+        readOnly={readOnly}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        className={`h-8 text-sm ${readOnly
+          ? "bg-gray-100 text-gray-400 border-gray-200"
+          : "border-gray-300"
+          } ${type === 'number' ? "text-right" : "text-left"}`}
+      />
+    );
+  });
+
+  const EditableNumberCell = (props) => (
+    <EditableTextCell {...props} type="number" />
+  );
+
+  const EditableSelectCell = memo(function EditableSelectCell({
+    getValue,
+    row,
+    column,
+    table,
+    options,
+  }) {
+    const selectRef = useRef(null);
+    registerCellRef(table, row.index, column.id, selectRef);
+    return (
+      <Select
+        value={getValue()}
+        onValueChange={(value) =>
+          table.options.meta.updateData(row.index, column.id, value)
+        }
+      >
+        <SelectTrigger ref={selectRef} className="h-8 text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  });
+
+  /** ⚙️ Columns — memoized */
+  const columns = useMemo(() => {
+    const catOptions =
+      baseRates.category_rates?.categories?.map((cat) => ({
+        value: cat.id,
+        label: cat.category_name,
+      })) || [];
+
+    return [
+      { accessorKey: "room_name", header: "Room/Section", size: 150, cell: EditableTextCell },
+      {
+        accessorKey: "category",
+        header: "Category",
+        size: 130,
+        cell: (ctx) => (
+          <EditableSelectCell
+            {...ctx}
+            options={catOptions.sort(
+              (a, b) =>
+                (baseRates.category_rates?.categories.find((c) => c.id === a.value)?.sort_order ||
+                  0) -
+                (baseRates.category_rates?.categories.find((c) => c.id === b.value)?.sort_order ||
+                  0)
+            )}
+          />
+        ),
+      },
+      { accessorKey: "item_name", header: "Item Name", size: 180, cell: EditableTextCell },
+      {
+        accessorKey: "unit",
+        header: "Unit",
+        size: 100,
+        cell: (ctx) => (
+          <EditableSelectCell
+            {...ctx}
+            options={[
+              { value: "sqft", label: "Sq.ft" },
+              { value: "no", label: "No" },
+              { value: "lumpsum", label: "Lumpsum" },
+            ]}
+          />
+        ),
+      },
+      { accessorKey: "width", header: "Width", size: 90, cell: (ctx) => <EditableNumberCell {...ctx} readOnly={ctx.row.original.unit !== "sqft"} /> },
+      { accessorKey: "height", header: "Height", size: 90, cell: (ctx) => <EditableNumberCell {...ctx} readOnly={ctx.row.original.unit !== "sqft"} /> },
+      { accessorKey: "quantity", header: "Qty", size: 100, cell: (ctx) => <EditableNumberCell {...ctx} readOnly={ctx.row.original.unit === "sqft"} /> },
+      { accessorKey: "unit_price", header: "Unit Price (₹)", size: 120, cell: EditableNumberCell },
+      {
+        accessorKey: "item_discount_percentage", header: "Item Disc (%)", size: 110, cell: (ctx) => {
+          const thisCategory = baseRates.category_rates.categories.find((cat) => cat.id === ctx.row.original.category)
+          return <EditableNumberCell {...ctx} readOnly={thisCategory.pay_to_vendor_directly}/>
+        }
+      },
+      { accessorKey: "karighar_charges_percentage", header: "KG Charges (%)", size: 120, cell: EditableNumberCell },
+      { accessorKey: "discount_kg_charges_percentage", header: "KG Disc (%)", size: 110, cell: EditableNumberCell },
+      { accessorKey: "gst_percentage", header: "GST (%)", size: 90, cell: EditableNumberCell },
+      {
+        accessorKey: "vendor_type",
+        header: "Vendor",
+        size: 100,
+        cell: (ctx) => (
+          <EditableSelectCell
+            {...ctx}
+            options={[
+              { value: "PI", label: "PI" },
+              { value: "Aristo", label: "Aristo" },
+              { value: "Other", label: "Other" },
+            ]}
+          />
+        ),
+      },
+      {
+        id: "item_total",
+        header: "Item Total",
+        size: 120,
+        cell: ({ row }) => {
+          const total = useMemo(
+            () => calculateItemTotal(row.original).item_total,
+            [row.original, calculateItemTotal]
+          );
+          return (
+            <div className="font-medium text-green-700 text-sm">
+              {formatCurrency(total)}
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        size: 100,
+        cell: ({ row }) => (
+          <div className="flex gap-1 justify-center">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => duplicateItem(row.index)}
+              title="Duplicate"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => removeItem(row.index)}
+              className="text-red-600 hover:bg-red-50"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        ),
+      },
+    ];
+  }, [baseRates, calculateItemTotal, duplicateItem, removeItem]);
+
+  /** ⚡ Table Instance */
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: { columnPinning },
+    onColumnPinningChange: setColumnPinning,
+    meta: { updateData: updateItem, cellRefs: cellRefs.current },
+  });
+
+  /** 🌀 Virtualized Rows (middle section) */
+  const rowVirtualizer = useVirtualizer({
+    count: table.getRowModel().rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const totalHeight = rowVirtualizer.getTotalSize();
+
+  /** Scroll sync left/middle/right */
+  useEffect(() => {
+    const left = document.getElementById("left-fixed");
+    const right = document.getElementById("right-fixed");
+    const middle = document.getElementById("middle-scroll");
+    if (!left || !right || !middle) return;
+    const sync = () => {
+      left.scrollTop = middle.scrollTop;
+      right.scrollTop = middle.scrollTop;
+    };
+    middle.addEventListener("scroll", sync);
+    return () => middle.removeEventListener("scroll", sync);
+  }, []);
+
+  /** 🧩 Render */
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end items-center gap-3 mb-2">
+        <div className="text-sm text-muted-foreground">
+          Total Items: {data.length}
+        </div>
+        <Button type="button" onClick={addItem} variant="outline" size="sm" className="gap-2">
+          <Plus className="h-4 w-4" /> Add Item
+        </Button>
+      </div>
+
+      <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
+        {/* LEFT FIXED */}
+        <div id="left-fixed" className="flex-none w-[465px] border-r overflow-hidden" style={{ overflowY: "auto" }}>
+          <table className="w-full text-sm border-collapse">
+            <thead className="sticky top-0 bg-slate-100 z-10">
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers
+                    .filter((h) => ["room_name", "category", "item_name"].includes(h.column.id))
+                    .map((header) => (
+                      <th key={header.id} className="p-2 border-b font-semibold" width="155px">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody style={{ height: totalHeight, position: "relative" }}>
+              {virtualRows.map((vr) => {
+                const row = table.getRowModel().rows[vr.index];
+                return (
+                  <tr
+                    key={row.id}
+                    className="bg-white border-b"
+                    style={{ position: "absolute", top: 0, transform: `translateY(${vr.start}px)` }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => ["room_name", "category", "item_name"].includes(c.column.id))
+                      .map((cell) => (
+                        <td key={cell.id} className="p-2 border-r" width="155px">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* MIDDLE SCROLL */}
+        <div ref={tableContainerRef} id="middle-scroll" className="flex-1 overflow-auto">
+          <table className="w-full text-sm border-collapse table-fixed">
+            <thead className="sticky top-0 bg-slate-100 z-10">
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers
+                    .filter(
+                      (h) =>
+                        !["room_name", "category", "item_name", "item_total", "actions"].includes(h.column.id)
+                    )
+                    .map((header) => (
+                      <th key={header.id} className="p-2 border-b font-semibold whitespace-nowrap w-[120px]">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody style={{ height: totalHeight, position: "relative" }}>
+              {virtualRows.map((vr) => {
+                const row = table.getRowModel().rows[vr.index];
+                return (
+                  <tr
+                    key={row.id}
+                    style={{ position: "absolute", top: 0, transform: `translateY(${vr.start}px)` }}
+                    className="border-b bg-white"
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter(
+                        (c) =>
+                          !["room_name", "category", "item_name", "item_total", "actions"].includes(c.column.id)
+                      )
+                      .map((cell) => (
+                        <td key={cell.id} className="p-2 border-r w-[120px]">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* RIGHT FIXED */}
+        <div id="right-fixed" className="flex-none w-[210px] border-l overflow-hidden" style={{ overflowY: "auto" }}>
+          <table className="w-full text-sm border-collapse">
+            <thead className="sticky top-0 bg-slate-100 z-10">
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers
+                    .filter((h) => ["item_total", "actions"].includes(h.column.id))
+                    .map((header) => (
+                      <th key={header.id} className="p-2 border-b font-semibold" width="105px" >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody style={{ height: totalHeight, position: "relative" }}>
+              {virtualRows.map((vr) => {
+                const row = table.getRowModel().rows[vr.index];
+                return (
+                  <tr
+                    key={row.id}
+                    className="border-b bg-white"
+                    style={{ position: "absolute", top: 0, transform: `translateY(${vr.start}px)` }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => ["item_total", "actions"].includes(c.column.id))
+                      .map((cell) => (
+                        <td key={cell.id} className="p-2 border-r text-right" width="105px">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+
+const EstimationSummary = ({ totals, baseRates }) => {
+  // Get categories from baseRates (available in parent scope)
+  const categories = baseRates.category_rates?.categories || [];
+
   // Helper to get grid columns based on category count
   const getCategoryGridCols = (count) => {
     // if (count <= 3) return 'md:grid-cols-3';
@@ -1226,11 +1112,11 @@ const EstimationSummary = ({totals, bizModel}) => {
     // if (count === 5 || count === 6) return 'md:grid-cols-3';
     return 'md:grid-cols-4'; // 4xN grid for 7+
   };
-  
+
   return (
     <div className="mt-6 p-4 bg-slate-50 rounded-lg">
       <h3 className="font-semibold mb-3">Estimation Summary</h3>
-      
+
       {/* Dynamic Category Breakdown */}
       <div className={`grid gap-4 text-sm ${getCategoryGridCols(categories.length)}`}>
         {categories
@@ -1247,13 +1133,13 @@ const EstimationSummary = ({totals, bizModel}) => {
             );
           })}
       </div>
-      
+
       {/* High-level Totals */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4 pt-4 border-t border-slate-300">
         <div>
           <p className="text-muted-foreground">Discount</p>
           <p className="font-bold text-xl text-green-700">
-            {formatCurrency(totals.items_discount+totals.kg_charges_discount)}
+            {formatCurrency(totals.items_discount + totals.kg_charges_discount)}
           </p>
           <p className="font-base text-xs text-blue-700">
             <span>{formatCurrency(totals.items_discount)} &amp; {formatCurrency(totals.kg_charges_discount)}</span>

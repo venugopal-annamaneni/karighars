@@ -348,24 +348,25 @@ const EstimationItemsTable = ({ category, project, estimation, projectBaseRates,
       header: 'Category',
       enableGrouping: true,
       cell: ({ getValue }) => {
-        const value = getValue();
-        // Get category name from projectBaseRates
-        const category = projectBaseRates?.category_rates?.categories?.find(c => c.id === value);
-        return category?.category_name || value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        // const value = getValue();
+        // // Get category name from projectBaseRates
+        // const category = projectBaseRates?.category_rates?.categories?.find(c => c.id === value);
+        // return category?.category_name || value?.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return category.category_name;
       },
-      sortingFn: (rowA, rowB) => {
-        const categories = projectBaseRates?.category_rates?.categories || [];
+      // sortingFn: (rowA, rowB) => {
+      //   const categories = projectBaseRates?.category_rates?.categories || [];
 
-        // Build sort order map from category_rates
-        const categoryOrder = {};
-        categories.forEach(cat => {
-          categoryOrder[cat.id] = cat.sort_order || 999;
-        });
+      //   // Build sort order map from category_rates
+      //   const categoryOrder = {};
+      //   categories.forEach(cat => {
+      //     categoryOrder[cat.id] = cat.sort_order || 999;
+      //   });
 
-        const a = categoryOrder[rowA.original.category] || 999;
-        const b = categoryOrder[rowB.original.category] || 999;
-        return a - b;
-      },
+      //   const a = categoryOrder[rowA.original.category] || 999;
+      //   const b = categoryOrder[rowB.original.category] || 999;
+      //   return a - b;
+      // },
     },
     {
       accessorKey: 'item_name',
@@ -632,7 +633,7 @@ const EstimationItemsTable = ({ category, project, estimation, projectBaseRates,
           <tbody>
             {table.getRowModel().rows.length == 0 && (
               <tr className="border-b hover:bg-slate-50">
-                <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'> Zero line items in estimation </td>
+                <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'>Zero items</td>
               </tr>
             )}
             {table.getRowModel().rows.map(row => {
@@ -710,7 +711,14 @@ const EstimationItemsTable = ({ category, project, estimation, projectBaseRates,
             <tfoot className="bg-slate-100 font-semibold border-t-2 border-slate-300">
               <tr>
                 <td colSpan={8} className="text-right p-3">&nbsp;</td>
-                <td className="text-right p-3">{formatCurrency(totals.subtotal)}</td>
+                <td className="text-right p-3">
+                  {category.pay_to_vendor_directly && (
+                    <span className='line-through text-muted-foreground'>{formatCurrency(totals.subtotal)}</span>
+                  )}
+                  {!category.pay_to_vendor_directly && (
+                    <span>{formatCurrency(totals.subtotal)}</span>
+                  )}
+                </td>
                 <td className="text-right p-3 text-red-600">{formatCurrency(totals.item_discount_amount)}</td>
                 <td className="text-right p-3">{formatCurrency(totals.karighar_charges_amount)}</td>
                 <td className="text-right p-3 text-red-600">{formatCurrency(totals.discount_kg_charges_amount)}</td>

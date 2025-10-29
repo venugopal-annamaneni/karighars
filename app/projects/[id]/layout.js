@@ -268,12 +268,12 @@ function ProjectLayoutInner({ children }) {
                   </form>
                 </DialogContent>
               </Dialog>
-              <Link href={`/projects/${projectId}/estimation`}>
+              {/* <Link href={`/projects/${projectId}/estimation`}>
                 <Button className="gap-2">
                   <FileText className="h-4 w-4" />
                   Manage Estimation
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>
