@@ -17,6 +17,7 @@ export default function UploadEstimationPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id;
+  const { CSVReader } = useCSVReader();
 
   const [project, setProject] = useState(null);
   const [baseRates, setBaseRates] = useState(null);
