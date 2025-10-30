@@ -91,7 +91,7 @@ export default function UploadEstimationPage() {
     const errors = [];
 
     // Required columns
-    const requiredColumns = ['category', 'room_name', 'item_name', 'quantity', 'unit', 'unit_price'];
+    const requiredColumns = ['category', 'room_name', 'item_name', 'quantity', 'unit', 'rate'];
     const missingColumns = requiredColumns.filter(col => 
       !headers.some(h => h.toLowerCase().trim() === col)
     );
