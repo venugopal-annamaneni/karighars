@@ -191,57 +191,25 @@ export default function ProjectEstimationPage() {
     return config?.max_kg_discount_percentage || 0;
   };
 
-  const calculateItemTotal = (item) => {
-    const quantity = parseFloat(item.quantity) || 0;
-    const unitPrice = parseFloat(item.unit_price) || 0;
-    const karigharChargesPerc = parseFloat(item.karighar_charges_percentage) || 0;
-    const itemDiscountPerc = parseFloat(item.item_discount_percentage) || 0;
-    const kgDiscountPerc = parseFloat(item.discount_kg_charges_percentage) || 0;
-    const gstPerc = parseFloat(item.gst_percentage) || 0;
-
-    // Step 1: Calculate subtotal
-    const subtotal = quantity * unitPrice;
-
-    // Step 2: Apply item discount (BEFORE KG charges)
-    const itemDiscountAmount = (subtotal * itemDiscountPerc) / 100;
-    const discountedSubtotal = subtotal - itemDiscountAmount;
-
-    // Step 3: Calculate KG charges (on discounted subtotal)
-    const kgChargesGross = (discountedSubtotal * karigharChargesPerc) / 100;
-
-    // Step 4: Apply KG discount (ON KG charges only)
-    const kgDiscountAmount = (kgChargesGross * kgDiscountPerc) / 100;
-    const kgChargesNet = kgChargesGross - kgDiscountAmount;
-
-    // Step 5: Calculate amount before GST (flag-based)
-    const categoryConfig = getCategoryConfig(item.category);
-    let amountBeforeGst = 0;
-    if (categoryConfig?.pay_to_vendor_directly) {
-      // Customer pays vendor directly, only KG charges billed
-      amountBeforeGst = kgChargesNet;
-    } else {
-      // Full billing: items + KG charges
-      amountBeforeGst = discountedSubtotal + kgChargesNet;
+  // Use the common calculation function with baseRates context
+  const calculateItemTotal = useCallback((item) => {
+    try {
+      return calcItemTotal(item, baseRates);
+    } catch (error) {
+      console.error('Error calculating item total:', error);
+      return {
+        subtotal: 0,
+        item_discount_amount: 0,
+        discounted_subtotal: 0,
+        karighar_charges_gross: 0,
+        kg_discount_amount: 0,
+        karighar_charges_amount: 0,
+        amount_before_gst: 0,
+        gst_amount: 0,
+        item_total: 0
+      };
     }
-
-    // Step 6: Calculate GST
-    const gstAmount = (amountBeforeGst * gstPerc) / 100;
-
-    // Step 7: Final item total
-    const itemTotal = amountBeforeGst + gstAmount;
-
-    return {
-      subtotal,
-      item_discount_amount: itemDiscountAmount,
-      discounted_subtotal: discountedSubtotal,
-      karighar_charges_gross: kgChargesGross,
-      kg_discount_amount: kgDiscountAmount,
-      karighar_charges_amount: kgChargesNet,
-      amount_before_gst: amountBeforeGst,
-      gst_amount: gstAmount,
-      item_total: itemTotal
-    };
-  };
+  }, [baseRates]);
 
   const calculateTotals = () => {
     // Get available categories from baseRates
