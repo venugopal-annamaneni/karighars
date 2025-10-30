@@ -211,67 +211,20 @@ export default function ProjectEstimationPage() {
     }
   }, [baseRates]);
 
-  const calculateTotals = () => {
+  // Use the common calculation function
+  const calculateTotals = useCallback(() => {
     // Get available categories from baseRates
     const categories = baseRates.category_rates?.categories || [];
 
-    // Initialize dynamic accumulators for each category
-    const categoryAccumulators = {};
-    categories.forEach(cat => {
-      categoryAccumulators[cat.id] = {
-        subtotal: 0,
-        item_discount_amount: 0,
-        kg_charges_gross: 0,
-        kg_charges_discount: 0,
-        amount_before_gst: 0,
-        gst_amount: 0,
-        total: 0
-      };
-    });
+    // Calculate item totals first
+    const itemsWithTotals = data.map(item => ({
+      ...item,
+      ...calculateItemTotal(item)
+    }));
 
-    // High-level totals
-    let totalItemsValue = 0;
-    let totalItemsDiscount = 0;
-    let totalKGCharges = 0;
-    let totalKGDiscount = 0;
-    let totalGST = 0;
-    let grandTotal = 0;
-
-    // Accumulate dynamically for each item
-    data.forEach(item => {
-      const itemCalc = calculateItemTotal(item);
-      const categoryId = item.category;
-
-      // Accumulate in the appropriate category bucket
-      if (categoryAccumulators[categoryId]) {
-        categoryAccumulators[categoryId].subtotal += itemCalc.subtotal;
-        categoryAccumulators[categoryId].item_discount_amount += itemCalc.item_discount_amount;
-        categoryAccumulators[categoryId].kg_charges_gross += itemCalc.karighar_charges_gross;
-        categoryAccumulators[categoryId].kg_charges_discount += itemCalc.kg_discount_amount;
-        categoryAccumulators[categoryId].amount_before_gst += itemCalc.amount_before_gst;
-        categoryAccumulators[categoryId].gst_amount += itemCalc.gst_amount;
-        categoryAccumulators[categoryId].total += itemCalc.item_total;
-      }
-
-      // Accumulate high-level totals
-      totalItemsValue += itemCalc.subtotal;
-      totalItemsDiscount += itemCalc.item_discount_amount;
-      totalKGCharges += itemCalc.karighar_charges_gross;
-      totalKGDiscount += itemCalc.kg_discount_amount;
-      totalGST += itemCalc.gst_amount;
-      grandTotal += itemCalc.item_total;
-    });
-
-    return {
-      category_breakdown: categoryAccumulators,
-      items_value: totalItemsValue,
-      items_discount: totalItemsDiscount,
-      kg_charges: totalKGCharges,
-      kg_charges_discount: totalKGDiscount,
-      gst_amount: totalGST,
-      final_value: grandTotal
-    };
-  };
+    // Use common function for category totals
+    return calculateCategoryTotals(itemsWithTotals, categories);
+  }, [data, baseRates, calculateItemTotal]);
 
   // Helper function to update items for a specific category
   const updateCategoryItems = useCallback((categoryId, updatedItems) => {
