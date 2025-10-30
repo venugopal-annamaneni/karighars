@@ -9,14 +9,6 @@ import Papa from 'papaparse';
 import { PAYMENT_STATUS } from '@/app/constants';
 import { calculateItemTotal, calculateCategoryTotals } from '@/lib/calcUtils';
 
-
-// calculateItemTotal function moved to @/lib/calcUtils
-
-
-// calculateCategoryTotals function moved to @/lib/calcUtils
-
-
-
 async function readUploadedFile(file) {
   if (typeof file.arrayBuffer === 'function') {
     const arrayBuffer = await file.arrayBuffer();
