@@ -10,7 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Upload, Download, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
+
 
 export default function UploadEstimationPage() {
   const { data: session, status } = useSession();
@@ -60,18 +62,18 @@ export default function UploadEstimationPage() {
     }
   };
 
-  const handleCSVUpload = (data, fileInfo) => {
-    setCsvFile(fileInfo);
+  const handleCSVUpload = (results, file) => {
+    setCsvFile(file);
     setIsValidating(true);
     
     // Parse CSV data
-    const rows = data.slice(1); // Skip header row
-    const headers = data[0].data;
+    const rows = results.data.slice(1); // Skip header row
+    const headers = results.data[0];
     
     const parsedRows = rows.map((row, index) => {
       const rowData = {};
       headers.forEach((header, i) => {
-        rowData[header.toLowerCase().trim()] = row.data[i];
+        rowData[header.toLowerCase().trim()] = row[i];
       });
       return { rowNumber: index + 2, data: rowData }; // +2 because row 1 is header
     });
@@ -89,7 +91,7 @@ export default function UploadEstimationPage() {
     const errors = [];
 
     // Required columns
-    const requiredColumns = ['category', 'room_name', 'item_name', 'quantity', 'unit', 'rate'];
+    const requiredColumns = ['category', 'room_name', 'item_name', 'quantity', 'unit', 'unit_price'];
     const missingColumns = requiredColumns.filter(col => 
       !headers.some(h => h.toLowerCase().trim() === col)
     );
@@ -150,10 +152,10 @@ export default function UploadEstimationPage() {
         });
       }
 
-      // Validate rate
-      const rate = parseFloat(data.rate);
-      if (isNaN(rate) || rate < 0) {
-        rowErrors.push({ row: rowNumber, field: 'rate', message: 'Rate must be >= 0' });
+      // Validate unit_price
+      const unitPrice = parseFloat(data.unit_price);
+      if (isNaN(unitPrice) || unitPrice < 0) {
+        rowErrors.push({ row: rowNumber, field: 'unit_price', message: 'Unit Price must be >= 0' });
       }
 
       // Check width/height for sqft
@@ -231,7 +233,7 @@ export default function UploadEstimationPage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', csvFile.file);
+      formData.append('file', csvFile);
 
       const res = await fetch(`/api/projects/${projectId}/upload`, {
         method: 'POST',
@@ -288,6 +290,7 @@ export default function UploadEstimationPage() {
             </div>
           </div>
         </div>
+        <Toaster richColors position="top-right" />
 
         {/* Upload Section */}
         {!csvFile && (
@@ -309,7 +312,7 @@ export default function UploadEstimationPage() {
           <CardHeader>
             <CardTitle>Step 2: Upload Your CSV</CardTitle>
             <CardDescription>
-              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, rate
+              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, unit_price
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -428,9 +431,9 @@ export default function UploadEstimationPage() {
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Category</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Room</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Item</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Qty</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Unit</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Rate</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Qty</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Unit Price</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -452,9 +455,9 @@ export default function UploadEstimationPage() {
                             <td className="px-4 py-3">{row.data.category}</td>
                             <td className="px-4 py-3">{row.data.room_name}</td>
                             <td className="px-4 py-3">{row.data.item_name}</td>
-                            <td className="px-4 py-3">{row.data.quantity}</td>
                             <td className="px-4 py-3">{row.data.unit}</td>
-                            <td className="px-4 py-3">{row.data.rate}</td>
+                            <td className="px-4 py-3">{row.data.quantity}</td>
+                            <td className="px-4 py-3">{row.data.unit_price}</td>
                           </tr>
                         );
                       })}

@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
     const projectRes = await query(`
       SELECT p.id, p.name, pbr.category_rates
       FROM projects p
-      LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.status = 'active'
+      LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.active = 'true'
       WHERE p.id = $1
     `, [projectId]);
 
@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
       'item_name',
       'quantity',
       'unit',
-      'rate',
+      'unit_price',
       'width',
       'height',
       'item_discount_percentage',
@@ -57,7 +57,7 @@ export async function GET(request, { params }) {
         item_name: `Sample ${category.category_name} Item`,
         quantity: category.id === 'woodwork' ? '120' : '1',
         unit: category.id === 'woodwork' ? 'sqft' : 'no',
-        rate: '1000',
+        unit_price: '1000',
         width: category.id === 'woodwork' ? '10' : '',
         height: category.id === 'woodwork' ? '12' : '',
         item_discount_percentage: '0',

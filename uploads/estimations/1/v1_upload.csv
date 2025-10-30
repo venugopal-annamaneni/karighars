@@ -1,0 +1,4 @@
+category,room_name,item_name,quantity,unit,unit_price,width,height,item_discount_percentage,discount_kg_charges_percentage
+woodwork,Sample Room,Sample Woodwork Item,120,sqft,1000,10,12,0,0
+accessories,Sample Room,Sample Accessories Item,1,no,1000,,,0,0
+shopping,Sample Room,Sample Shopping Item,1,no,1000,,,0,0

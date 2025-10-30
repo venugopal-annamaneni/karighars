@@ -6,19 +6,20 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
+import { PAYMENT_STATUS } from '@/app/constants';
 
-// Helper to calculate item totals
+
 function calculateItemTotal(item, baseRates) {
   const category = baseRates.category_rates?.categories?.find(c => c.id === item.category);
   if (!category) throw new Error(`Category ${item.category} not found`);
 
   const quantity = parseFloat(item.quantity) || 0;
-  const rate = parseFloat(item.rate) || 0;
+  const unitPrice = parseFloat(item.unit_price) || 0;
   const itemDiscountPct = parseFloat(item.item_discount_percentage) || 0;
   const kgDiscountPct = parseFloat(item.discount_kg_charges_percentage) || 0;
 
   // Calculate subtotal
-  const subtotal = quantity * rate;
+  const subtotal = quantity * unitPrice;
 
   // Calculate item discount
   const itemDiscountAmount = (subtotal * itemDiscountPct) / 100;
@@ -61,7 +62,7 @@ function calculateItemTotal(item, baseRates) {
   };
 }
 
-// Helper to calculate category totals
+
 function calculateCategoryTotals(items, categories) {
   const categoryBreakdown = {};
   let totalItemsValue = 0;
@@ -114,6 +115,20 @@ function calculateCategoryTotals(items, categories) {
   };
 }
 
+
+
+async function readUploadedFile(file) {
+  if (typeof file.arrayBuffer === 'function') {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+  const chunks = [];
+  for await (const chunk of file.stream()) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -133,8 +148,7 @@ export async function POST(request, { params }) {
     }
 
     // Read file content
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const buffer = await readUploadedFile(file);
     const csvContent = buffer.toString('utf-8');
 
     // Parse CSV
@@ -145,10 +159,10 @@ export async function POST(request, { params }) {
     });
 
     if (parseResult.errors.length > 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'CSV parsing error', 
-        errors: parseResult.errors 
+      return NextResponse.json({
+        success: false,
+        error: 'CSV parsing error',
+        errors: parseResult.errors
       }, { status: 400 });
     }
 
@@ -171,9 +185,9 @@ export async function POST(request, { params }) {
 
       if (lockCheck.rows.length > 0) {
         await query('ROLLBACK');
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Project is currently locked. Another user is uploading or editing.' 
+        return NextResponse.json({
+          success: false,
+          error: 'Project is currently locked. Another user is uploading or editing.'
         }, { status: 409 });
       }
 
@@ -181,7 +195,7 @@ export async function POST(request, { params }) {
       const projectRes = await query(`
         SELECT p.id, p.name, p.biz_model_id, pbr.category_rates, pbr.gst_percentage
         FROM projects p
-        LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.status = 'active'
+        LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.active = 'true'
         WHERE p.id = $1
       `, [projectId]);
 
@@ -191,6 +205,7 @@ export async function POST(request, { params }) {
       }
 
       const project = projectRes.rows[0];
+      console.log(project);
       const baseRates = {
         category_rates: project.category_rates,
         gst_percentage: project.gst_percentage
@@ -198,9 +213,9 @@ export async function POST(request, { params }) {
 
       if (!baseRates.category_rates || !baseRates.category_rates.categories) {
         await query('ROLLBACK');
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Project base rates not configured' 
+        return NextResponse.json({
+          success: false,
+          error: 'Project base rates not configured'
         }, { status: 400 });
       }
 
@@ -222,7 +237,7 @@ export async function POST(request, { params }) {
       const fileName = `v${nextVersion}_upload.csv`;
       const filePath = path.join(projectDir, fileName);
       const relativeFilePath = `uploads/estimations/${projectId}/${fileName}`;
-      
+
       await writeFile(filePath, csvContent);
 
       // 6. Process and calculate items
@@ -234,7 +249,7 @@ export async function POST(request, { params }) {
           item_name: row.item_name?.trim(),
           quantity: parseFloat(row.quantity) || 0,
           unit: row.unit?.toLowerCase().trim(),
-          rate: parseFloat(row.rate) || 0,
+          unit_price: parseFloat(row.unit_price) || 0,
           width: parseFloat(row.width) || null,
           height: parseFloat(row.height) || null,
           item_discount_percentage: parseFloat(row.item_discount_percentage) || 0,
@@ -255,15 +270,35 @@ export async function POST(request, { params }) {
         WHERE project_id = $1 AND is_active = true
       `, [projectId]);
 
+      // 8.1 Check for overpayment (only for revision, not first estimation)
+      let hasOverpayment = false;
+      let overpaymentAmount = 0;
+
+
+      // Get total approved payments
+      const paymentsRes = await query(`
+            SELECT COALESCE(SUM(amount), 0) as total_collected
+            FROM customer_payments
+            WHERE project_id = $1 AND status = $2
+          `, [projectId, PAYMENT_STATUS.APPROVED]);
+
+      const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
+
+      if (totalCollected > totals.final_value) {
+        hasOverpayment = true;
+        overpaymentAmount = totalCollected - totals.final_value;
+      }
+
+
       // 9. Create new project_estimations record (locked during creation)
       const estimationRes = await query(`
         INSERT INTO project_estimations (
           project_id, version, source, csv_file_path, uploaded_by,
           is_active, is_locked, locked_by, locked_at, status,
-          category_breakdown, items_value, items_discount,
-          kg_charges, kg_charges_discount, gst_amount, final_value,
-          created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+          category_breakdown, items_value, kg_charges, 
+          item_discount, kg_discount, discount, gst_amount, final_value,
+          created_at, updated_at, has_overpayment, overpayment_amount
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW(), $18, $19)
         RETURNING id
       `, [
         projectId,
@@ -274,13 +309,17 @@ export async function POST(request, { params }) {
         true,          // is_active
         false,         // is_locked (unlock immediately after creation)
         null,          // locked_by
+        'draft',
         JSON.stringify(totals.category_breakdown),
         totals.items_value,
-        totals.items_discount,
         totals.kg_charges,
+        totals.items_discount,
         totals.kg_charges_discount,
+        totals.items_discount + totals.kg_charges_discount,
         totals.gst_amount,
-        totals.final_value
+        totals.final_value,
+        hasOverpayment,
+        overpaymentAmount
       ]);
 
       const estimationId = estimationRes.rows[0].id;
@@ -290,30 +329,31 @@ export async function POST(request, { params }) {
         await query(`
           INSERT INTO estimation_items (
             estimation_id, category, room_name, item_name,
-            quantity, unit, rate, width, height,
-            item_discount_percentage, discount_kg_charges_percentage,
+            unit, width, height, quantity, unit_price, 
             subtotal, karighar_charges_percentage, karighar_charges_amount,
-            item_discount_amount, discount_kg_charges_amount,
-            amount_before_gst, gst_amount, item_total,
+            item_discount_percentage, item_discount_amount, 
+            discount_kg_charges_percentage, discount_kg_charges_amount,
+            gst_percentage, amount_before_gst, gst_amount, item_total,
             created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
         `, [
           estimationId,
           item.category,
           item.room_name,
           item.item_name,
-          item.quantity,
           item.unit,
-          item.rate,
           item.width,
           item.height,
-          item.item_discount_percentage,
-          item.discount_kg_charges_percentage,
+          item.quantity,
+          item.unit_price,
           item.subtotal,
-          baseRates.category_rates.categories.find(c => c.id === item.category)?.kg_percentage || 0,
+          item.discount_kg_charges_percentage,
           item.karighar_charges_amount,
+          item.item_discount_percentage,
           item.item_discount_amount,
+          baseRates.category_rates.categories.find(c => c.id === item.category)?.kg_percentage || 0,
           item.discount_kg_charges_amount,
+          item.gst_percentage,
           item.amount_before_gst,
           item.gst_amount,
           item.item_total
@@ -335,19 +375,19 @@ export async function POST(request, { params }) {
       // ===== ROLLBACK ON ERROR =====
       await query('ROLLBACK');
       console.error('Transaction error:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to process upload', 
-        message: error.message 
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to process upload',
+        message: error.message
       }, { status: 500 });
     }
 
   } catch (error) {
     console.error('Upload API error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Upload failed', 
-      message: error.message 
+    return NextResponse.json({
+      success: false,
+      error: 'Upload failed',
+      message: error.message
     }, { status: 500 });
   }
 }
