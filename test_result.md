@@ -25,28 +25,28 @@
 **Current Task**: Phase 3 - CSV Upload and Version Management for Estimation Items
 
 **Key Requirements**:
-1. Update Calculate Payment API to work with dynamic categories from BizModel
-2. Fetch category definitions from `biz_models.category_rates`
-3. Use `category_breakdown` JSONB from `project_estimations`
-4. Calculate target amounts dynamically for N categories
-5. Update Customer Payments UI to display dynamic category breakdowns
-6. Remove all hardcoded woodwork/misc/shopping references
+1. CSV Upload UI at `/projects/upload/[id]` page for initial estimation creation
+2. CSV Upload API at `/api/projects/[id]/upload` with transaction support and project locking
+3. CSV Template Download API at `/api/projects/[id]/estimations/template`
+4. Version Management APIs:
+   - List versions: `/api/projects/[id]/estimations/versions`
+   - Get version details: `/api/projects/[id]/estimations/versions/[versionId]`
+   - Load version from CSV: `/api/projects/[id]/estimations/versions/[versionId]/load`
+   - Download version CSV: `/api/projects/[id]/estimations/versions/[versionId]/download`
+5. UI Integration: Version dropdown in project detail page, Edit Estimation visible only after upload
+6. Client-side CSV validation using react-papaparse
+7. Project locking mechanism to prevent concurrent edits
 
-**Recent Changes (Phase 2)**:
-- Completely refactored `/app/api/projects/[id]/calculate-payment/route.js`:
-  - Now fetches BizModel `category_rates` to get category definitions
-  - Uses milestone `category_percentages` JSONB instead of flat columns
-  - Uses estimation `category_breakdown` JSONB for totals
-  - Calculates target amounts dynamically for all categories
-  - Returns dynamic response: `{categories: {catId: {data}}, target_total, ...}`
-  
-- Updated `/app/app/projects/[id]/customer-payments/page.js`:
-  - Added `getCategoryIcon()` helper function
-  - Updated `handleMilestoneChange()` to work with dynamic API response
-  - Modified milestone dropdown to show dynamic category percentages
-  - Replaced hardcoded category breakdown display with dynamic rendering
-  - Removed all references to woodwork_amount, misc_amount, shopping_amount
-  - Cleaned up commented-out legacy code
+**Recent Changes (Phase 3 - In Progress)**:
+- ✅ Created CSV Upload API with full transaction support
+- ✅ Created CSV Template Download API
+- ✅ Created Version Management APIs (list, details, load, download)
+- ✅ Executed migration 008 (added is_locked, locked_by columns)
+- ✅ Fixed route naming conflicts (consolidated [version] → [versionId])
+- ✅ Created CSV Upload UI at `/app/projects/upload/[id]/page.js`
+- ⏸️ UI Integration in project detail page (in progress)
+- ⏸️ Manage estimation page enhancements (pending)
+- ⏸️ Client-side CSV validation (pending)
 
 ---
 
