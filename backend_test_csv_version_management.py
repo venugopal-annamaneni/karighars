@@ -36,14 +36,15 @@ def get_existing_project_with_estimations():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT DISTINCT p.id, p.project_code, p.name, 
+            SELECT p.id, p.project_code, p.name, 
                    COUNT(pe.id) as estimation_count,
-                   MAX(pe.version) as latest_version
+                   MAX(pe.version) as latest_version,
+                   p.created_at
             FROM projects p
             LEFT JOIN project_estimations pe ON p.id = pe.project_id 
             LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.active = 'true'
             WHERE pbr.category_rates IS NOT NULL
-            GROUP BY p.id, p.project_code, p.name
+            GROUP BY p.id, p.project_code, p.name, p.created_at
             HAVING COUNT(pe.id) > 0
             ORDER BY p.created_at DESC
             LIMIT 1;
