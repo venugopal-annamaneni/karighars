@@ -22,7 +22,7 @@
 
 ## Original User Problem Statement
 
-**Current Task**: Phase 2 - Implement Dynamic Payment Milestone Categories in Payment Calculation and Customer Payments UI
+**Current Task**: Phase 3 - CSV Upload and Version Management for Estimation Items
 
 **Key Requirements**:
 1. Update Calculate Payment API to work with dynamic categories from BizModel
