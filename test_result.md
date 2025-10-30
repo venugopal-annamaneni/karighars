@@ -52,6 +52,135 @@
 
 ## Test Cases for Backend Agent
 
+### Phase 3: CSV Upload and Version Management
+
+### Test Scenario 1: CSV Upload API - Basic Upload
+**Endpoint**: `POST /api/projects/{id}/upload`
+**Description**: Test CSV file upload for creating first estimation version
+**Prerequisites**:
+- Create a project with active base rates
+- Prepare a valid CSV file with estimation items
+- User must be authenticated
+
+**Test Data**: CSV with columns:
+```
+category,room_name,item_name,quantity,unit,rate,width,height,item_discount_percentage,discount_kg_charges_percentage
+woodwork,Living Room,TV Unit,1,sqft,1500,8,5,0,0
+misc,Kitchen,Electrical Work,1,lumpsum,15000,,,0,0
+```
+
+**Expected Result**:
+- HTTP 200 response
+- New `project_estimations` record created with version=1
+- CSV file saved at `uploads/estimations/{projectId}/v1_upload.csv`
+- Estimation items inserted into `estimation_items` table
+- Category breakdown calculated correctly
+- Transaction committed successfully
+
+### Test Scenario 2: CSV Upload API - Concurrent Upload Protection
+**Endpoint**: `POST /api/projects/{id}/upload`
+**Description**: Test project locking mechanism prevents concurrent uploads
+**Test Steps**:
+1. Start first upload (don't wait for completion)
+2. Attempt second upload while first is processing
+
+**Expected Result**:
+- First upload succeeds
+- Second upload returns HTTP 409 (Conflict)
+- Error message: "Project is currently locked"
+
+### Test Scenario 3: CSV Template Download
+**Endpoint**: `GET /api/projects/{id}/estimations/template`
+**Description**: Download CSV template for estimation items
+
+**Expected Result**:
+- HTTP 200 response
+- CSV file with correct headers
+- Content-Type: text/csv
+- Filename in response headers
+
+### Test Scenario 4: List Estimation Versions
+**Endpoint**: `GET /api/projects/{id}/estimations/versions`
+**Description**: Get all estimation versions for a project
+
+**Expected Result**:
+- HTTP 200 response
+- Array of version objects
+- Each version has: id, version, source, created_at, created_by, is_active
+- Sorted by version DESC (newest first)
+
+### Test Scenario 5: Get Specific Version Details
+**Endpoint**: `GET /api/projects/{id}/estimations/versions/{versionId}`
+**Description**: Get details of a specific estimation version including items
+
+**Expected Result**:
+- HTTP 200 response
+- Estimation metadata (version, source, totals)
+- Array of estimation items for that version
+- Category breakdown JSONB data
+
+### Test Scenario 6: Download Version CSV
+**Endpoint**: `GET /api/projects/{id]/estimations/versions/{versionId}/download`
+**Description**: Download the original CSV file for a specific version
+
+**Expected Result**:
+- HTTP 200 response  
+- CSV file content
+- Content-Type: text/csv
+- Content-Disposition header with filename
+- HTTP 404 if CSV file not found or version created manually
+
+### Test Scenario 7: Load Version from CSV
+**Endpoint**: `GET /api/projects/{id}/estimations/versions/{versionId}/load`
+**Description**: Load estimation items from archived CSV file
+
+**Expected Result**:
+- HTTP 200 response
+- Parsed estimation items from CSV
+- Calculated totals from stored estimation record
+- CSV file path in response
+
+### Test Scenario 8: CSV Validation - Missing Columns
+**Endpoint**: `POST /api/projects/{id}/upload`
+**Description**: Upload CSV with missing required columns
+
+**Test Data**: CSV missing 'category' column
+
+**Expected Result**:
+- HTTP 400 response
+- Error message indicating missing column
+- No database records created
+- Transaction rolled back
+
+### Test Scenario 9: CSV Validation - Invalid Data Types
+**Endpoint**: `POST /api/projects/{id}/upload`
+**Description**: Upload CSV with invalid data types
+
+**Test Data**: quantity='abc', rate='xyz'
+
+**Expected Result**:
+- Quantity/rate parsed as 0 or NaN handled gracefully
+- Or validation error returned
+
+### Test Scenario 10: Version Increment
+**Endpoint**: `POST /api/projects/{id}/upload`
+**Description**: Upload multiple CSVs to create multiple versions
+
+**Test Steps**:
+1. Upload first CSV (creates v1)
+2. Upload second CSV (should create v2)
+3. Upload third CSV (should create v3)
+
+**Expected Result**:
+- Each upload creates new version (1, 2, 3...)
+- Previous versions remain in database
+- CSV files saved with correct version numbers
+- Latest version marked as is_active
+
+---
+
+## Test Cases for Backend Agent
+
 ### Phase 2: Payment Calculation with Dynamic Categories
 
 ### Test Scenario 1: Calculate Payment with Dynamic Categories
