@@ -359,9 +359,20 @@ export default function ProjectEstimationsPage() {
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">No estimation created yet</p>
-              <Link href={`/projects/${projectId}/manage-estimation`}>
-                <Button>Create Estimation</Button>
-              </Link>
+              <div className="flex gap-3 justify-center">
+                <Link href={`/projects/upload/${projectId}`}>
+                  <Button className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload CSV
+                  </Button>
+                </Link>
+                <Link href={`/projects/${projectId}/manage-estimation`}>
+                  <Button variant="outline" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create Manually
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
         </CardContent>
