@@ -152,10 +152,10 @@ export default function UploadEstimationPage() {
         });
       }
 
-      // Validate unit_price
-      const unitPrice = parseFloat(data.unit_price);
+      // Validate unit_price/rate
+      const unitPrice = parseFloat(data.rate || data.unit_price);
       if (isNaN(unitPrice) || unitPrice < 0) {
-        rowErrors.push({ row: rowNumber, field: 'unit_price', message: 'Unit Price must be >= 0' });
+        rowErrors.push({ row: rowNumber, field: 'rate', message: 'Rate must be >= 0' });
       }
 
       // Check width/height for sqft
