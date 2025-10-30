@@ -51,6 +51,11 @@ export default function ProjectEstimationsPage() {
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
   const [projectBaseRates, setProjectBaseRates] = useState(null);
+  
+  // Version management state
+  const [versions, setVersions] = useState([]);
+  const [selectedVersion, setSelectedVersion] = useState(null);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const { fetchProjectData, project, estimation, loading } = useProjectData();
