@@ -74,8 +74,72 @@ export default function ProjectEstimationsPage() {
   useEffect(() => {
     if (projectId) {
       fetchProjectAuxData();
+      fetchVersions();
     }
   }, [projectId]);
+
+  const fetchVersions = async () => {
+    try {
+      setVersionsLoading(true);
+      const res = await fetch(`/api/projects/${projectId}/estimations/versions`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data.versions || []);
+        // Set selected version to latest by default
+        if (data.latest_version && !selectedVersion) {
+          setSelectedVersion(data.latest_version.toString());
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching versions:', error);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleVersionChange = async (versionNum) => {
+    setSelectedVersion(versionNum);
+    // Fetch version details and items
+    try {
+      setEstimationLoading(true);
+      const res = await fetch(`/api/projects/${projectId}/estimations/versions/${versionNum}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Update estimation items
+        setEstimationItems(data.items || []);
+      } else {
+        toast.error('Failed to load version details');
+      }
+    } catch (error) {
+      console.error('Error loading version:', error);
+      toast.error('Failed to load version details');
+    } finally {
+      setEstimationLoading(false);
+    }
+  };
+
+  const handleDownloadCSV = async (versionNum) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/estimations/versions/${versionNum}/download`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `estimation_v${versionNum}_project_${projectId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success('CSV downloaded successfully');
+      } else {
+        toast.error('Failed to download CSV');
+      }
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      toast.error('Failed to download CSV');
+    }
+  };
 
   const fetchProjectAuxData = async () => {
     try {
