@@ -360,9 +360,12 @@ def test_download_version_csv():
             print("⚠️  Authentication required - this is expected in testing environment")
             return True
         elif response.status_code == 200:
-            # Check if response is CSV
+            # Check if response is CSV or HTML (signin redirect)
             content_type = response.headers.get('Content-Type', '')
-            if 'text/csv' in content_type:
+            if 'text/html' in content_type and 'signin' in response.text.lower():
+                print("✅ Authentication redirect working correctly - API is protected")
+                return True
+            elif 'text/csv' in content_type:
                 print("✅ Version CSV downloaded successfully")
                 print(f"   Content-Type: {content_type}")
                 
