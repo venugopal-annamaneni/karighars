@@ -312,7 +312,7 @@ export default function UploadEstimationPage() {
           <CardHeader>
             <CardTitle>Step 2: Upload Your CSV</CardTitle>
             <CardDescription>
-              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, unit_price
+              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, rate
             </CardDescription>
           </CardHeader>
           <CardContent>
