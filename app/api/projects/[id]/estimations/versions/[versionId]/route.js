@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
   }
 
   const projectId = params.id;
-  const version = parseInt(params.version);
+  const version = parseInt(params.versionId);
 
   if (isNaN(version)) {
     return NextResponse.json({ error: 'Invalid version' }, { status: 400 });
