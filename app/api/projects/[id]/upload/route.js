@@ -10,58 +10,7 @@ import { PAYMENT_STATUS } from '@/app/constants';
 import { calculateItemTotal, calculateCategoryTotals } from '@/lib/calcUtils';
 
 
-function calculateItemTotal(item, baseRates) {
-  const category = baseRates.category_rates?.categories?.find(c => c.id === item.category);
-  if (!category) throw new Error(`Category ${item.category} not found`);
-
-  const quantity = parseFloat(item.quantity) || 0;
-  const unitPrice = parseFloat(item.unit_price) || 0;
-  const itemDiscountPct = parseFloat(item.item_discount_percentage) || 0;
-  const kgDiscountPct = parseFloat(item.discount_kg_charges_percentage) || 0;
-
-  // Calculate subtotal
-  const subtotal = quantity * unitPrice;
-
-  // Calculate item discount
-  const itemDiscountAmount = (subtotal * itemDiscountPct) / 100;
-  const discountedSubtotal = subtotal - itemDiscountAmount;
-
-  // Calculate KG charges
-  const kgPercentage = category.kg_percentage || 0;
-  const kgChargesGross = (discountedSubtotal * kgPercentage) / 100;
-
-  // Calculate KG discount
-  const kgDiscountAmount = (kgChargesGross * kgDiscountPct) / 100;
-  const kgChargesNet = kgChargesGross - kgDiscountAmount;
-
-  // Calculate amount before GST
-  let amountBeforeGst;
-  if (category.pay_to_vendor_directly) {
-    // For shopping: only KG charges, not item subtotal
-    amountBeforeGst = kgChargesNet;
-  } else {
-    // For woodwork/misc: subtotal + KG charges
-    amountBeforeGst = discountedSubtotal + kgChargesNet;
-  }
-
-  // Calculate GST
-  const gstPercentage = baseRates.gst_percentage || 0;
-  const gstAmount = (amountBeforeGst * gstPercentage) / 100;
-
-  // Calculate final item total
-  const itemTotal = amountBeforeGst + gstAmount;
-
-  return {
-    subtotal: parseFloat(subtotal.toFixed(2)),
-    item_discount_amount: parseFloat(itemDiscountAmount.toFixed(2)),
-    karighar_charges_gross: parseFloat(kgChargesGross.toFixed(2)),
-    discount_kg_charges_amount: parseFloat(kgDiscountAmount.toFixed(2)),
-    karighar_charges_amount: parseFloat(kgChargesNet.toFixed(2)),
-    amount_before_gst: parseFloat(amountBeforeGst.toFixed(2)),
-    gst_amount: parseFloat(gstAmount.toFixed(2)),
-    item_total: parseFloat(itemTotal.toFixed(2))
-  };
-}
+// calculateItemTotal function moved to @/lib/calcUtils
 
 
 function calculateCategoryTotals(items, categories) {
