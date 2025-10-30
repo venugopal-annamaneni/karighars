@@ -13,57 +13,7 @@ import { calculateItemTotal, calculateCategoryTotals } from '@/lib/calcUtils';
 // calculateItemTotal function moved to @/lib/calcUtils
 
 
-function calculateCategoryTotals(items, categories) {
-  const categoryBreakdown = {};
-  let totalItemsValue = 0;
-  let totalItemsDiscount = 0;
-  let totalKGCharges = 0;
-  let totalKGDiscount = 0;
-  let totalGST = 0;
-  let grandTotal = 0;
-
-  categories.forEach(cat => {
-    categoryBreakdown[cat.id] = {
-      subtotal: 0,
-      item_discount_amount: 0,
-      kg_charges_gross: 0,
-      kg_charges_discount: 0,
-      amount_before_gst: 0,
-      gst_amount: 0,
-      total: 0
-    };
-  });
-
-  items.forEach(item => {
-    const catId = item.category;
-    if (categoryBreakdown[catId]) {
-      categoryBreakdown[catId].subtotal += item.subtotal;
-      categoryBreakdown[catId].item_discount_amount += item.item_discount_amount;
-      categoryBreakdown[catId].kg_charges_gross += item.karighar_charges_gross;
-      categoryBreakdown[catId].kg_charges_discount += item.discount_kg_charges_amount;
-      categoryBreakdown[catId].amount_before_gst += item.amount_before_gst;
-      categoryBreakdown[catId].gst_amount += item.gst_amount;
-      categoryBreakdown[catId].total += item.item_total;
-    }
-
-    totalItemsValue += item.subtotal;
-    totalItemsDiscount += item.item_discount_amount;
-    totalKGCharges += item.karighar_charges_gross;
-    totalKGDiscount += item.discount_kg_charges_amount;
-    totalGST += item.gst_amount;
-    grandTotal += item.item_total;
-  });
-
-  return {
-    category_breakdown: categoryBreakdown,
-    items_value: parseFloat(totalItemsValue.toFixed(2)),
-    items_discount: parseFloat(totalItemsDiscount.toFixed(2)),
-    kg_charges: parseFloat(totalKGCharges.toFixed(2)),
-    kg_charges_discount: parseFloat(totalKGDiscount.toFixed(2)),
-    gst_amount: parseFloat(totalGST.toFixed(2)),
-    final_value: parseFloat(grandTotal.toFixed(2))
-  };
-}
+// calculateCategoryTotals function moved to @/lib/calcUtils
 
 
 
