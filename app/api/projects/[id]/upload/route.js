@@ -1,0 +1,353 @@
+import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+import { authOptions } from '@/lib/auth-options';
+import { query } from '@/lib/db';
+import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
+import Papa from 'papaparse';
+
+// Helper to calculate item totals
+function calculateItemTotal(item, baseRates) {
+  const category = baseRates.category_rates?.categories?.find(c => c.id === item.category);
+  if (!category) throw new Error(`Category ${item.category} not found`);
+
+  const quantity = parseFloat(item.quantity) || 0;
+  const rate = parseFloat(item.rate) || 0;
+  const itemDiscountPct = parseFloat(item.item_discount_percentage) || 0;
+  const kgDiscountPct = parseFloat(item.discount_kg_charges_percentage) || 0;
+
+  // Calculate subtotal
+  const subtotal = quantity * rate;
+
+  // Calculate item discount
+  const itemDiscountAmount = (subtotal * itemDiscountPct) / 100;
+  const discountedSubtotal = subtotal - itemDiscountAmount;
+
+  // Calculate KG charges
+  const kgPercentage = category.kg_percentage || 0;
+  const kgChargesGross = (discountedSubtotal * kgPercentage) / 100;
+
+  // Calculate KG discount
+  const kgDiscountAmount = (kgChargesGross * kgDiscountPct) / 100;
+  const kgChargesNet = kgChargesGross - kgDiscountAmount;
+
+  // Calculate amount before GST
+  let amountBeforeGst;
+  if (category.pay_to_vendor_directly) {
+    // For shopping: only KG charges, not item subtotal
+    amountBeforeGst = kgChargesNet;
+  } else {
+    // For woodwork/misc: subtotal + KG charges
+    amountBeforeGst = discountedSubtotal + kgChargesNet;
+  }
+
+  // Calculate GST
+  const gstPercentage = baseRates.gst_percentage || 0;
+  const gstAmount = (amountBeforeGst * gstPercentage) / 100;
+
+  // Calculate final item total
+  const itemTotal = amountBeforeGst + gstAmount;
+
+  return {
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    item_discount_amount: parseFloat(itemDiscountAmount.toFixed(2)),
+    karighar_charges_gross: parseFloat(kgChargesGross.toFixed(2)),
+    discount_kg_charges_amount: parseFloat(kgDiscountAmount.toFixed(2)),
+    karighar_charges_amount: parseFloat(kgChargesNet.toFixed(2)),
+    amount_before_gst: parseFloat(amountBeforeGst.toFixed(2)),
+    gst_amount: parseFloat(gstAmount.toFixed(2)),
+    item_total: parseFloat(itemTotal.toFixed(2))
+  };
+}
+
+// Helper to calculate category totals
+function calculateCategoryTotals(items, categories) {
+  const categoryBreakdown = {};
+  let totalItemsValue = 0;
+  let totalItemsDiscount = 0;
+  let totalKGCharges = 0;
+  let totalKGDiscount = 0;
+  let totalGST = 0;
+  let grandTotal = 0;
+
+  categories.forEach(cat => {
+    categoryBreakdown[cat.id] = {
+      subtotal: 0,
+      item_discount_amount: 0,
+      kg_charges_gross: 0,
+      kg_charges_discount: 0,
+      amount_before_gst: 0,
+      gst_amount: 0,
+      total: 0
+    };
+  });
+
+  items.forEach(item => {
+    const catId = item.category;
+    if (categoryBreakdown[catId]) {
+      categoryBreakdown[catId].subtotal += item.subtotal;
+      categoryBreakdown[catId].item_discount_amount += item.item_discount_amount;
+      categoryBreakdown[catId].kg_charges_gross += item.karighar_charges_gross;
+      categoryBreakdown[catId].kg_charges_discount += item.discount_kg_charges_amount;
+      categoryBreakdown[catId].amount_before_gst += item.amount_before_gst;
+      categoryBreakdown[catId].gst_amount += item.gst_amount;
+      categoryBreakdown[catId].total += item.item_total;
+    }
+
+    totalItemsValue += item.subtotal;
+    totalItemsDiscount += item.item_discount_amount;
+    totalKGCharges += item.karighar_charges_gross;
+    totalKGDiscount += item.discount_kg_charges_amount;
+    totalGST += item.gst_amount;
+    grandTotal += item.item_total;
+  });
+
+  return {
+    category_breakdown: categoryBreakdown,
+    items_value: parseFloat(totalItemsValue.toFixed(2)),
+    items_discount: parseFloat(totalItemsDiscount.toFixed(2)),
+    kg_charges: parseFloat(totalKGCharges.toFixed(2)),
+    kg_charges_discount: parseFloat(totalKGDiscount.toFixed(2)),
+    gst_amount: parseFloat(totalGST.toFixed(2)),
+    final_value: parseFloat(grandTotal.toFixed(2))
+  };
+}
+
+export async function POST(request, { params }) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const projectId = params.id;
+  const userId = session.user.id;
+
+  try {
+    // Get form data
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file) {
+      return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 });
+    }
+
+    // Read file content
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const csvContent = buffer.toString('utf-8');
+
+    // Parse CSV
+    const parseResult = Papa.parse(csvContent, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.toLowerCase().trim()
+    });
+
+    if (parseResult.errors.length > 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'CSV parsing error', 
+        errors: parseResult.errors 
+      }, { status: 400 });
+    }
+
+    const rows = parseResult.data;
+
+    if (rows.length === 0) {
+      return NextResponse.json({ success: false, error: 'CSV file is empty' }, { status: 400 });
+    }
+
+    // ===== BEGIN TRANSACTION =====
+    await query('BEGIN');
+
+    try {
+      // 1. Check for existing lock
+      const lockCheck = await query(`
+        SELECT id, locked_by, locked_at 
+        FROM project_estimations 
+        WHERE project_id = $1 AND is_locked = true
+      `, [projectId]);
+
+      if (lockCheck.rows.length > 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Project is currently locked. Another user is uploading or editing.' 
+        }, { status: 409 });
+      }
+
+      // 2. Get project and base rates
+      const projectRes = await query(`
+        SELECT p.id, p.name, p.biz_model_id, pbr.category_rates, pbr.gst_percentage
+        FROM projects p
+        LEFT JOIN project_base_rates pbr ON p.id = pbr.project_id AND pbr.status = 'active'
+        WHERE p.id = $1
+      `, [projectId]);
+
+      if (projectRes.rows.length === 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
+      }
+
+      const project = projectRes.rows[0];
+      const baseRates = {
+        category_rates: project.category_rates,
+        gst_percentage: project.gst_percentage
+      };
+
+      if (!baseRates.category_rates || !baseRates.category_rates.categories) {
+        await query('ROLLBACK');
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Project base rates not configured' 
+        }, { status: 400 });
+      }
+
+      // 3. Get next version number
+      const versionRes = await query(`
+        SELECT COALESCE(MAX(version), 0) as max_version
+        FROM project_estimations
+        WHERE project_id = $1
+      `, [projectId]);
+      const nextVersion = versionRes.rows[0].max_version + 1;
+
+      // 4. Create uploads directory if not exists
+      const projectDir = path.join(process.cwd(), 'uploads', 'estimations', projectId.toString());
+      if (!existsSync(projectDir)) {
+        await mkdir(projectDir, { recursive: true });
+      }
+
+      // 5. Save CSV file
+      const fileName = `v${nextVersion}_upload.csv`;
+      const filePath = path.join(projectDir, fileName);
+      const relativeFilePath = `uploads/estimations/${projectId}/${fileName}`;
+      
+      await writeFile(filePath, csvContent);
+
+      // 6. Process and calculate items
+      const calculatedItems = [];
+      for (const row of rows) {
+        const itemData = {
+          category: row.category?.trim(),
+          room_name: row.room_name?.trim(),
+          item_name: row.item_name?.trim(),
+          quantity: parseFloat(row.quantity) || 0,
+          unit: row.unit?.toLowerCase().trim(),
+          rate: parseFloat(row.rate) || 0,
+          width: parseFloat(row.width) || null,
+          height: parseFloat(row.height) || null,
+          item_discount_percentage: parseFloat(row.item_discount_percentage) || 0,
+          discount_kg_charges_percentage: parseFloat(row.discount_kg_charges_percentage) || 0
+        };
+
+        const calculated = calculateItemTotal(itemData, baseRates);
+        calculatedItems.push({ ...itemData, ...calculated });
+      }
+
+      // 7. Calculate totals
+      const totals = calculateCategoryTotals(calculatedItems, baseRates.category_rates.categories);
+
+      // 8. Mark all previous versions as inactive and unlock them
+      await query(`
+        UPDATE project_estimations
+        SET is_active = false, is_locked = false, locked_by = NULL, locked_at = NULL
+        WHERE project_id = $1 AND is_active = true
+      `, [projectId]);
+
+      // 9. Create new project_estimations record (locked during creation)
+      const estimationRes = await query(`
+        INSERT INTO project_estimations (
+          project_id, version, source, csv_file_path, uploaded_by,
+          is_active, is_locked, locked_by, locked_at, status,
+          category_breakdown, items_value, items_discount,
+          kg_charges, kg_charges_discount, gst_amount, final_value,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW())
+        RETURNING id
+      `, [
+        projectId,
+        nextVersion,
+        'csv_upload',
+        relativeFilePath,
+        userId,
+        true,          // is_active
+        false,         // is_locked (unlock immediately after creation)
+        null,          // locked_by
+        JSON.stringify(totals.category_breakdown),
+        totals.items_value,
+        totals.items_discount,
+        totals.kg_charges,
+        totals.kg_charges_discount,
+        totals.gst_amount,
+        totals.final_value
+      ]);
+
+      const estimationId = estimationRes.rows[0].id;
+
+      // 10. Insert estimation items
+      for (const item of calculatedItems) {
+        await query(`
+          INSERT INTO estimation_items (
+            estimation_id, category, room_name, item_name,
+            quantity, unit, rate, width, height,
+            item_discount_percentage, discount_kg_charges_percentage,
+            subtotal, karighar_charges_percentage, karighar_charges_amount,
+            item_discount_amount, discount_kg_charges_amount,
+            amount_before_gst, gst_amount, item_total,
+            created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+        `, [
+          estimationId,
+          item.category,
+          item.room_name,
+          item.item_name,
+          item.quantity,
+          item.unit,
+          item.rate,
+          item.width,
+          item.height,
+          item.item_discount_percentage,
+          item.discount_kg_charges_percentage,
+          item.subtotal,
+          baseRates.category_rates.categories.find(c => c.id === item.category)?.kg_percentage || 0,
+          item.karighar_charges_amount,
+          item.item_discount_amount,
+          item.discount_kg_charges_amount,
+          item.amount_before_gst,
+          item.gst_amount,
+          item.item_total
+        ]);
+      }
+
+      // ===== COMMIT TRANSACTION =====
+      await query('COMMIT');
+
+      return NextResponse.json({
+        success: true,
+        version: nextVersion,
+        estimation_id: estimationId,
+        items_count: calculatedItems.length,
+        final_value: totals.final_value
+      });
+
+    } catch (error) {
+      // ===== ROLLBACK ON ERROR =====
+      await query('ROLLBACK');
+      console.error('Transaction error:', error);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to process upload', 
+        message: error.message 
+      }, { status: 500 });
+    }
+
+  } catch (error) {
+    console.error('Upload API error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Upload failed', 
+      message: error.message 
+    }, { status: 500 });
+  }
+}
