@@ -7,6 +7,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { PAYMENT_STATUS } from '@/app/constants';
+import { calculateItemTotal, calculateCategoryTotals } from '@/lib/calcUtils';
 
 
 function calculateItemTotal(item, baseRates) {
