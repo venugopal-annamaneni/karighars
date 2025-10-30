@@ -97,7 +97,6 @@ export async function POST(request, { params }) {
       }
 
       const project = projectRes.rows[0];
-      console.log(project);
       const baseRates = {
         category_rates: project.category_rates,
         gst_percentage: project.gst_percentage
@@ -147,14 +146,13 @@ export async function POST(request, { params }) {
           item_discount_percentage: parseFloat(row.item_discount_percentage) || 0,
           discount_kg_charges_percentage: parseFloat(row.discount_kg_charges_percentage) || 0
         };
-
         const calculated = calculateItemTotal(itemData, baseRates);
         calculatedItems.push({ ...itemData, ...calculated });
-      }
+      }      
 
       // 7. Calculate totals
       const totals = calculateCategoryTotals(calculatedItems, baseRates.category_rates.categories);
-
+      
       // 8. Mark all previous versions as inactive and unlock them
       await query(`
         UPDATE project_estimations
@@ -165,8 +163,6 @@ export async function POST(request, { params }) {
       // 8.1 Check for overpayment (only for revision, not first estimation)
       let hasOverpayment = false;
       let overpaymentAmount = 0;
-
-
       // Get total approved payments
       const paymentsRes = await query(`
             SELECT COALESCE(SUM(amount), 0) as total_collected
@@ -188,7 +184,7 @@ export async function POST(request, { params }) {
           project_id, version, source, csv_file_path, uploaded_by,
           is_active, is_locked, locked_by, locked_at, status,
           category_breakdown, items_value, kg_charges, 
-          item_discount, kg_discount, discount, gst_amount, final_value,
+          items_discount, kg_discount, discount, gst_amount, final_value,
           created_at, updated_at, has_overpayment, overpayment_amount
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW(), $18, $19)
         RETURNING id
@@ -206,8 +202,8 @@ export async function POST(request, { params }) {
         totals.items_value,
         totals.kg_charges,
         totals.items_discount,
-        totals.kg_charges_discount,
-        totals.items_discount + totals.kg_charges_discount,
+        totals.kg_discount,
+        totals.discount,
         totals.gst_amount,
         totals.final_value,
         hasOverpayment,
@@ -221,8 +217,8 @@ export async function POST(request, { params }) {
         await query(`
           INSERT INTO estimation_items (
             estimation_id, category, room_name, item_name,
-            unit, width, height, quantity, unit_price, 
-            subtotal, karighar_charges_percentage, karighar_charges_amount,
+            unit, width, height, quantity, unit_price, subtotal, 
+            karighar_charges_percentage, karighar_charges_amount,
             item_discount_percentage, item_discount_amount, 
             discount_kg_charges_percentage, discount_kg_charges_amount,
             gst_percentage, amount_before_gst, gst_amount, item_total,
@@ -239,15 +235,15 @@ export async function POST(request, { params }) {
           item.quantity,
           item.unit_price,
           item.subtotal,
-          item.discount_kg_charges_percentage,
+          item.karighar_charges_percentage,
           item.karighar_charges_amount,
           item.item_discount_percentage,
           item.item_discount_amount,
-          baseRates.category_rates.categories.find(c => c.id === item.category)?.kg_percentage || 0,
+          item.discount_kg_charges_percentage,
           item.discount_kg_charges_amount,
           item.gst_percentage,
-          item.amount_before_gst,
           item.gst_amount,
+          item.amount_before_gst,
           item.item_total
         ]);
       }

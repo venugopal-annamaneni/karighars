@@ -39,7 +39,7 @@ export default function UploadEstimationPage() {
 
   const fetchProjectData = async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/route.js`);
+      const res = await fetch(`/api/projects/${projectId}`);
       if (res.ok) {
         const data = await res.json();
         setProject(data.project);
@@ -65,11 +65,11 @@ export default function UploadEstimationPage() {
   const handleCSVUpload = (results, file) => {
     setCsvFile(file);
     setIsValidating(true);
-    
+
     // Parse CSV data
     const rows = results.data.slice(1); // Skip header row
     const headers = results.data[0];
-    
+
     const parsedRows = rows.map((row, index) => {
       const rowData = {};
       headers.forEach((header, i) => {
@@ -79,7 +79,7 @@ export default function UploadEstimationPage() {
     });
 
     setParsedData(parsedRows);
-    
+
     // Validate data
     validateCSVData(parsedRows, headers);
     setIsValidating(false);
@@ -91,8 +91,8 @@ export default function UploadEstimationPage() {
     const errors = [];
 
     // Required columns
-    const requiredColumns = ['category', 'room_name', 'item_name', 'quantity', 'unit', 'rate'];
-    const missingColumns = requiredColumns.filter(col => 
+    const requiredColumns = ['category', 'room_name', 'item_name', 'unit', 'width', 'height', 'quantity', 'unit_price', 'item_discount_percentage', 'discount_kg_charges_percentage'];
+    const missingColumns = requiredColumns.filter(col =>
       !headers.some(h => h.toLowerCase().trim() === col)
     );
 
@@ -119,10 +119,10 @@ export default function UploadEstimationPage() {
       if (!data.category || data.category.trim() === '') {
         rowErrors.push({ row: rowNumber, field: 'category', message: 'Category is required' });
       } else if (!validCategories.includes(data.category.toLowerCase().trim())) {
-        rowErrors.push({ 
-          row: rowNumber, 
-          field: 'category', 
-          message: `Invalid category "${data.category}". Valid categories: ${validCategories.join(', ')}` 
+        rowErrors.push({
+          row: rowNumber,
+          field: 'category',
+          message: `Invalid category "${data.category}". Valid categories: ${validCategories.join(', ')}`
         });
       }
 
@@ -136,39 +136,41 @@ export default function UploadEstimationPage() {
         rowErrors.push({ row: rowNumber, field: 'item_name', message: 'Item name is required' });
       }
 
-      // Validate quantity
-      const quantity = parseFloat(data.quantity);
-      if (isNaN(quantity) || quantity <= 0) {
-        rowErrors.push({ row: rowNumber, field: 'quantity', message: 'Quantity must be > 0' });
-      }
-
       // Validate unit
       const validUnits = ['sqft', 'no', 'lumpsum'];
       if (!data.unit || !validUnits.includes(data.unit.toLowerCase().trim())) {
-        rowErrors.push({ 
-          row: rowNumber, 
-          field: 'unit', 
-          message: `Unit must be one of: ${validUnits.join(', ')}` 
+        rowErrors.push({
+          row: rowNumber,
+          field: 'unit',
+          message: `Unit must be one of: ${validUnits.join(', ')}`
         });
-      }
-
-      // Validate unit_price/rate
-      const unitPrice = parseFloat(data.rate || data.unit_price);
-      if (isNaN(unitPrice) || unitPrice < 0) {
-        rowErrors.push({ row: rowNumber, field: 'rate', message: 'Rate must be >= 0' });
       }
 
       // Check width/height for sqft
       if (data.unit?.toLowerCase().trim() === 'sqft') {
         if (!data.width || !data.height) {
-          rowWarnings.push({ 
-            row: rowNumber, 
-            field: 'width/height', 
-            message: 'Width and height recommended for sqft unit' 
+          rowWarnings.push({
+            row: rowNumber,
+            field: 'width/height',
+            message: 'Width and height recommended for sqft unit'
           });
         }
       }
 
+      // Validate quantity
+      const quantity = data.unit.toLowerCase().trim() === 'sqft' ? parseFloat(data.width) * parseFloat(data.height): parseFloat(data.quantity);
+      if (isNaN(quantity) || quantity <= 0) {
+        rowErrors.push({ row: rowNumber, field: 'quantity', message: 'Quantity must be > 0' });
+      }
+
+      
+      // Validate unit_price
+      const unitPrice = parseFloat(data.unit_price);
+      if (isNaN(unitPrice) || unitPrice < 0) {
+        rowErrors.push({ row: rowNumber, field: 'unit_price', message: 'unit_price must be >= 0' });
+      }
+
+      
       // Validate discount percentages
       if (data.item_discount_percentage) {
         const discount = parseFloat(data.item_discount_percentage);
@@ -176,12 +178,28 @@ export default function UploadEstimationPage() {
           c => c.id.toLowerCase() === data.category.toLowerCase().trim()
         );
         const maxDiscount = category?.max_item_discount_percentage || 0;
-        
+
         if (discount > maxDiscount) {
-          rowErrors.push({ 
-            row: rowNumber, 
-            field: 'item_discount_percentage', 
-            message: `Exceeds max ${maxDiscount}% for ${category?.category_name}` 
+          rowErrors.push({
+            row: rowNumber,
+            field: 'item_discount_percentage',
+            message: `Exceeds max ${maxDiscount}% for ${category?.category_name}`
+          });
+        }
+      }
+
+      if (data.discount_kg_charges_percentage) {
+        const discount = parseFloat(data.discount_kg_charges_percentage);
+        const category = baseRates?.category_rates?.categories?.find(
+          c => c.id.toLowerCase() === data.category.toLowerCase().trim()
+        );
+        const maxDiscount = category?.max_kg_discount_percentage || 0;
+
+        if (discount > maxDiscount) {
+          rowErrors.push({
+            row: rowNumber,
+            field: 'discount_kg_charges_percentage',
+            message: `Exceeds max ${maxDiscount}% for ${category?.category_name}`
           });
         }
       }
@@ -312,7 +330,7 @@ export default function UploadEstimationPage() {
           <CardHeader>
             <CardTitle>Step 2: Upload Your CSV</CardTitle>
             <CardDescription>
-              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, rate
+              Upload a CSV file with estimation items. Required columns: category, room_name, item_name, quantity, unit, unit_price
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -432,8 +450,13 @@ export default function UploadEstimationPage() {
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Room</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Item</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Unit</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Width</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Height</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Qty</th>
                         <th className="px-4 py-3 text-left font-medium text-gray-700">Unit Price</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Item Discount %</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">KG Charge Discount %</th>
+
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -456,8 +479,12 @@ export default function UploadEstimationPage() {
                             <td className="px-4 py-3">{row.data.room_name}</td>
                             <td className="px-4 py-3">{row.data.item_name}</td>
                             <td className="px-4 py-3">{row.data.unit}</td>
+                            <td className="px-4 py-3">{row.data.width}</td>
+                            <td className="px-4 py-3">{row.data.height}</td>
                             <td className="px-4 py-3">{row.data.quantity}</td>
                             <td className="px-4 py-3">{row.data.unit_price}</td>
+                            <td className="px-4 py-3">{row.data.item_discount_percentage}</td>
+                            <td className="px-4 py-3">{row.data.discount_kg_charges_percentage}</td>
                           </tr>
                         );
                       })}
@@ -481,8 +508,8 @@ export default function UploadEstimationPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {canConfirm 
-                      ? 'Ready to upload. This will create a new estimation version.' 
+                    {canConfirm
+                      ? 'Ready to upload. This will create a new estimation version.'
                       : 'Fix errors before proceeding'}
                   </p>
                 </div>
@@ -490,8 +517,8 @@ export default function UploadEstimationPage() {
                   <Button variant="outline" onClick={() => router.push(`/projects/${projectId}`)}>
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleConfirmUpload} 
+                  <Button
+                    onClick={handleConfirmUpload}
                     disabled={!canConfirm}
                   >
                     {isUploading ? (

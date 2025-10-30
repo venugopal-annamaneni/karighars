@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
-import { calculateItemTotal as calcItemTotal, calculateCategoryTotals } from '@/lib/calcUtils';
+import { calculateItemTotal as calculateItemTotalLib, calculateCategoryTotals } from '@/lib/calcUtils';
 import {
   flexRender,
   getCoreRowModel,
@@ -97,6 +97,7 @@ export default function ProjectEstimationPage() {
         throw new Error('Failed to fetch active base rates');
       }
       const baseRateData = await baseRateRes.json();
+      debugger;
       setbaseRates(baseRateData.activeRate); // Keep same state name for compatibility
 
       // Load existing estimation if available
@@ -194,9 +195,11 @@ export default function ProjectEstimationPage() {
   // Use the common calculation function with baseRates context
   const calculateItemTotal = useCallback((item) => {
     try {
-      return calcItemTotal(item, baseRates);
+      debugger;
+      return calculateItemTotalLib(item, baseRates);
     } catch (error) {
       console.error('Error calculating item total:', error);
+      toast("Error calculating item total:", error);
       return {
         subtotal: 0,
         item_discount_amount: 0,

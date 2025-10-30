@@ -58,7 +58,7 @@ export async function POST(request) {
     `INSERT INTO project_estimations (
       project_id, created_by, version, status, 
       category_breakdown,
-      items_value, kg_charges, item_discount, kg_discount, discount, gst_amount, 
+      items_value, kg_charges, items_discount, kg_discount, discount, gst_amount, 
       final_value,
       has_overpayment, overpayment_amount,
       remarks
