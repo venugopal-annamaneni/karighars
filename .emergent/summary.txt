@@ -1,0 +1,124 @@
+<analysis>
+The AI engineer successfully refactored the KG Interiors application from hardcoded categories to a fully dynamic system. This involved extensive database schema changes, API modifications, and UI overhauls across BizModels, Project Base Rates, Estimation Management, and Payment calculations. Key accomplishments include dynamic milestone configurations, category-based estimation displays, and the removal of all hardcoded category references. Following this, the engineer embarked on implementing a CSV upload feature for estimation items, including client-side validation, project locking, and version management, which is currently in progress. The work demonstrates a methodical approach, breaking down complex tasks into phases with user confirmations at each major step.
+</analysis>
+
+<product_requirements>
+KG Interiors requires a finance management platform to replace Excel, offering real-time cash flow, commissions, and project financial health. The platform supports various workflows (Sales, Design, Shopping, Civil Vendor) and includes a Finance Dashboard, Project Ledger, Reports, and role-based access.
+
+**Implemented features so far:**
+*   Google OAuth for user authentication.
+*   Customizable BizModel system with payment milestones and project stages, now supporting dynamic  (JSONB) with , , , , and  per category.
+*   Project-specific  using  (JSONB) with an approval workflow.
+*   Advanced  calculations with item-level and KG charges discounts, and a Pay to vendor directly flag.
+*    storing category-wise totals in a  JSONB column.
+*    page: fully updated for dual-discount system, dynamic rates, and  flag, and refactored to display estimation items by dynamic categories in separate tables, with per-category and overall summaries.
+*   Payment milestones in BizModel now dynamically display all configured categories and allow setting percentage payables for each category per milestone.
+*    API and  UI refactored to handle dynamic categories.
+*   All hardcoded category references (woodwork, misc, shopping) removed from the codebase.
+
+**Ongoing Feature: CSV Upload for Estimation Items**
+*   Users upload CSVs for initial estimations; UI creation is disabled until an upload.
+*   CSV contents are processed and inserted into  (new version ) and .
+*   The original CSV is stored at .
+*   Edit Estimation button becomes visible after first upload.
+*   Users can switch between previous estimation versions from a dropdown in .
+*   Loading an older version into  disables the Save button.
+*   Edit Estimation always targets the latest version, loading from the database.
+*   On saving an edited latest version, existing DB items are dumped to CSV, deleted, and new items/estimation are created as a new version.
+*   Client-side CSV validation (using ) and a project-locking mechanism (DB transactions) are required for bulk operations.
+</product_requirements>
+
+<key_technical_concepts>
+-   **Full-stack:** Next.js (React frontend, API routes backend), PostgreSQL (primary database).
+-   **Authentication:** NextAuth.js with Google OAuth.
+-   **Styling:** Tailwind CSS and Shadcn UI components.
+-   **Database:** Direct SQL queries via  module, custom migrations, JSONB data type, DB Transactions.
+-   **Data Tables:** TanStack Table (grouping, editing, CSV export), React Virtual.
+-   **CSV Processing:**  for client-side CSV parsing.
+-   **Infrastructure:** Supervisor, Kubernetes.
+</key_technical_concepts>
+
+<code_architecture>
+
+
+-   ****: Main database schema definition.
+    -   **Summary:** Defines PostgreSQL schema. Updated to use JSONB for dynamic categories.
+    -   **Changes:**  and  now have  JSONB.  now has  JSONB.  has  JSONB, , .
+-   ****: API for BizModel CRUD.
+    -   **Summary:** Handles creation and retrieval of BizModels.
+    -   **Changes:** Modified POST/GET to accept/return  JSONB and  JSONB for milestones.
+-   ****: API for BizModel by ID.
+    -   **Summary:** Handles fetching/updating specific BizModels.
+    -   **Changes:** Updated PUT handler to correctly parse and save  JSONB for milestones, removing hardcoded logic.
+-   ****: API for project payment calculation.
+    -   **Summary:** Calculates payment breakdown for a project based on milestones and estimation.
+    -   **Changes:** Refactored to dynamically use  and  for calculations.
+-   ****: API for estimation items.
+    -   **Summary:** Manages estimation items.
+    -   **Changes:** Modified GET handler to dynamically sort items by  from the BizModel's  JSONB.
+-   ****: **NEW** API for CSV uploads.
+    -   **Summary:** Handles processing uploaded estimation item CSVs, inserting data into  and  within a DB transaction, and implementing project locking.
+-   ****: **NEW** API for CSV template download.
+    -   **Summary:** Provides a CSV template for estimation item uploads.
+-   ****: **NEW** API for listing estimation versions.
+    -   **Summary:** Returns a list of all estimation versions for a given project.
+-   ****: **NEW** API for fetching a specific estimation version.
+    -   **Summary:** Retrieves details for a specific estimation version.
+-   ****: **NEW** API to load a specific estimation version.
+    -   **Summary:** Loads a specific estimation version by processing its archived CSV.
+-   ****: Project detail page.
+    -   **Summary:** Displays project info and estimation summary.
+    -   **Changes:** Fixed bug in  to correctly access . Refactored to dynamically display category summary cards using  based on .
+-   ****: Project estimation form.
+    -   **Summary:** Critical for creating/modifying estimations.
+    -   **Changes:** Major refactor.  moved outside.  updated to use dynamic accumulator. The page now renders multiple  components (a new component) grouped by category, each with a summary, and an  component.  now accepts  prop. A backup file  was created for the original.
+-   ****: UI for managing customer payments.
+    -   **Summary:** Allows recording and tracking customer payments against milestones.
+    -   **Changes:** Refactored to dynamically display milestone percentages and payment calculations across all categories, removing hardcoded references. Cleaned up old state fields.
+-   ****: **NEW** UI page for CSV upload.
+    -   **Summary:** Provides an interface for users to upload estimation item CSVs, offering client-side validation using .
+-   ****: BizModel management UI.
+    -   **Summary:** Interface for creating and editing BizModels.
+    -   **Changes:** Completely refactored to dynamically manage categories and their rates. Milestone configuration now uses dynamic category percentages (JSONB). Removed all hardcoded category defaults from creation, editing, and display logic.
+-   ****: Application constants.
+    -   **Summary:** Centralizes static values.
+    -   **Changes:**  constant was removed.
+-   ****: Database migration.
+    -   **Summary:** Updates  table.
+    -   **Changes:** Drops , ,  columns and adds  JSONB.
+-   ****: Database migration.
+    -   **Summary:** Adds columns for CSV upload and project locking.
+    -   **Changes:** Adds  and  to , and  to .
+-   ****: Temporary script.
+    -   **Summary:** Used to manually run database migrations.
+    -   **Changes:** Created to execute  directly. (Later deleted).
+-   ****: **NEW** directory.
+    -   **Summary:** Stores uploaded estimation CSV files.
+</code_architecture>
+
+<pending_tasks>
+-   Complete the  ().
+-   Integrate version management APIs into the  UI for version dropdown, loading older versions, and managing Edit Estimation button visibility and behavior.
+-   Integrate project locking feedback and UI elements to prevent concurrent saves/uploads.
+-   Implement client-side validation logic in  for uploaded CSVs.
+-   Refine the  UI and logic to handle loading older versions (disabling save) versus editing the latest version.
+-   Centralize  and  into a common function for use by both the CSV uploader and the  page.
+</pending_tasks>
+
+<current_work>
+Immediately before this summary, the AI engineer was implementing the CSV Upload feature for estimation items.
+**Current state:**
+1.  **Dependencies:**  has been installed for client-side CSV parsing.
+2.  **Database Migration:** A new migration script  was created to add  and  columns to the  and  tables for the project locking mechanism. The execution of this migration failed due to a database connection issue () but was deferred.
+3.  **CSV Upload UI ():** The new page for CSV uploads has been created. The  hook from  has been correctly integrated into this client-side component.
+4.  **Upload Directory:** The  directory has been created to store uploaded CSV files.
+5.  **CSV Upload API ():** This API endpoint has been created, designed to handle CSV processing, insertion into  and  within a database transaction, and project locking.
+6.  **CSV Template Download API ():** This API has been created to allow users to download a CSV template for estimation items.
+7.  **Version Management APIs:** APIs for listing estimation versions (), getting specific version details (), and loading a version from its CSV () have been created.
+The work stopped while creating the . The user confirmed previous bug fixes and requested to proceed with Phase 3 (Version Management).
+</current_work>
+
+<optional_next_step>
+Complete the creation of the .
+</optional_next_step>
+

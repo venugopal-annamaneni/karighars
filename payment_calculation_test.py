@@ -13,7 +13,7 @@ import psycopg2
 from urllib.parse import urlparse
 
 # Configuration
-BASE_URL = "https://kg-finance-app.preview.emergentagent.com"
+BASE_URL = "https://interiors-finance.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 # Database connection from environment
