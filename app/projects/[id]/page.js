@@ -203,29 +203,77 @@ export default function ProjectEstimationsPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Project Estimation</CardTitle>
-              <CardDescription>
-                {estimation ? `Version ${estimation.version} • ${estimation.status}` : 'No estimation created yet'}
-              </CardDescription>
+            <div className="flex items-center gap-4">
+              <div>
+                <CardTitle>Project Estimation</CardTitle>
+                <CardDescription>
+                  {estimation ? `Version ${estimation.version} • ${estimation.status}` : 'No estimation created yet'}
+                </CardDescription>
+              </div>
+              
+              {/* Version Selector */}
+              {versions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <Select value={selectedVersion || estimation?.version?.toString()} onValueChange={handleVersionChange}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {versions.map((v) => (
+                        <SelectItem key={v.version} value={v.version.toString()}>
+                          Version {v.version} {v.is_active && '(Current)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
+            
             <div className="flex gap-2">
+              {/* Download CSV Button */}
+              {selectedVersion && versions.find(v => v.version.toString() === selectedVersion)?.csv_available && (
+                <Button
+                  onClick={() => handleDownloadCSV(selectedVersion)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download CSV
+                </Button>
+              )}
+              
+              {/* Revert Button */}
               {(estimation && (estimation.created_by === session.user.id || session.user.role === USER_ROLE.ADMIN) && (estimation.version > 1)) && (
                 <Button
                   onClick={() => setShowCancelConfirmModal(true)}
                   variant="outline"
+                  size="sm"
                   className="border-orange-500 text-orange-700 hover:bg-orange-50"
                 >
                   <StepBackIcon className="h-4 w-4" />
                   Revert to v{estimation.version - 1}
                 </Button>
               )}
-              <Link href={`/projects/${projectId}/manage-estimation`}>
-                <Button size="sm" className="gap-2">
-                  {estimation ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                  {estimation ? 'Edit Estimation' : 'Create Estimation'}
-                </Button>
-              </Link>
+              
+              {/* Upload CSV or Edit Estimation Button */}
+              {estimation ? (
+                <Link href={`/projects/${projectId}/manage-estimation`}>
+                  <Button size="sm" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Edit Estimation
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/projects/upload/${projectId}`}>
+                  <Button size="sm" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload CSV
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </CardHeader>
