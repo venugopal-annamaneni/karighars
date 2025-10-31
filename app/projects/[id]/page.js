@@ -51,14 +51,9 @@ export default function ProjectEstimationsPage() {
   const [estimationItems, setEstimationItems] = useState([]);
   const [estimationLoading, setEstimationLoading] = useState(true);
   const [projectBaseRates, setProjectBaseRates] = useState(null);
-  
-  // Version management state
-  const [versions, setVersions] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState(null);
-  const [versionsLoading, setVersionsLoading] = useState(false);
 
-  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
-  const { fetchProjectData, project, estimation, loading } = useProjectData();
+  //const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+  const { project, estimation, loading } = useProjectData();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -74,71 +69,96 @@ export default function ProjectEstimationsPage() {
   useEffect(() => {
     if (projectId) {
       fetchProjectAuxData();
-      fetchVersions();
+      //fetchVersions();
     }
   }, [projectId]);
 
-  const fetchVersions = async () => {
-    try {
-      setVersionsLoading(true);
-      const res = await fetch(`/api/projects/${projectId}/estimations/versions`);
-      if (res.ok) {
-        const data = await res.json();
-        setVersions(data.versions || []);
-        // Set selected version to latest by default
-        if (data.latest_version && !selectedVersion) {
-          setSelectedVersion(data.latest_version.toString());
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching versions:', error);
-    } finally {
-      setVersionsLoading(false);
-    }
-  };
+  // const fetchVersions = async () => {
+  //   try {
+  //     setVersionsLoading(true);
+  //     const res = await fetch(`/api/projects/${projectId}/estimations/versions`);
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       debugger;
+  //       setVersions(data.versions || []);
+  //       if (data.latest_version) {
+  //         setLatestVersion(data.latest_version.toString());
+  //         setSelectedVersion(data.latest_version.toString());
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching versions:', error);
+  //   } finally {
+  //     setVersionsLoading(false);
+  //   }
+  // };
 
-  const handleVersionChange = async (versionNum) => {
-    setSelectedVersion(versionNum);
-    // Fetch version details and items
-    try {
-      setEstimationLoading(true);
-      const res = await fetch(`/api/projects/${projectId}/estimations/versions/${versionNum}`);
-      if (res.ok) {
-        const data = await res.json();
-        // Update estimation items
-        setEstimationItems(data.items || []);
-      } else {
-        toast.error('Failed to load version details');
-      }
-    } catch (error) {
-      console.error('Error loading version:', error);
-      toast.error('Failed to load version details');
-    } finally {
-      setEstimationLoading(false);
-    }
-  };
+  // const handleVersionChange = async (versionNum) => {
+  //   setSelectedVersion(versionNum);
+  //   // Fetch version details and items
+  //   try {
+  //     setEstimationLoading(true);
+  //     const res = await fetch(`/api/projects/${projectId}/estimations/versions/${versionNum}`);
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       // Update estimation items
+  //       setEstimationItems(data.items || []);
+  //     } else {
+  //       toast.error('Failed to load version details');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading version:', error);
+  //     toast.error('Failed to load version details');
+  //   } finally {
+  //     setEstimationLoading(false);
+  //   }
+  // };
 
-  const handleDownloadCSV = async (versionNum) => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}/estimations/versions/${versionNum}/download`);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `estimation_v${versionNum}_project_${projectId}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        toast.success('CSV downloaded successfully');
-      } else {
-        toast.error('Failed to download CSV');
-      }
-    } catch (error) {
-      console.error('Error downloading CSV:', error);
-      toast.error('Failed to download CSV');
+  const handleDownloadCSV = () => {
+    const csvConfig = mkConfig({
+      filename: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
+      useKeysAsHeaders: true,
+      fieldSeparator: ',',
+    });
+
+    let csvData = [];
+    if (estimationItems.length > 0) {
+      csvData = estimationItems.map(item => ({
+        room_name: item.room_name,
+        category: item.category,
+        item_name: item.item_name,
+        unit: item.unit,
+        width: item.width || '-',
+        height: item.height || '-',
+        quantity: item.quantity,
+        unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
+        subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
+        karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
+        discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
+        gst_percentage: item.gst_percentage,
+        item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
+      }));
+    } else {
+      csvData = [{
+        room_name: "",
+        category: "",
+        item_name: "",
+        unit: "",
+        width: "",
+        height: "",
+        quantity: "",
+        unit_price: "",
+        subtotal: "",
+        karighar_charges_amount: "",
+        discount_amount: "",
+        gst_percentage: "",
+        item_total: "",
+      }]
     }
+
+    const csv = generateCsv(csvConfig)(csvData);
+    download(csvConfig)(csv);
+    toast.success('CSV exported successfully!');
   };
 
   const fetchProjectAuxData = async () => {
@@ -174,7 +194,7 @@ export default function ProjectEstimationsPage() {
 
 
 
-  if (status === 'loading' || loading || estimationLoading) {
+  if (status === 'loading' || loading || estimationLoading ) {
     return (
       <div className="min-h-screen pt-20 flex items-start justify-center">
         <div className="text-center">
@@ -186,17 +206,6 @@ export default function ProjectEstimationsPage() {
   }
 
   if (!session || !project) return null;
-
-  // const getStageColor = (stage) => {
-  //   switch (stage) {
-  //     case PROJECT_STAGES.ONBOARDING: return 'bg-blue-100 text-blue-700';
-  //     case PROJECT_STAGES['2D']: return 'bg-purple-100 text-purple-700';
-  //     case PROJECT_STAGES['3D']: return 'bg-amber-100 text-amber-700';
-  //     case PROJECT_STAGES.EXEC: return 'bg-green-100 text-green-700';
-  //     case PROJECT_STAGES.HANDOVER: return 'bg-slate-100 text-slate-700';
-  //     default: return 'bg-gray-100 text-gray-700';
-  //   }
-  // };
 
   return (
     <div>
@@ -210,72 +219,63 @@ export default function ProjectEstimationsPage() {
                   {estimation ? `Version ${estimation.version} • ${estimation.status}` : 'No estimation created yet'}
                 </CardDescription>
               </div>
-              
+
               {/* Version Selector */}
-              {versions.length > 0 && (
+              {/* {versions.length > 0 && (
                 <div className="flex items-center gap-2">
                   <History className="h-4 w-4 text-muted-foreground" />
-                  <Select value={selectedVersion || estimation?.version?.toString()} onValueChange={handleVersionChange}>
+                  <Select value={selectedVersion} onValueChange={handleVersionChange}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select version" />
                     </SelectTrigger>
                     <SelectContent>
-                      {versions.map((v) => (
-                        <SelectItem key={v.version} value={v.version.toString()}>
-                          Version {v.version} {v.is_active && '(Current)'}
+                      {versions.map((v) => {
+                        return <SelectItem key={v.version} value={v.version.toString()}>
+                          Version {v.version} ({v.created_by})) {v.version === parseInt(latestVersion) && '(Latest)'}
                         </SelectItem>
-                      ))}
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+              )} */}
             </div>
-            
+
             <div className="flex gap-2">
               {/* Download CSV Button */}
-              {selectedVersion && versions.find(v => v.version.toString() === selectedVersion)?.csv_available && (
-                <Button
-                  onClick={() => handleDownloadCSV(selectedVersion)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download CSV
-                </Button>
-              )}
-              
-              {/* Revert Button */}
-              {(estimation && (estimation.created_by === session.user.id || session.user.role === USER_ROLE.ADMIN) && (estimation.version > 1)) && (
-                <Button
-                  onClick={() => setShowCancelConfirmModal(true)}
-                  variant="outline"
-                  size="sm"
-                  className="border-orange-500 text-orange-700 hover:bg-orange-50"
-                >
-                  <StepBackIcon className="h-4 w-4" />
-                  Revert to v{estimation.version - 1}
-                </Button>
-              )}
-              
+              <Button
+                onClick={() => handleDownloadCSV()}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download CSV
+              </Button>
+
               {/* Upload CSV or Edit Estimation Button */}
-              {estimation ? (
+              <Link href={`/projects/upload/${projectId}`}>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload CSV
+                </Button>
+              </Link>
+              {estimation && (
                 <Link href={`/projects/${projectId}/manage-estimation`}>
                   <Button size="sm" className="gap-2">
                     <Edit className="h-4 w-4" />
                     Edit Estimation
                   </Button>
                 </Link>
-              ) : (
-                <Link href={`/projects/upload/${projectId}`}>
-                  <Button size="sm" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Upload CSV
-                  </Button>
-                </Link>
               )}
+
+
             </div>
           </div>
+          {/* {selectedVersion !== latestVersion && (
+            <div className='w-full bg-red-100 text-red-700 font-semibold p-4 rounded-lg'>
+              Caution: You are viewing old version of the estimation. Estimation is in "ReadOnly" mode.
+            </div>
+          )} */}
         </CardHeader>
         <CardContent>
           {estimation ? (
@@ -380,7 +380,7 @@ export default function ProjectEstimationsPage() {
 
 
       {/* Cancel Estimation Confirmation Modal */}
-      <Dialog open={showCancelConfirmModal} onOpenChange={setShowCancelConfirmModal}>
+      {/* <Dialog open={showCancelConfirmModal} onOpenChange={setShowCancelConfirmModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-orange-900">Cancel Estimation & Revert?</DialogTitle>
@@ -439,7 +439,7 @@ export default function ProjectEstimationsPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 }
@@ -671,7 +671,7 @@ const EstimationItemsTable = ({ category, project, estimation, projectBaseRates,
   // CSV Export Function
   const onExportCSV = () => {
     const csvConfig = mkConfig({
-      filename: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
+      filename: `${project?.name || 'Project'}_${category.category_name}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
       useKeysAsHeaders: true,
       fieldSeparator: ',',
     });

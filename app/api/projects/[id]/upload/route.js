@@ -68,21 +68,7 @@ export async function POST(request, { params }) {
     await query('BEGIN');
 
     try {
-      // 1. Check for existing lock
-      const lockCheck = await query(`
-        SELECT id, locked_by, locked_at 
-        FROM project_estimations 
-        WHERE project_id = $1 AND is_locked = true
-      `, [projectId]);
-
-      if (lockCheck.rows.length > 0) {
-        await query('ROLLBACK');
-        return NextResponse.json({
-          success: false,
-          error: 'Project is currently locked. Another user is uploading or editing.'
-        }, { status: 409 });
-      }
-
+      
       // 2. Get project and base rates
       const projectRes = await query(`
         SELECT p.id, p.name, p.biz_model_id, pbr.category_rates, pbr.gst_percentage
@@ -153,14 +139,14 @@ export async function POST(request, { params }) {
       // 7. Calculate totals
       const totals = calculateCategoryTotals(calculatedItems, baseRates.category_rates.categories);
       
-      // 8. Mark all previous versions as inactive and unlock them
+      // 8. Mark all previous versions as inactive
       await query(`
         UPDATE project_estimations
-        SET is_active = false, is_locked = false, locked_by = NULL, locked_at = NULL
+        SET is_active = false
         WHERE project_id = $1 AND is_active = true
       `, [projectId]);
 
-      // 8.1 Check for overpayment (only for revision, not first estimation)
+      // 8.1 Check for overpayment
       let hasOverpayment = false;
       let overpaymentAmount = 0;
       // Get total approved payments
@@ -178,15 +164,15 @@ export async function POST(request, { params }) {
       }
 
 
-      // 9. Create new project_estimations record (locked during creation)
+      // 9. Create new project_estimations record
       const estimationRes = await query(`
         INSERT INTO project_estimations (
           project_id, version, source, csv_file_path, uploaded_by,
-          is_active, is_locked, locked_by, locked_at, status,
+          is_active, status,
           category_breakdown, items_value, kg_charges, 
           items_discount, kg_discount, discount, gst_amount, final_value,
           created_at, updated_at, has_overpayment, overpayment_amount
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,NOW(), $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW(), $18, $19)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), $16, $17)
         RETURNING id
       `, [
         projectId,
@@ -195,8 +181,6 @@ export async function POST(request, { params }) {
         relativeFilePath,
         userId,
         true,          // is_active
-        false,         // is_locked (unlock immediately after creation)
-        null,          // locked_by
         'draft',
         JSON.stringify(totals.category_breakdown),
         totals.items_value,

@@ -22,40 +22,38 @@ export async function POST(request) {
 
   // Build category_breakdown JSONB from items
   const categoryBreakdown = body.category_breakdown || {};
- 
+
   // Aggregate totals
   const itemsValue = parseFloat(body.items_value) || 0;
   const itemsDiscount = parseFloat(body.items_discount) || 0;
   const kgCharges = parseFloat(body.kg_charges) || 0;
   const kgDiscount = parseFloat(body.kg_charges_discount) || 0;
-  const discount = itemsDiscount + kgDiscount ;
+  const discount = itemsDiscount + kgDiscount;
   const gstAmount = parseFloat(body.gst_amount) || 0;
   const finalValue = parseFloat(body.final_value) || 0;
 
-  console.log(body);
-
-  // Check for overpayment (only for revision, not first estimation)
   let hasOverpayment = false;
   let overpaymentAmount = 0;
-
-  if (nextVersion > 1) {
-    // Get total approved payments
-    const paymentsRes = await query(`
+  // Get total approved payments
+  const paymentsRes = await query(`
       SELECT COALESCE(SUM(amount), 0) as total_collected
       FROM customer_payments
       WHERE project_id = $1 AND status = $2
     `, [body.project_id, PAYMENT_STATUS.APPROVED]);
 
-    const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
+  const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
 
-    if (totalCollected > finalValue) {
-      hasOverpayment = true;
-      overpaymentAmount = totalCollected - finalValue;
-    }
+  if (totalCollected > finalValue) {
+    hasOverpayment = true;
+    overpaymentAmount = totalCollected - finalValue;
   }
 
-  const result = await query(
-    `INSERT INTO project_estimations (
+  try {
+
+
+    await query("BEGIN");
+    const result = await query(
+      `INSERT INTO project_estimations (
       project_id, created_by, version, status, 
       category_breakdown,
       items_value, kg_charges, items_discount, kg_discount, discount, gst_amount, 
@@ -64,58 +62,62 @@ export async function POST(request) {
       remarks
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
-    [
-      body.project_id, session.user.id, nextVersion,body.status || ESTIMATION_STATUS.DRAFT,
-      JSON.stringify(categoryBreakdown),
-      itemsValue, kgCharges, itemsDiscount, kgDiscount, discount, gstAmount,
-      finalValue,
-      hasOverpayment, overpaymentAmount,
-      body.remarks, 
-    ]
-  );
+      [
+        body.project_id, session.user.id, nextVersion, body.status || ESTIMATION_STATUS.DRAFT,
+        JSON.stringify(categoryBreakdown),
+        itemsValue, kgCharges, itemsDiscount, kgDiscount, discount, gstAmount,
+        finalValue,
+        hasOverpayment, overpaymentAmount,
+        body.remarks,
+      ]
+    );
 
-  // Add estimation items with all calculated fields including room_name, unit, width, height
-  if (body.items && body.items.length > 0) {
-    for (const item of body.items) {
-      // Calculate quantity based on unit type
-      let finalQuantity = item.quantity;
-      if (item.unit === 'sqft' && item.width && item.height) {
-        finalQuantity = parseFloat(item.width) * parseFloat(item.height);
-      }
-
-      console.log(item);
-      await query(
-        `INSERT INTO estimation_items (
+    // Add estimation items with all calculated fields including room_name, unit, width, height
+    if (body.items && body.items.length > 0) {
+      for (const item of body.items) {
+        // Calculate quantity based on unit type
+        let finalQuantity = item.quantity;
+        if (item.unit === 'sqft' && item.width && item.height) {
+          finalQuantity = parseFloat(item.width) * parseFloat(item.height);
+        }
+        await query(
+          `INSERT INTO estimation_items (
           estimation_id, category, room_name, vendor_type, item_name, 
           unit, width, height, quantity, unit_price,
           subtotal, karighar_charges_percentage, karighar_charges_amount, item_discount_percentage, item_discount_amount, 
           discount_kg_charges_percentage, discount_kg_charges_amount, gst_percentage, gst_amount, amount_before_gst, item_total
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
-        [
-          result.rows[0].id, item.category, item.room_name, item.vendor_type, item.item_name, 
-          item.unit, parseFloat(item.width) || null, parseFloat(item.height)|| null, parseFloat(finalQuantity), parseFloat(item.unit_price),
-          parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
-          parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total)
-        ]
-      );
-    }
-  }
-
-  // If overpayment detected, return warning
-  if (hasOverpayment) {
-    return NextResponse.json({
-      estimation: result.rows[0],
-      warning: 'overpayment_detected',
-      overpayment: {
-        amount: overpaymentAmount,
-        status: 'pending_approval',
-        message: 'Admin must approve this estimation to create credit note'
+          [
+            result.rows[0].id, item.category, item.room_name, item.vendor_type, item.item_name,
+            item.unit, parseFloat(item.width) || null, parseFloat(item.height) || null, parseFloat(finalQuantity), parseFloat(item.unit_price),
+            parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
+            parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total)
+          ]
+        );
       }
-    });
-  }
+    }
 
-  return NextResponse.json({ estimation: result.rows[0] });
+    // If overpayment detected, return warning
+    if (hasOverpayment) {
+      return NextResponse.json({
+        estimation: result.rows[0],
+        warning: 'overpayment_detected',
+        overpayment: {
+          amount: overpaymentAmount,
+          status: 'pending_approval',
+          message: 'Admin must approve this estimation to create credit note'
+        }
+      });
+    }
+    await query("COMMIT");
+    return NextResponse.json({ estimation: result.rows[0] });
+
+  } catch (error) {
+    await query("ROLLBACK");
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 

@@ -392,20 +392,6 @@ export default function ProjectEstimationPage() {
             );
           })}
 
-        {/* Keyboard Shortcuts Help */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
-              <strong>⌨️ Keyboard Shortcuts:</strong>
-              <span className="ml-2">Tab = Next cell</span>
-              <span className="ml-2">•</span>
-              <span className="ml-2">Enter = Next row</span>
-              <span className="ml-2">•</span>
-              <span className="ml-2">Esc = Cancel edit</span>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Overall Summary - Bottom */}
         <OverallSummary totals={calculateTotals()} baseRates={baseRates} />
 
@@ -720,7 +706,7 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
             </Button>
           </div>
         ) : (
-          <>
+          <div className='space-y-4'>
             <EditableEstimationItems
               data={items}
               // Accept both updater-function or direct array and forward a real array to onItemsChange
@@ -732,8 +718,23 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
               calculateItemTotal={calculateItemTotal}
             />
 
+            
+            {/* Keyboard Shortcuts Help */}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-900">
+                  <strong>⌨️ Keyboard Shortcuts:</strong>
+                  <span className="ml-2">Tab = Next cell</span>
+                  <span className="ml-2">•</span>
+                  <span className="ml-2">Enter = Next row</span>
+                  <span className="ml-2">•</span>
+                  <span className="ml-2">Esc = Cancel edit</span>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Category Summary */}
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-semibold text-green-900 mb-3">{category.category_name} Summary</h4>
               <div className="grid md:grid-cols-6 gap-3 text-sm">
                 <div>
@@ -769,7 +770,8 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
                 </div>
               </div>
             </div>
-          </>
+
+          </div>
         )}
       </CardContent>
     </Card>
