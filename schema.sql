@@ -412,12 +412,9 @@ COMMENT ON COLUMN project_estimations.is_active IS 'Indicates if this version is
 COMMENT ON COLUMN project_estimations.category_breakdown IS 'JSONB structure: {"category_id": {"subtotal": 0, "item_discount_amount": 0, "karighar_charges_amount": 0, "discount_kg_charges_amount": 0, "amount_before_gst": 0, "gst_amount": 0, "total": 0}}. Supports dynamic categories from biz_models.';
 COMMENT ON COLUMN project_estimations.items_value IS 'Sum of all item subtotals across categories (for fast queries)';
 COMMENT ON COLUMN project_estimations.kg_charges IS 'Sum of all KG charges across categories';
-COMMENT ON COLUMN project_estimations.item_discount IS 'Sum of all item-level discounts across categories';
-COMMENT ON COLUMN project_estimations.kg_discount IS 'Sum of all KG charge discounts across categories';
-COMMENT ON COLUMN project_estimations.discount IS 'Total discount (item_discount + kg_discount)';
-COMMENT ON COLUMN project_estimations.gst_amount IS 'Calculated GST amount based on final_value';
-COMMENT ON COLUMN project_estimations.has_overpayment IS 'True if this revision creates overpayment situation';
-COMMENT ON COLUMN project_estimations.overpayment_amount IS 'Amount of overpayment if estimation < collected';
+COMMENT ON COLUMN project_estimations.items_discount IS 'Sum of all item discount amounts across categories';
+COMMENT ON COLUMN project_estimations.kg_discount IS 'Sum of all KG discount amounts across categories';
+COMMENT ON COLUMN project_estimations.discount IS 'Total discount: items_discount + kg_discount';
 
 CREATE TABLE project_ledger (
     id INTEGER NOT NULL DEFAULT nextval('project_ledger_id_seq'::regclass),
