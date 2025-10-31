@@ -356,13 +356,19 @@ CREATE TABLE project_estimations (
     approval_status TEXT DEFAULT 'approved'::text,
     approved_at TIMESTAMPTZ,
     
+    -- CSV Upload tracking
+    source VARCHAR(20) DEFAULT 'manual_edit',
+    csv_file_path TEXT,
+    uploaded_by INTEGER REFERENCES users(id),
+    is_active BOOLEAN DEFAULT true,
+    
     -- Dynamic category breakdown (JSONB for flexibility)
     category_breakdown JSONB DEFAULT '{}'::jsonb,
     
     -- High-level aggregate totals (for fast queries)
     items_value NUMERIC(20,2) DEFAULT 0,
     kg_charges NUMERIC(20,2) DEFAULT 0,
-    item_discount NUMERIC(20,2) DEFAULT 0,
+    items_discount NUMERIC(20,2) DEFAULT 0,
     kg_discount NUMERIC(20,2) DEFAULT 0,
     discount NUMERIC(20,2) DEFAULT 0,
     gst_amount NUMERIC(12,2) DEFAULT 0.00,
@@ -381,6 +387,7 @@ CREATE TABLE project_estimations (
     updated_at TIMESTAMPTZ DEFAULT now(),
     
     PRIMARY KEY (id),
+    UNIQUE (project_id, version),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES users(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
@@ -388,14 +395,23 @@ CREATE TABLE project_estimations (
     CHECK ((approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))
 );
 
--- Index for JSONB queries
+-- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_project_estimations_category_breakdown 
 ON project_estimations USING gin(category_breakdown);
 
+CREATE INDEX IF NOT EXISTS idx_estimations_project_version 
+ON project_estimations(project_id, version DESC);
+
+CREATE INDEX IF NOT EXISTS idx_estimations_active 
+ON project_estimations(project_id, is_active) WHERE is_active = true;
+
 -- Column Comments
-COMMENT ON COLUMN project_estimations.category_breakdown IS 'JSONB structure: {"category_id": {"subtotal": 0, "item_discount_amount": 0, "discounted_subtotal": 0, "kg_charges_gross": 0, "kg_charges_discount": 0, "kg_charges_net": 0, "amount_before_gst": 0, "gst_amount": 0, "total": 0}}. Supports dynamic categories from biz_models.';
-COMMENT ON COLUMN project_estimations.items_value IS 'Sum of all discounted item subtotals across categories (for fast queries)';
-COMMENT ON COLUMN project_estimations.kg_charges IS 'Sum of all final KG charges (after discounts) across categories';
+COMMENT ON COLUMN project_estimations.source IS 'Origin of the estimation: csv_upload or manual_edit';
+COMMENT ON COLUMN project_estimations.csv_file_path IS 'Path to the original CSV file if uploaded';
+COMMENT ON COLUMN project_estimations.is_active IS 'Indicates if this version is currently active';
+COMMENT ON COLUMN project_estimations.category_breakdown IS 'JSONB structure: {"category_id": {"subtotal": 0, "item_discount_amount": 0, "karighar_charges_amount": 0, "discount_kg_charges_amount": 0, "amount_before_gst": 0, "gst_amount": 0, "total": 0}}. Supports dynamic categories from biz_models.';
+COMMENT ON COLUMN project_estimations.items_value IS 'Sum of all item subtotals across categories (for fast queries)';
+COMMENT ON COLUMN project_estimations.kg_charges IS 'Sum of all KG charges across categories';
 COMMENT ON COLUMN project_estimations.item_discount IS 'Sum of all item-level discounts across categories';
 COMMENT ON COLUMN project_estimations.kg_discount IS 'Sum of all KG charge discounts across categories';
 COMMENT ON COLUMN project_estimations.discount IS 'Total discount (item_discount + kg_discount)';
