@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PROJECT_STAGES, USER_ROLE } from '@/app/constants';
-import { formatCurrency, getCategoryIcon, UIFriendly } from '@/lib/utils';
+import { formatCurrency, getCategoryIcon } from '@/lib/utils';
 import {
   Edit,
   FileText,
