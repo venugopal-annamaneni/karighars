@@ -88,6 +88,9 @@ export default function ProjectEstimationPage() {
   });
 
   const { fetchProjectData, project, estimation, loading } = useProjectData();
+  const [originalHash, setOriginalHash] = useState('');
+  const [showNoChangesCard, setShowNoChangesCard] = useState(false);
+
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -113,23 +116,25 @@ export default function ProjectEstimationPage() {
 
       // Load existing estimation if available
       if (estimation && estimation.id) {
-        setFormData({
+        const newFormData = {
           remarks: estimation.remarks || '',
           status: estimation.status,
-        });
+        };
+        setFormData(newFormData);
+
 
         const itemsRes = await fetch(`/api/projects/${projectId}/estimations/${estimation.id}/items`);
         if (itemsRes.ok) {
           const itemsData = await itemsRes.json();
           if (itemsData.items.length > 0) {
-            setData(itemsData.items.map(item => ({
+            const normalizedItems = itemsData.items.map(item => ({
               id: item.id || Date.now() + Math.random(),
               room_name: item.room_name || '',
               category: item.category,
               item_name: item.item_name,
               unit: item.unit || 'sqft',
-              width: item.width || '',
-              height: item.height || '',
+              width: parseFloat(item.width) || '',
+              height: parseFloat(item.height) || '',
               quantity: parseFloat(item.quantity),
               unit_price: parseFloat(item.unit_price),
               subtotal: parseFloat(item.subtotal) || 0,
@@ -137,13 +142,29 @@ export default function ProjectEstimationPage() {
               karighar_charges_amount: parseFloat(item.karighar_charges_amount) || 0,
               item_discount_percentage: parseFloat(item.item_discount_percentage || 0),
               item_discount_amount: parseFloat(item.item_discount_amount) || 0,
-              discount_kg_charges_percentage: parseFloat(item.discount_kg_charges_percentage || 0),
+              discount_kg_charges_percentage: parseFloat(item.discount_kg_charges_percentage) || 0,
               discount_kg_charges_amount: parseFloat(item.discount_kg_charges_amount) || 0,
               gst_percentage: parseFloat(item.gst_percentage),
               gst_amount: parseFloat(item.gst_amount) || 0,
               item_total: parseFloat(item.item_total) || 0,
               vendor_type: item.vendor_type
-            })));
+            }));
+
+            setData(normalizedItems);
+
+            const baseState = {
+              items: normalizedItems.map(({ id, ...rest }) => rest), // omit volatile id
+              form: newFormData,
+            };
+
+            // Convert to JSON and hash
+            const stringified = JSON.stringify(baseState);
+            const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(stringified));
+            const hashHex = Array.from(new Uint8Array(hash))
+              .map(b => b.toString(16).padStart(2, '0'))
+              .join('');
+
+            setOriginalHash(hashHex);
           }
         }
       }
@@ -232,6 +253,28 @@ export default function ProjectEstimationPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+
+    const currentState = {
+      items: data.map(({ id, ...rest }) => rest),
+      form: formData,
+    };
+
+    const currentHashBuffer = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(JSON.stringify(currentState))
+    );
+    const currentHash = Array.from(new Uint8Array(currentHashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    if (currentHash === originalHash) {
+      setShowNoChangesCard(true);
+      //router.push(`/projects/${projectId}`);
+      return;
+    }
+
+
     setSaving(true);
 
     try {
@@ -464,6 +507,45 @@ export default function ProjectEstimationPage() {
         </Card>
       </form>
 
+      {/* No changes info Modal */}
+      <Dialog open={showNoChangesCard} onOpenChange={setShowNoChangesCard}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+              </div>
+              <DialogTitle className="text-xl text-yellow-900">
+                No Changes Detected
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-base text-slate-700">
+              It looks like you haven’t made any changes to this estimation since the last save.
+              There’s nothing new to save right now.
+              <br /><br />
+              You can continue editing, or go back to the project page.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowNoChangesCard(false)}
+            >
+              Continue Editing
+            </Button>
+            <Button
+              type="button"
+              onClick={() => router.push(`/projects/${projectId}`)}
+            >
+              Go to Project Page
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Overpayment Warning Modal */}
       <Dialog open={showOverpaymentModal} onOpenChange={setShowOverpaymentModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -576,6 +658,8 @@ const OverallSummary = ({ totals, baseRates }) => {
     return 'md:grid-cols-4';
   };
 
+  let totalPaidToVendors = 0;
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -589,11 +673,13 @@ const OverallSummary = ({ totals, baseRates }) => {
             .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
             .map(category => {
               const categoryData = totals.category_breakdown?.[category.id] || {};
+              if (category.pay_to_vendor_directly)
+                totalPaidToVendors += parseFloat(categoryData.subtotal);
               return (
                 <div key={category.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <p className="text-xs text-muted-foreground mb-1">{category.category_name}</p>
-                  <p className="text-lg font-bold text-slate-900">
-                    {formatCurrency(categoryData.total || 0)}
+                  <p className={`text-lg font-bold text-slate-900 ${category.pay_to_vendor_directly ? 'line-through' : ''}`}>
+                    {formatCurrency(categoryData.subtotal || 0)}
                   </p>
                 </div>
               );
@@ -601,24 +687,28 @@ const OverallSummary = ({ totals, baseRates }) => {
         </div>
 
         {/* High-Level Totals */}
-        <div className="grid md:grid-cols-4 gap-4 pt-4 mt-4 border-t border-slate-300">
+        <div className="grid md:grid-cols-5 gap-4 pt-4 mt-4 border-t border-slate-300">
           <div>
             <p className="text-sm text-muted-foreground">Total Items Value</p>
-            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.items_value || 0)}</p>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.items_value - totalPaidToVendors)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">KG Charges</p>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.kg_charges)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Discount</p>
             <p className="text-xl font-bold text-red-600">
-              -{formatCurrency((totals.items_discount || 0) + (totals.kg_charges_discount || 0))}
+              -{formatCurrency((totals.items_discount))}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">GST</p>
-            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.gst_amount || 0)}</p>
+            <p className="text-xl font-bold text-slate-900">{formatCurrency(totals.gst_amount)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Final Value</p>
-            <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.final_value || 0)}</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.final_value)}</p>
           </div>
         </div>
       </CardContent>
@@ -718,7 +808,7 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
               calculateItemTotal={calculateItemTotal}
             />
 
-            
+
             {/* Keyboard Shortcuts Help */}
             <Card>
               <CardContent className="pt-4">
