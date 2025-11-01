@@ -4,7 +4,7 @@
 BEGIN;
 
 -- Create purchase_requests table
-CREATE TABLE IF NOT EXISTS purchase_requests (
+CREATE TABLE purchase_requests (
     id SERIAL PRIMARY KEY,
     pr_number VARCHAR(50) UNIQUE NOT NULL,
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
