@@ -53,6 +53,11 @@ export const ESTIMATION_STATUS = {
   APPROVED: 'approved'
 }
 
+export const ESTIMATION_ITEM_STATUS = {
+  QUEUED: 'Queued',
+  PR_RAISED: 'PR Raised'
+}
+
 export const ALERT_TYPE = {
   OVERPAYMENT_ALERT: "overpayment_alert",
   OVER_INVOICED_ALERT: "over_invoiced_alert"
