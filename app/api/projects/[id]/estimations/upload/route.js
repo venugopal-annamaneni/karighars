@@ -226,9 +226,10 @@ export async function POST(request, { params }) {
           item.discount_kg_charges_percentage,
           item.discount_kg_charges_amount,
           item.gst_percentage,
-          item.gst_amount,
           item.amount_before_gst,
-          item.item_total
+          item.gst_amount,
+          item.item_total,
+          ESTIMATION_ITEM_STATUS.QUEUED
         ]);
       }
 
