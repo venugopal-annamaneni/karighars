@@ -58,6 +58,14 @@ export const ESTIMATION_ITEM_STATUS = {
   PR_RAISED: 'PR Raised'
 }
 
+export const PURCHASE_REQUEST_STATUS = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled'
+}
+
 export const ALERT_TYPE = {
   OVERPAYMENT_ALERT: "overpayment_alert",
   OVER_INVOICED_ALERT: "over_invoiced_alert"
