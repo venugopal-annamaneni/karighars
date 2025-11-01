@@ -288,6 +288,7 @@ function ProjectLayoutInner({ children }) {
           <TabsList>
             <TabsTrigger value="estimation">Estimation</TabsTrigger>
             <TabsTrigger value="customer-payments">Customer Payments</TabsTrigger>
+            <TabsTrigger value="purchase-requests">Purchase Requests</TabsTrigger>
             <TabsTrigger value="vendor-boqs">Vendor BOQs</TabsTrigger>
             <TabsTrigger value="vendor-payments">Vendor Payments</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
