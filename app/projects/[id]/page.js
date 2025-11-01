@@ -124,35 +124,31 @@ export default function ProjectEstimationsPage() {
     let csvData = [];
     if (estimationItems.length > 0) {
       csvData = estimationItems.map(item => ({
-        room_name: item.room_name,
         category: item.category,
+        room_name: item.room_name,
         item_name: item.item_name,
-        unit: item.unit,
-        width: item.width || '-',
-        height: item.height || '-',
         quantity: item.quantity,
-        unit_price: `${parseFloat(item.unit_price || 0).toLocaleString('en-IN')}`,
-        subtotal: `${parseFloat(item.subtotal || 0).toLocaleString('en-IN')}`,
-        karighar_charges_amount: `${parseFloat(item.karighar_charges_amount || 0).toLocaleString('en-IN')}`,
-        discount_amount: `${parseFloat(item.discount_amount || 0).toLocaleString('en-IN')}`,
-        gst_percentage: item.gst_percentage,
-        item_total: `${parseFloat(item.item_total || 0).toLocaleString('en-IN')}`,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        width: item.width || '',
+        height: item.height || '',
+        item_discount_percentage: item.item_discount_percentage || 0,
+        discount_kg_charges_percentage: item.discount_kg_charges_percentage || 0,
+        status: item.status || 'Queued',
       }));
     } else {
       csvData = [{
-        room_name: "",
         category: "",
+        room_name: "",
         item_name: "",
+        quantity: "",
         unit: "",
+        unit_price: "",
         width: "",
         height: "",
-        quantity: "",
-        unit_price: "",
-        subtotal: "",
-        karighar_charges_amount: "",
-        discount_amount: "",
-        gst_percentage: "",
-        item_total: "",
+        item_discount_percentage: "",
+        discount_kg_charges_percentage: "",
+        status: "",
       }]
     }
 
