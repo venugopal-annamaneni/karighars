@@ -275,6 +275,7 @@ CREATE TABLE estimation_items (
 );
 
 -- Column Comments
+COMMENT ON COLUMN estimation_items.status IS 'Item status: Queued, PR Raised, etc. Used for workflow tracking';
 COMMENT ON COLUMN estimation_items.quantity IS 'Quantity - auto-calculated (width x height) for sqft, manual input for no/lumpsum';
 COMMENT ON COLUMN estimation_items.unit IS 'Unit of measurement: sqft (area), no (count), lumpsum (fixed)';
 COMMENT ON COLUMN estimation_items.karighar_charges_percentage IS 'KG charges percentage - D&C for woodwork, Service charge for misc/shopping';
