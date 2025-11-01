@@ -63,7 +63,8 @@ export async function GET(request, { params }) {
         width: category.id === 'woodwork' ? '10' : '',
         height: category.id === 'woodwork' ? '12' : '',
         item_discount_percentage: '0',
-        discount_kg_charges_percentage: '0'
+        discount_kg_charges_percentage: '0',
+        status: ESTIMATION_ITEM_STATUS.QUEUED
       }));
 
     // Generate CSV
