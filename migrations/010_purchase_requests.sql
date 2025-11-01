@@ -38,7 +38,7 @@ CREATE TABLE purchase_requests (
 );
 
 -- Create purchase_request_items table
-CREATE TABLE IF NOT EXISTS purchase_request_items (
+CREATE TABLE purchase_request_items (
     id SERIAL PRIMARY KEY,
     purchase_request_id INTEGER NOT NULL REFERENCES purchase_requests(id) ON DELETE CASCADE,
     estimation_item_id INTEGER NOT NULL UNIQUE REFERENCES estimation_items(id) ON DELETE CASCADE,
