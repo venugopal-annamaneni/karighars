@@ -230,7 +230,7 @@ export async function POST(request, { params }) {
           item.amount_before_gst,
           item.gst_amount,
           item.item_total,
-          ESTIMATION_ITEM_STATUS.QUEUED
+          item.status
         ]);
       }
 
