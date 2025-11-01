@@ -130,7 +130,8 @@ export async function POST(request, { params }) {
           width: parseFloat(row.width) || null,
           height: parseFloat(row.height) || null,
           item_discount_percentage: parseFloat(row.item_discount_percentage) || 0,
-          discount_kg_charges_percentage: parseFloat(row.discount_kg_charges_percentage) || 0
+          discount_kg_charges_percentage: parseFloat(row.discount_kg_charges_percentage) || 0,
+          status: row.status?.trim() || ESTIMATION_ITEM_STATUS.QUEUED
         };
         const calculated = calculateItemTotal(itemData, baseRates);
         calculatedItems.push({ ...itemData, ...calculated });
