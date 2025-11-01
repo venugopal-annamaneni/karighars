@@ -645,6 +645,73 @@ CREATE TABLE vendor_boqs (
     CHECK ((status = ANY (ARRAY['draft'::text, 'submitted'::text, 'approved'::text, 'in_progress'::text, 'completed'::text, 'rejected'::text])))
 );
 
+CREATE TABLE purchase_requests (
+    id SERIAL PRIMARY KEY,
+    pr_number VARCHAR(50) UNIQUE NOT NULL,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    vendor_id INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
+    
+    status VARCHAR(50) DEFAULT 'Draft',
+    
+    created_by INTEGER REFERENCES users(id),
+    approved_by INTEGER REFERENCES users(id),
+    
+    expected_delivery_date DATE,
+    actual_delivery_date DATE,
+    submitted_at TIMESTAMPTZ,
+    approved_at TIMESTAMPTZ,
+    
+    total_amount NUMERIC(20,2) DEFAULT 0,
+    gst_amount NUMERIC(12,2) DEFAULT 0,
+    final_amount NUMERIC(20,2) DEFAULT 0,
+    
+    remarks TEXT,
+    payment_terms TEXT,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_pr_project ON purchase_requests(project_id);
+CREATE INDEX idx_pr_status ON purchase_requests(status);
+CREATE INDEX idx_pr_vendor ON purchase_requests(vendor_id);
+CREATE INDEX idx_pr_created_by ON purchase_requests(created_by);
+
+CREATE TABLE purchase_request_items (
+    id SERIAL PRIMARY KEY,
+    purchase_request_id INTEGER NOT NULL REFERENCES purchase_requests(id) ON DELETE CASCADE,
+    estimation_item_id INTEGER NOT NULL UNIQUE REFERENCES estimation_items(id) ON DELETE CASCADE,
+    
+    category VARCHAR(100),
+    room_name VARCHAR(255),
+    item_name TEXT,
+    quantity NUMERIC(10,2),
+    unit VARCHAR(20),
+    unit_price NUMERIC(12,2),
+    
+    quoted_price NUMERIC(12,2),
+    final_price NUMERIC(12,2),
+    
+    subtotal NUMERIC(20,2),
+    gst_amount NUMERIC(12,2),
+    item_total NUMERIC(20,2),
+    
+    received_quantity NUMERIC(10,2) DEFAULT 0,
+    pending_quantity NUMERIC(10,2),
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_pri_pr ON purchase_request_items(purchase_request_id);
+CREATE INDEX idx_pri_estimation ON purchase_request_items(estimation_item_id);
+
+COMMENT ON TABLE purchase_requests IS 'Purchase requests created from estimation items';
+COMMENT ON TABLE purchase_request_items IS 'Line items in purchase requests with 1-1 mapping to estimation items';
+COMMENT ON COLUMN purchase_requests.pr_number IS 'Auto-generated PR number format: PR-{project_id}-{sequence}';
+COMMENT ON COLUMN purchase_requests.status IS 'PR status: Draft, Submitted, Approved, Rejected, Cancelled';
+COMMENT ON COLUMN purchase_request_items.estimation_item_id IS 'Unique reference to estimation item (1-1 mapping)';
+
 CREATE TABLE vendors (
     id INTEGER NOT NULL DEFAULT nextval('vendors_id_seq'::regclass),
     name TEXT NOT NULL,
