@@ -206,8 +206,8 @@ export async function POST(request, { params }) {
             item_discount_percentage, item_discount_amount, 
             discount_kg_charges_percentage, discount_kg_charges_amount,
             gst_percentage, amount_before_gst, gst_amount, item_total,
-            created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW())
+            status, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW())
         `, [
           estimationId,
           item.category,
