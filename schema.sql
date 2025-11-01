@@ -264,6 +264,9 @@ CREATE TABLE estimation_items (
     item_total NUMERIC DEFAULT 0,
     total NUMERIC,
 
+    -- Status tracking
+    status VARCHAR(50) DEFAULT 'Queued',
+
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ,
