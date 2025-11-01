@@ -253,7 +253,7 @@ export default function UploadEstimationPage() {
       const formData = new FormData();
       formData.append('file', csvFile);
 
-      const res = await fetch(`/api/projects/${projectId}/upload`, {
+      const res = await fetch(`/api/projects/${projectId}/estimations/upload`, {
         method: 'POST',
         body: formData
       });
