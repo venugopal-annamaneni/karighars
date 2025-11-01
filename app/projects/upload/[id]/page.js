@@ -205,6 +205,18 @@ export default function UploadEstimationPage() {
         }
       }
 
+      // Validate status (optional column)
+      if (data.status) {
+        const validStatuses = Object.values(ESTIMATION_ITEM_STATUS);
+        if (!validStatuses.includes(data.status.trim())) {
+          rowWarnings.push({
+            row: rowNumber,
+            field: 'status',
+            message: `Invalid status "${data.status}". Valid: ${validStatuses.join(', ')}. Will default to "Queued".`
+          });
+        }
+      }
+
       if (rowErrors.length > 0) {
         errors.push(...rowErrors);
       } else if (rowWarnings.length > 0) {
