@@ -54,16 +54,16 @@ export async function POST(request) {
     await query("BEGIN");
     const result = await query(
       `INSERT INTO project_estimations (
-      project_id, created_by, version, status, 
+      project_id, created_by, version,
       category_breakdown,
       items_value, kg_charges, items_discount, kg_discount, discount, gst_amount, 
       final_value,
       has_overpayment, overpayment_amount,
       remarks
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
       [
-        body.project_id, session.user.id, nextVersion, body.status || ESTIMATION_STATUS.DRAFT,
+        body.project_id, session.user.id, nextVersion, 
         JSON.stringify(categoryBreakdown),
         itemsValue, kgCharges, itemsDiscount, kgDiscount, discount, gstAmount,
         finalValue,
