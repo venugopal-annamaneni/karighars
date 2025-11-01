@@ -680,7 +680,7 @@ CREATE INDEX idx_pr_created_by ON purchase_requests(created_by);
 CREATE TABLE purchase_request_items (
     id SERIAL PRIMARY KEY,
     purchase_request_id INTEGER NOT NULL REFERENCES purchase_requests(id) ON DELETE CASCADE,
-    estimation_item_id INTEGER NOT NULL UNIQUE REFERENCES estimation_items(id) ON DELETE CASCADE,
+    estimation_item_id INTEGER NOT NULL REFERENCES estimation_items(id) ON DELETE CASCADE,
     
     category VARCHAR(100),
     room_name VARCHAR(255),
@@ -700,17 +700,20 @@ CREATE TABLE purchase_request_items (
     pending_quantity NUMERIC(10,2),
     
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    CONSTRAINT unique_pr_estimation_item UNIQUE (purchase_request_id, estimation_item_id)
 );
 
 CREATE INDEX idx_pri_pr ON purchase_request_items(purchase_request_id);
 CREATE INDEX idx_pri_estimation ON purchase_request_items(estimation_item_id);
 
 COMMENT ON TABLE purchase_requests IS 'Purchase requests created from estimation items';
-COMMENT ON TABLE purchase_request_items IS 'Line items in purchase requests with 1-1 mapping to estimation items';
+COMMENT ON TABLE purchase_request_items IS 'Line items in purchase requests';
 COMMENT ON COLUMN purchase_requests.pr_number IS 'Auto-generated PR number format: PR-{project_id}-{sequence}';
 COMMENT ON COLUMN purchase_requests.status IS 'PR status: Draft, Submitted, Approved, Rejected, Cancelled';
-COMMENT ON COLUMN purchase_request_items.estimation_item_id IS 'Unique reference to estimation item (1-1 mapping)';
+COMMENT ON COLUMN purchase_request_items.estimation_item_id IS 'Reference to estimation item';
+COMMENT ON CONSTRAINT unique_pr_estimation_item ON purchase_request_items IS 'Prevents duplicate items in the same PR';
 
 CREATE TABLE vendors (
     id INTEGER NOT NULL DEFAULT nextval('vendors_id_seq'::regclass),
