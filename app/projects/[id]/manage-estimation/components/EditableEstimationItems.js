@@ -16,6 +16,7 @@ import {
 } from "react";
 import { toast } from 'sonner';
 export const EditableEstimationItems = memo(function EditableEstimationItems({
+  categoryId,
   data,
   setData,
   baseRates,
@@ -333,18 +334,37 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalHeight = rowVirtualizer.getTotalSize();
 
+  const leftFixed = `${categoryId}-left-fixed`;
+  const rightFixed = `${categoryId}-right-fixed`;
+  const middleScroll = `${categoryId}-middle-scroll`;
+
   /** Scroll sync left/middle/right */
   useEffect(() => {
-    const left = document.getElementById("left-fixed");
-    const right = document.getElementById("right-fixed");
-    const middle = document.getElementById("middle-scroll");
+    const left = document.getElementById(leftFixed);
+    const right = document.getElementById(rightFixed);
+    const middle = document.getElementById(middleScroll);
     if (!left || !right || !middle) return;
-    const sync = () => {
+    debugger;
+    const syncLeftRight = () => {
       left.scrollTop = middle.scrollTop;
       right.scrollTop = middle.scrollTop;
     };
-    middle.addEventListener("scroll", sync);
-    return () => middle.removeEventListener("scroll", sync);
+    const syncLeftMiddle = () => {
+      left.scrollTop = right.scrollTop;
+      middle.scrollTop = right.scrollTop;
+    };
+    const syncMiddleRight = () => {
+      middle.scrollTop = left.scrollTop;
+      right.scrollTop = left.scrollTop;
+    };
+    middle.addEventListener("scroll", syncLeftRight);
+    left.addEventListener("scroll", syncMiddleRight);
+    right.addEventListener("scroll", syncLeftMiddle);
+    return () => {
+      middle.removeEventListener("scroll", syncLeftRight);
+      left.removeEventListener("scroll", syncMiddleRight);
+      right.removeEventListener("scroll", syncLeftMiddle);
+    }
   }, []);
 
   /** 🧩 Render */
@@ -363,7 +383,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
 
       <div className="flex w-full border rounded-lg" style={{ maxHeight: "600px" }}>
         {/* LEFT FIXED */}
-        <div id="left-fixed" className="flex-none w-[465px] border-r overflow-hidden" style={{ overflowY: "auto" }}>
+        <div id={leftFixed} className="flex-none w-[465px] border-r overflow-hidden" style={{ overflowY: "auto" }}>
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 bg-slate-100 z-10">
               {table.getHeaderGroups().map((hg) => (
@@ -403,7 +423,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
         </div>
 
         {/* MIDDLE SCROLL */}
-        <div ref={tableContainerRef} id="middle-scroll" className="flex-1 overflow-auto">
+        <div ref={tableContainerRef} id={middleScroll} className="flex-1 overflow-auto">
           <table className="w-full text-sm border-collapse table-fixed">
             <thead className="sticky top-0 bg-slate-100 z-10">
               {table.getHeaderGroups().map((hg) => (
@@ -449,7 +469,7 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
         </div>
 
         {/* RIGHT FIXED */}
-        <div id="right-fixed" className="flex-none w-[210px] border-l overflow-hidden" style={{ overflowY: "auto" }}>
+        <div id={rightFixed} className="flex-none w-[210px] border-l overflow-hidden" style={{ overflowY: "auto" }}>
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 bg-slate-100 z-10">
               {table.getHeaderGroups().map((hg) => (

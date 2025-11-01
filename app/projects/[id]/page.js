@@ -216,7 +216,7 @@ export default function ProjectEstimationsPage() {
               <div>
                 <CardTitle>Project Estimation</CardTitle>
                 <CardDescription>
-                  {estimation ? `Version ${estimation.version} • ${estimation.status}` : 'No estimation created yet'}
+                  {estimation ? `Version ${estimation.version}`  : 'No estimation created yet'}
                 </CardDescription>
               </div>
 
@@ -764,7 +764,7 @@ const EstimationItemsTable = ({ category, project, estimation, projectBaseRates,
           <tbody>
             {table.getRowModel().rows.length == 0 && (
               <tr className="border-b hover:bg-slate-50">
-                <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'>Zero items</td>
+                <td colSpan={14} className='h-14 p-2 border-r border-slate-200 bg-slate-200 text-center'>No items found</td>
               </tr>
             )}
             {table.getRowModel().rows.map(row => {

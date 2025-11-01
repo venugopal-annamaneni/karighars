@@ -1,13 +1,11 @@
 "use client";
 
-import { ESTIMATION_STATUS } from '@/app/constants';
 import { useProjectData } from "@/app/context/ProjectDataContext";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { calculateCategoryTotals, calculateItemTotal as calculateItemTotalLib } from '@/lib/calcUtils';
 import { formatCurrency } from '@/lib/utils';
@@ -83,8 +81,7 @@ export default function ProjectEstimationPage() {
   });
 
   const [formData, setFormData] = useState({
-    remarks: '',
-    status: ESTIMATION_STATUS.DRAFT,
+    remarks: ''
   });
 
   const { fetchProjectData, project, estimation, loading } = useProjectData();
@@ -117,8 +114,7 @@ export default function ProjectEstimationPage() {
       // Load existing estimation if available
       if (estimation && estimation.id) {
         const newFormData = {
-          remarks: estimation.remarks || '',
-          status: estimation.status,
+          remarks: estimation.remarks || ''
         };
         setFormData(newFormData);
 
@@ -320,7 +316,6 @@ export default function ProjectEstimationPage() {
             project_id: projectId,
             ...totals,
             remarks: formData.remarks,
-            status: formData.status,
             items: itemsWithCalcs
           });
           setShowOverpaymentModal(true);
@@ -351,7 +346,6 @@ export default function ProjectEstimationPage() {
         project_id: projectId,
         ...totals,
         remarks: formData.remarks,
-        status: formData.status,
         items: itemsWithCalcs
       });
 
@@ -443,26 +437,6 @@ export default function ProjectEstimationPage() {
           <CardContent className="pt-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ESTIMATION_STATUS).map(([key, value]) => (
-                        <SelectItem key={key} value={value}>
-                          {value
-                            .replace(/\b\w/g, c => c.toUpperCase())}  {/* capitalize words */}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-2">
                   <Label>Default GST (%)</Label>
 
@@ -798,6 +772,7 @@ const CategoryEstimationTable = memo(function CategoryEstimationTable({
         ) : (
           <div className='space-y-4'>
             <EditableEstimationItems
+              categoryId={category.id}
               data={items}
               // Accept both updater-function or direct array and forward a real array to onItemsChange
               setData={(updaterOrArray) => {
