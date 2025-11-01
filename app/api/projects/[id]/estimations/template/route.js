@@ -46,7 +46,8 @@ export async function GET(request, { params }) {
       'width',
       'height',
       'item_discount_percentage',
-      'discount_kg_charges_percentage'
+      'discount_kg_charges_percentage',
+      'status'
     ];
 
     // Create sample rows for each category
