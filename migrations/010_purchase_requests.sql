@@ -41,7 +41,7 @@ CREATE TABLE purchase_requests (
 CREATE TABLE purchase_request_items (
     id SERIAL PRIMARY KEY,
     purchase_request_id INTEGER NOT NULL REFERENCES purchase_requests(id) ON DELETE CASCADE,
-    estimation_item_id INTEGER NOT NULL UNIQUE REFERENCES estimation_items(id) ON DELETE CASCADE,
+    estimation_item_id INTEGER NOT NULL REFERENCES estimation_items(id) ON DELETE CASCADE,
     
     -- Item details snapshot (from estimation_item)
     category VARCHAR(100),
@@ -66,7 +66,10 @@ CREATE TABLE purchase_request_items (
     
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- Composite unique constraint
+    CONSTRAINT unique_pr_estimation_item UNIQUE (purchase_request_id, estimation_item_id)
 );
 
 -- Create indexes for performance
