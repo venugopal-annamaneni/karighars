@@ -92,18 +92,20 @@ export async function POST(request, { params }) {
     const prNumber = `PR-${projectId}-${String(nextSeq).padStart(3, '0')}`;
 
     // 3. Create purchase request
+    const status = body.status || 'draft'; // Default to draft
     const prResult = await query(`
       INSERT INTO purchase_requests (
         pr_number, project_id, estimation_id, vendor_id, 
         status, created_by, expected_delivery_date, notes,
         created_at
-      ) VALUES ($1, $2, $3, $4, 'confirmed', $5, $6, $7, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       RETURNING id, pr_number
     `, [
       prNumber,
       projectId,
       body.estimation_id,
       body.vendor_id || null,
+      status,
       session.user.id,
       body.expected_delivery_date || null,
       body.notes || null
