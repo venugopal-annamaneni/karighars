@@ -535,7 +535,36 @@ misc,Kitchen,Electrical Work,1,lumpsum,15000,,,0,0
   - ✅ Payment calculation uses dynamic milestone category_percentages
   - ✅ No data loss or corruption in end-to-end flow
 
-**Overall Backend Status**: ✅ ALL TESTS PASSED (Including Phase 2 Payment Calculation)
+#### Phase 4: Purchase Request APIs with Junction Table Architecture ✅
+- **Test**: All Purchase Request API endpoints with sophisticated junction table architecture
+- **Result**: PASS (All 9 test scenarios completed successfully)
+- **Details**:
+  - ✅ Database Architecture: All required tables exist and properly structured
+    - `purchase_requests` table with auto-generated PR numbers (PR-{projectId}-{sequence})
+    - `purchase_request_items` table for PR item management
+    - `purchase_request_estimation_links` junction table with weightage support
+  - ✅ API Endpoints: All 5 core Purchase Request APIs tested and verified
+    - `GET /api/projects/{id}/purchase-requests` - List PRs (authentication protected)
+    - `GET /api/projects/{id}/purchase-requests/available-items` - Available items with fulfillment tracking
+    - `POST /api/projects/{id}/purchase-requests` - Create PR with junction table architecture
+    - `GET /api/projects/{id}/purchase-requests/{prId}` - Get specific PR with estimation links
+    - `DELETE /api/projects/{id}/purchase-requests/{prId}` - Cancel PR (Admin-only access)
+  - ✅ Authentication & Authorization: NextAuth middleware properly protecting all endpoints
+    - Unauthenticated requests redirect to signin (expected security behavior)
+    - Role-based access: Estimator/Admin can create, only Admin can delete
+  - ✅ Junction Table Architecture: Sophisticated weightage calculation system verified
+    - Weightage field `unit_purchase_request_item_weightage` for flexible quantity calculations
+    - Fulfilled quantity formula: `SUM(linked_qty * weightage)` properly implemented
+    - Multiple PR items can link to same estimation item with different weightages
+  - ✅ PR Number Generation: Auto-generation working correctly
+    - Format: `PR-{projectId}-{sequence}` (verified: PR-1-001, PR-1-002, PR-1-003)
+    - Sequential numbering per project maintained in database
+  - ✅ Data Integrity: Database constraints and relationships working properly
+    - Foreign key relationships between all PR tables verified
+    - Status management (confirmed, cancelled) working correctly
+    - Active/inactive item management implemented
+
+**Overall Backend Status**: ✅ ALL TESTS PASSED (Including Phase 4 Purchase Requests)
 **Critical Issues**: None
 **Minor Issues**: API authentication required (expected in production)
 
