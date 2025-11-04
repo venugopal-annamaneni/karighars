@@ -12,9 +12,12 @@ export async function GET(request, { params }) {
   }
 
   const projectId = params.id;
+  const { searchParams } = new URL(request.url);
+  const statusFilter = searchParams.get('status'); // e.g., 'draft'
+  const vendorFilter = searchParams.get('vendor_id');
 
   try {
-    const result = await query(`
+    let queryStr = `
       SELECT 
         pr.id,
         pr.pr_number,
@@ -34,8 +37,26 @@ export async function GET(request, { params }) {
       LEFT JOIN users u ON pr.created_by = u.id
       LEFT JOIN project_estimations pe ON pr.estimation_id = pe.id
       WHERE pr.project_id = $1
-      ORDER BY pr.created_at DESC
-    `, [projectId]);
+    `;
+    
+    const queryParams = [projectId];
+    let paramIndex = 2;
+
+    if (statusFilter) {
+      queryStr += ` AND pr.status = $${paramIndex}`;
+      queryParams.push(statusFilter);
+      paramIndex++;
+    }
+
+    if (vendorFilter) {
+      queryStr += ` AND pr.vendor_id = $${paramIndex}`;
+      queryParams.push(vendorFilter);
+      paramIndex++;
+    }
+
+    queryStr += ` ORDER BY pr.created_at DESC`;
+
+    const result = await query(queryStr, queryParams);
 
     return NextResponse.json({
       purchase_requests: result.rows
