@@ -31,6 +31,7 @@ export async function GET(request, { params }) {
     const estimationId = estimationResult.rows[0].id;
 
     // Calculate fulfilled quantity using junction table with weightage
+    // Separate confirmed and draft allocations
     const items = await query(`
       SELECT 
         ei.id,
@@ -48,7 +49,15 @@ export async function GET(request, { params }) {
             WHERE pr.status = 'confirmed' AND pri.active = true
           ), 
           0
-        ) as fulfilled_qty,
+        ) as confirmed_qty,
+        COALESCE(
+          SUM(
+            prel.linked_qty * prel.unit_purchase_request_item_weightage
+          ) FILTER (
+            WHERE pr.status = 'draft' AND pri.active = true
+          ), 
+          0
+        ) as draft_qty,
         (
           ei.quantity - COALESCE(
             SUM(
