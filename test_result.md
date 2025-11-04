@@ -48,6 +48,16 @@
 - ⏸️ Manage estimation page enhancements (pending)
 - ⏸️ Client-side CSV validation (pending)
 
+**Recent Changes (Phase 4 - Purchase Requests with Junction Table)**:
+- ✅ Database migrations completed (010, 011, 012, 013)
+- ✅ Junction table architecture implemented (purchase_request_estimation_links)
+- ✅ All PR API endpoints created and ready
+- ✅ Purchase Request Create UI implemented with 3-step workflow
+- ✅ Purchase Request List UI implemented
+- ✅ Purchase Request View UI implemented
+- ⏸️ Backend API testing (in progress)
+- ⏸️ Frontend testing (pending user approval)
+
 ---
 
 ## Test Cases for Backend Agent
