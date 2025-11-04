@@ -165,7 +165,7 @@ export async function POST(request, { params }) {
       purchase_request: {
         id: purchaseRequestId,
         pr_number: prNumber,
-        status: 'confirmed',
+        status: status,
         items_count: body.items.length
       }
     });
