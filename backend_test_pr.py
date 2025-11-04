@@ -61,7 +61,7 @@ def get_test_project_with_estimation():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT DISTINCT p.id, p.project_code, p.name, pe.id as estimation_id, pe.version
+            SELECT p.id, p.project_code, p.name, pe.id as estimation_id, pe.version, p.created_at
             FROM projects p
             JOIN project_estimations pe ON p.id = pe.project_id
             JOIN estimation_items ei ON pe.id = ei.estimation_id
