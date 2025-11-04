@@ -132,16 +132,7 @@ export default function ViewPurchaseRequestPage() {
   }
 
   const pr = prDetail.purchase_request;
-  const items = prDetail.items;
-
-  // Group items by category
-  const itemsByCategory = items.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {});
+  const items = prDetail.items || [];
 
   return (
     <div className="space-y-6">
