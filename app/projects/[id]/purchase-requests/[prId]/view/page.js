@@ -10,8 +10,6 @@ import {
   ArrowLeft,
   Loader2,
   Trash2,
-  Edit,
-  Download,
   CheckCircle2,
   XCircle,
   Clock,
@@ -19,10 +17,10 @@ import {
   Calendar,
   User,
   Building2,
-  FileText
+  Link2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { PURCHASE_REQUEST_STATUS, USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
 
