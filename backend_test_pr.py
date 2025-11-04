@@ -97,7 +97,7 @@ def get_test_vendor():
     
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name FROM vendors WHERE active = true LIMIT 1;")
+        cursor.execute("SELECT id, name FROM vendors WHERE is_active = true LIMIT 1;")
         vendor = cursor.fetchone()
         cursor.close()
         conn.close()
