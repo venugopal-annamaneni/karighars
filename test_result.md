@@ -62,6 +62,150 @@
 
 ## Test Cases for Backend Agent
 
+### Phase 4: Purchase Requests with Junction Table Architecture
+
+### Test Scenario PR-1: List Purchase Requests
+**Endpoint**: `GET /api/projects/{id}/purchase-requests`
+**Description**: Test fetching all purchase requests for a project
+**Prerequisites**:
+- User must be authenticated
+- Project should have at least one purchase request
+
+**Expected Result**:
+- HTTP 200 response
+- Array of purchase requests with vendor details, items count, status
+- Includes pr_number, vendor_name, created_by_name, items_count
+- Ordered by created_at DESC
+
+### Test Scenario PR-2: Get Available Estimation Items
+**Endpoint**: `GET /api/projects/{id}/purchase-requests/available-items`
+**Description**: Test fetching estimation items with fulfillment tracking via junction table
+**Prerequisites**:
+- Project must have active estimation with items
+- Items may or may not be linked to existing PRs
+
+**Expected Result**:
+- HTTP 200 response
+- Array of estimation items with total_qty, fulfilled_qty, available_qty
+- Items grouped by category in `grouped_by_category` field
+- Fulfilled qty calculated from junction table with weightage formula:
+  `SUM(linked_qty * unit_purchase_request_item_weightage)`
+- Available qty = total_qty - fulfilled_qty
+
+### Test Scenario PR-3: Create Purchase Request (New Architecture)
+**Endpoint**: `POST /api/projects/{id}/purchase-requests`
+**Description**: Test creating a PR with the new junction table architecture
+**Prerequisites**:
+- User must be Estimator or Admin
+- Valid estimation_id
+- Valid vendor_id
+
+**Test Data**:
+```json
+{
+  "estimation_id": "<valid_estimation_id>",
+  "vendor_id": "<valid_vendor_id>",
+  "expected_delivery_date": "2025-12-31",
+  "notes": "Test PR creation",
+  "items": [
+    {
+      "name": "Plywood 18mm",
+      "quantity": 10,
+      "unit": "sheets",
+      "links": [
+        {
+          "estimation_item_id": "<valid_estimation_item_id>",
+          "linked_qty": 50,
+          "weightage": 0.5,
+          "notes": "50 sqft wardrobe needs 0.5 sheets per sqft"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Expected Result**:
+- HTTP 200 response
+- New purchase_requests record created with auto-generated pr_number
+- Purchase_request_items created for each item in array
+- purchase_request_estimation_links created for each link
+- All operations in DB transaction
+- Status set to 'confirmed'
+- Returns PR details with pr_number
+
+### Test Scenario PR-4: Get Specific Purchase Request
+**Endpoint**: `GET /api/projects/{id}/purchase-requests/{prId}`
+**Description**: Test fetching detailed PR information including links
+**Prerequisites**:
+- Valid PR exists in database
+
+**Expected Result**:
+- HTTP 200 response
+- Complete PR details with vendor information
+- Array of PR items with their estimation_links
+- Each link shows: estimation_item_id, item_name, category, room, linked_qty, weightage, notes
+- Links aggregated using JSON functions
+
+### Test Scenario PR-5: Cancel Purchase Request
+**Endpoint**: `DELETE /api/projects/{id}/purchase-requests/{prId}`
+**Description**: Test cancelling a PR (Admin only)
+**Prerequisites**:
+- User must be Admin
+- Valid PR exists
+
+**Expected Result**:
+- HTTP 200 response
+- PR status updated to 'cancelled'
+- All associated PR items status set to 'cancelled' and active=false
+- All operations in DB transaction
+
+### Test Scenario PR-6: Authorization - Estimator Can Create
+**Endpoint**: `POST /api/projects/{id}/purchase-requests`
+**Description**: Test that Estimators can create PRs
+**Prerequisites**:
+- User with role 'estimator'
+
+**Expected Result**:
+- HTTP 200 response (creation succeeds)
+
+### Test Scenario PR-7: Authorization - Non-Admin Cannot Delete
+**Endpoint**: `DELETE /api/projects/{id}/purchase-requests/{prId}`
+**Description**: Test that non-Admins cannot delete PRs
+**Prerequisites**:
+- User with role other than 'admin'
+
+**Expected Result**:
+- HTTP 403 Forbidden
+- Error message: "Only Admins can delete Purchase Requests"
+
+### Test Scenario PR-8: Weightage Calculation Verification
+**Description**: Verify that fulfilled quantity calculation with weightage is correct
+**Test Case**:
+- Create estimation item: Wardrobe, 100 sqft
+- Create PR item: Plywood 18mm, 60 sheets
+- Link with weightage 0.5 and linked_qty 100
+- Expected fulfilled_qty for estimation item: 100 * 0.5 = 50 sheets
+- Expected available_qty for estimation item: 100 - 50 = 50 sqft
+
+### Test Scenario PR-9: Multiple Links to Same Estimation Item
+**Description**: Verify system handles multiple PR items linking to same estimation item
+**Test Case**:
+- Estimation item: Wardrobe, 100 sqft
+- PR1 Item: Plywood, 30 sheets, weightage 0.3, linked_qty 50 (contributes 15 sheets)
+- PR2 Item: Marine Ply, 20 sheets, weightage 0.2, linked_qty 50 (contributes 10 sheets)
+- Expected total fulfilled: 25 sheets equivalent
+- Available qty should account for both PRs
+
+### Test Scenario PR-10: PR Number Generation
+**Description**: Test auto-generation of PR numbers
+**Expected Result**:
+- First PR: PR-{projectId}-001
+- Second PR: PR-{projectId}-002
+- Sequential numbering maintained
+
+---
+
 ### Phase 3: CSV Upload and Version Management
 
 ### Test Scenario 1: CSV Upload API - Basic Upload
