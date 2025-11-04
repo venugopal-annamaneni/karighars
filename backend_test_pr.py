@@ -390,22 +390,26 @@ def test_pr_4_get_specific_pr():
             print("✅ API endpoint exists and is properly protected")
             return True
         elif response.status_code == 200:
-            result = response.json()
-            pr = result.get('purchase_request', {})
-            items = result.get('items', [])
-            
-            print("✅ Purchase request details fetched successfully")
-            print(f"   PR Number: {pr.get('pr_number')}")
-            print(f"   Vendor: {pr.get('vendor_name')}")
-            print(f"   Items Count: {len(items)}")
-            
-            # Check for estimation links in items
-            if items:
-                item = items[0]
-                links = item.get('estimation_links', [])
-                print(f"   First item has {len(links) if links else 0} estimation links")
-            
-            return True
+            try:
+                result = response.json()
+                pr = result.get('purchase_request', {})
+                items = result.get('items', [])
+                
+                print("✅ Purchase request details fetched successfully")
+                print(f"   PR Number: {pr.get('pr_number')}")
+                print(f"   Vendor: {pr.get('vendor_name')}")
+                print(f"   Items Count: {len(items)}")
+                
+                # Check for estimation links in items
+                if items:
+                    item = items[0]
+                    links = item.get('estimation_links', [])
+                    print(f"   First item has {len(links) if links else 0} estimation links")
+                
+                return True
+            except json.JSONDecodeError:
+                print(f"❌ Invalid JSON response: {response.text[:200]}")
+                return False
         else:
             print(f"❌ Unexpected response: {response.status_code}")
             print(f"Response: {response.text}")
