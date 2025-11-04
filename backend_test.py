@@ -8,7 +8,7 @@ import requests
 import json
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import psycopg2
 from urllib.parse import urlparse
 
