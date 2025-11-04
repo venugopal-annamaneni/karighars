@@ -89,7 +89,8 @@ export async function GET(request, { params }) {
       groupedByCategory[item.category].push({
         ...item,
         total_qty: parseFloat(item.total_qty),
-        fulfilled_qty: parseFloat(item.fulfilled_qty),
+        confirmed_qty: parseFloat(item.confirmed_qty),
+        draft_qty: parseFloat(item.draft_qty),
         available_qty: parseFloat(item.available_qty)
       });
     });
@@ -99,7 +100,8 @@ export async function GET(request, { params }) {
       items: items.rows.map(item => ({
         ...item,
         total_qty: parseFloat(item.total_qty),
-        fulfilled_qty: parseFloat(item.fulfilled_qty),
+        confirmed_qty: parseFloat(item.confirmed_qty),
+        draft_qty: parseFloat(item.draft_qty),
         available_qty: parseFloat(item.available_qty)
       })),
       grouped_by_category: groupedByCategory,
