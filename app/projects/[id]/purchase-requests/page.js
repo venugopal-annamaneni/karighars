@@ -16,7 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { PURCHASE_REQUEST_STATUS, USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
 
@@ -52,25 +52,28 @@ export default function PurchaseRequestsPage() {
   };
 
   const getStatusBadge = (status) => {
+    const statusLower = status?.toLowerCase() || '';
     const variants = {
-      [PURCHASE_REQUEST_STATUS.DRAFT]: 'secondary',
-      [PURCHASE_REQUEST_STATUS.SUBMITTED]: 'default',
-      [PURCHASE_REQUEST_STATUS.APPROVED]: 'success',
-      [PURCHASE_REQUEST_STATUS.REJECTED]: 'destructive',
-      [PURCHASE_REQUEST_STATUS.CANCELLED]: 'outline'
+      'draft': 'secondary',
+      'confirmed': 'default',
+      'submitted': 'default',
+      'approved': 'default',
+      'rejected': 'destructive',
+      'cancelled': 'outline'
     };
 
     const icons = {
-      [PURCHASE_REQUEST_STATUS.DRAFT]: <Clock className="h-3 w-3" />,
-      [PURCHASE_REQUEST_STATUS.SUBMITTED]: <PackagePlus className="h-3 w-3" />,
-      [PURCHASE_REQUEST_STATUS.APPROVED]: <CheckCircle2 className="h-3 w-3" />,
-      [PURCHASE_REQUEST_STATUS.REJECTED]: <XCircle className="h-3 w-3" />,
-      [PURCHASE_REQUEST_STATUS.CANCELLED]: <XCircle className="h-3 w-3" />
+      'draft': <Clock className="h-3 w-3" />,
+      'confirmed': <CheckCircle2 className="h-3 w-3" />,
+      'submitted': <PackagePlus className="h-3 w-3" />,
+      'approved': <CheckCircle2 className="h-3 w-3" />,
+      'rejected': <XCircle className="h-3 w-3" />,
+      'cancelled': <XCircle className="h-3 w-3" />
     };
 
     return (
-      <Badge variant={variants[status] || 'default'} className="gap-1">
-        {icons[status]}
+      <Badge variant={variants[statusLower] || 'default'} className="gap-1">
+        {icons[statusLower]}
         {status}
       </Badge>
     );
@@ -115,7 +118,7 @@ export default function PurchaseRequestsPage() {
               <PackagePlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-2">No purchase requests yet</p>
               <p className="text-sm text-muted-foreground mb-4">
-                Create your first purchase request from queued estimation items
+                Create your first purchase request from estimation items
               </p>
               {canCreatePR && (
                 <Link href={`/projects/${projectId}/purchase-requests/create`}>
@@ -135,7 +138,6 @@ export default function PurchaseRequestsPage() {
                     <th className="text-left p-3 text-sm font-medium">Vendor</th>
                     <th className="text-center p-3 text-sm font-medium">Items</th>
                     <th className="text-center p-3 text-sm font-medium">Status</th>
-                    <th className="text-right p-3 text-sm font-medium">Amount</th>
                     <th className="text-left p-3 text-sm font-medium">Expected Delivery</th>
                     <th className="text-left p-3 text-sm font-medium">Created</th>
                     <th className="text-center p-3 text-sm font-medium">Actions</th>
@@ -160,16 +162,10 @@ export default function PurchaseRequestsPage() {
                         )}
                       </td>
                       <td className="p-3 text-center">
-                        <Badge variant="outline">{pr.items_count}</Badge>
+                        <Badge variant="outline">{pr.items_count || 0}</Badge>
                       </td>
                       <td className="p-3 text-center">
                         {getStatusBadge(pr.status)}
-                      </td>
-                      <td className="p-3 text-right">
-                        <p className="font-medium">{formatCurrency(pr.final_amount)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Inc. GST {formatCurrency(pr.gst_amount)}
-                        </p>
                       </td>
                       <td className="p-3 text-sm">
                         {pr.expected_delivery_date ? formatDate(pr.expected_delivery_date) : '-'}
