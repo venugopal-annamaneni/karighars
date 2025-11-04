@@ -59,7 +59,7 @@ export default function ViewPurchaseRequestPage() {
   };
 
   const handleDeletePR = async () => {
-    if (!confirm(`Are you sure you want to cancel PR ${prDetail?.purchase_request?.pr_number}? This will revert all items to Queued status.`)) {
+    if (!confirm(`Are you sure you want to cancel PR ${prDetail?.purchase_request?.pr_number}?`)) {
       return;
     }
 
@@ -85,33 +85,34 @@ export default function ViewPurchaseRequestPage() {
   };
 
   const getStatusBadge = (status) => {
+    const statusLower = status?.toLowerCase() || '';
     const variants = {
-      [PURCHASE_REQUEST_STATUS.DRAFT]: 'secondary',
-      [PURCHASE_REQUEST_STATUS.SUBMITTED]: 'default',
-      [PURCHASE_REQUEST_STATUS.APPROVED]: 'success',
-      [PURCHASE_REQUEST_STATUS.REJECTED]: 'destructive',
-      [PURCHASE_REQUEST_STATUS.CANCELLED]: 'outline'
+      'draft': 'secondary',
+      'confirmed': 'default',
+      'submitted': 'default',
+      'approved': 'default',
+      'rejected': 'destructive',
+      'cancelled': 'outline'
     };
 
     const icons = {
-      [PURCHASE_REQUEST_STATUS.DRAFT]: <Clock className="h-4 w-4" />,
-      [PURCHASE_REQUEST_STATUS.SUBMITTED]: <PackagePlus className="h-4 w-4" />,
-      [PURCHASE_REQUEST_STATUS.APPROVED]: <CheckCircle2 className="h-4 w-4" />,
-      [PURCHASE_REQUEST_STATUS.REJECTED]: <XCircle className="h-4 w-4" />,
-      [PURCHASE_REQUEST_STATUS.CANCELLED]: <XCircle className="h-4 w-4" />
+      'draft': <Clock className="h-4 w-4" />,
+      'confirmed': <CheckCircle2 className="h-4 w-4" />,
+      'submitted': <PackagePlus className="h-4 w-4" />,
+      'approved': <CheckCircle2 className="h-4 w-4" />,
+      'rejected': <XCircle className="h-4 w-4" />,
+      'cancelled': <XCircle className="h-4 w-4" />
     };
 
     return (
-      <Badge variant={variants[status] || 'default'} className="gap-1">
-        {icons[status]}
+      <Badge variant={variants[statusLower] || 'default'} className="gap-1">
+        {icons[statusLower]}
         {status}
       </Badge>
     );
   };
 
   const canDeletePR = session?.user?.role === USER_ROLE.ADMIN;
-  const canEditPR = (session?.user?.role === USER_ROLE.ESTIMATOR || session?.user?.role === USER_ROLE.ADMIN) 
-    && prDetail?.purchase_request?.status === PURCHASE_REQUEST_STATUS.DRAFT;
 
   if (loading) {
     return (
