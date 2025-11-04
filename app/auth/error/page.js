@@ -70,7 +70,7 @@ function AuthErrorContent() {
                 The redirect URI must be configured in Google Cloud Console:
               </p>
               <code className="text-xs bg-white p-2 rounded block break-all border border-blue-200">
-                https://interiors-finance.preview.emergentagent.com/api/auth/callback/google
+                https://finance-flow-878.preview.emergentagent.com/api/auth/callback/google
               </code>
               <p className="text-xs text-blue-700 mt-2">
                 See GOOGLE_OAUTH_SETUP.md in the project root for detailed instructions.

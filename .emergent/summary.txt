@@ -1,124 +1,138 @@
 <analysis>
-The AI engineer successfully refactored the KG Interiors application from hardcoded categories to a fully dynamic system. This involved extensive database schema changes, API modifications, and UI overhauls across BizModels, Project Base Rates, Estimation Management, and Payment calculations. Key accomplishments include dynamic milestone configurations, category-based estimation displays, and the removal of all hardcoded category references. Following this, the engineer embarked on implementing a CSV upload feature for estimation items, including client-side validation, project locking, and version management, which is currently in progress. The work demonstrates a methodical approach, breaking down complex tasks into phases with user confirmations at each major step.
+The AI engineer effectively managed the evolution of the KG Interiors application from dynamic category refactoring to the advanced Purchase Request system. Key achievements include the robust implementation of a CSV upload feature with client-side validation, versioning, and a centralized calculation utility. Database migrations were handled, and conflicting API routes were resolved. Following user feedback, the architecture for Purchase Requests shifted significantly, moving from a simple 1:1 item mapping to a complex junction table with weightage, reflecting a deep understanding of evolving requirements. The engineer demonstrated strong problem-solving in resolving database connection issues, managing conflicting file paths, and adapting to user-initiated code changes and  operations. The current focus is on completing the API layer for the redesigned Purchase Request feature, with UI development pending.
 </analysis>
 
 <product_requirements>
-KG Interiors requires a finance management platform to replace Excel, offering real-time cash flow, commissions, and project financial health. The platform supports various workflows (Sales, Design, Shopping, Civil Vendor) and includes a Finance Dashboard, Project Ledger, Reports, and role-based access.
+KG Interiors requires a finance management platform to replace Excel, providing real-time cash flow, commissions, and project financial health. The platform supports various workflows (Sales, Design, Shopping, Civil Vendor) and includes a Finance Dashboard, Project Ledger, Reports, and role-based access.
 
 **Implemented features so far:**
 *   Google OAuth for user authentication.
-*   Customizable BizModel system with payment milestones and project stages, now supporting dynamic  (JSONB) with , , , , and  per category.
-*   Project-specific  using  (JSONB) with an approval workflow.
-*   Advanced  calculations with item-level and KG charges discounts, and a Pay to vendor directly flag.
+*   Customizable BizModel system with dynamic  (JSONB) for payment milestones and project stages, including discounts and Pay to vendor directly flags.
+*   Project-specific  with approval workflow.
+*   Advanced  calculations with dual-discount system.
 *    storing category-wise totals in a  JSONB column.
-*    page: fully updated for dual-discount system, dynamic rates, and  flag, and refactored to display estimation items by dynamic categories in separate tables, with per-category and overall summaries.
-*   Payment milestones in BizModel now dynamically display all configured categories and allow setting percentage payables for each category per milestone.
-*    API and  UI refactored to handle dynamic categories.
-*   All hardcoded category references (woodwork, misc, shopping) removed from the codebase.
-
-**Ongoing Feature: CSV Upload for Estimation Items**
-*   Users upload CSVs for initial estimations; UI creation is disabled until an upload.
-*   CSV contents are processed and inserted into  (new version ) and .
-*   The original CSV is stored at .
-*   Edit Estimation button becomes visible after first upload.
-*   Users can switch between previous estimation versions from a dropdown in .
-*   Loading an older version into  disables the Save button.
-*   Edit Estimation always targets the latest version, loading from the database.
-*   On saving an edited latest version, existing DB items are dumped to CSV, deleted, and new items/estimation are created as a new version.
-*   Client-side CSV validation (using ) and a project-locking mechanism (DB transactions) are required for bulk operations.
+*    page: Updated for dynamic rates and refactored to display items by dynamic categories.
+*   Dynamic display of all configured categories and percentage payables per milestone in BizModel.
+*    API and  UI refactored for dynamic categories.
+*   All hardcoded category references removed.
+*   **CSV Upload for Estimation Items:** Users can upload CSVs for estimations. The system processes and inserts items into  (new version) and . The original CSV is stored. Includes client-side validation and version management.
+*   **Estimation Item Status:** A  column (, ) has been added to , defaulting to  on creation/upload.
+*   **Purchase Requests (PRs) (Redesigned):** Allows creating PRs by linking  to  via a  junction table. This supports one estimation item breaking down into multiple PR items, with flexible quantities and component breakdown using . PR items no longer carry customer-facing pricing.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack:** Next.js (React frontend, API routes backend), PostgreSQL (primary database).
+-   **Full-stack:** Next.js (React frontend, API routes backend), PostgreSQL.
 -   **Authentication:** NextAuth.js with Google OAuth.
 -   **Styling:** Tailwind CSS and Shadcn UI components.
--   **Database:** Direct SQL queries via  module, custom migrations, JSONB data type, DB Transactions.
--   **Data Tables:** TanStack Table (grouping, editing, CSV export), React Virtual.
--   **CSV Processing:**  for client-side CSV parsing.
--   **Infrastructure:** Supervisor, Kubernetes.
+-   **Database:** Direct SQL queries via , custom migrations, JSONB, DB Transactions, composite unique constraints.
+-   **CSV Processing:**  for client-side parsing,  for generation.
+-   **Modularity:** Centralized calculation utilities ().
+-   **Versioning:** Estimation item versioning, Git for code management.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   ****: Main database schema definition.
-    -   **Summary:** Defines PostgreSQL schema. Updated to use JSONB for dynamic categories.
-    -   **Changes:**  and  now have  JSONB.  now has  JSONB.  has  JSONB, , .
--   ****: API for BizModel CRUD.
-    -   **Summary:** Handles creation and retrieval of BizModels.
-    -   **Changes:** Modified POST/GET to accept/return  JSONB and  JSONB for milestones.
--   ****: API for BizModel by ID.
-    -   **Summary:** Handles fetching/updating specific BizModels.
-    -   **Changes:** Updated PUT handler to correctly parse and save  JSONB for milestones, removing hardcoded logic.
--   ****: API for project payment calculation.
-    -   **Summary:** Calculates payment breakdown for a project based on milestones and estimation.
-    -   **Changes:** Refactored to dynamically use  and  for calculations.
--   ****: API for estimation items.
-    -   **Summary:** Manages estimation items.
-    -   **Changes:** Modified GET handler to dynamically sort items by  from the BizModel's  JSONB.
--   ****: **NEW** API for CSV uploads.
-    -   **Summary:** Handles processing uploaded estimation item CSVs, inserting data into  and  within a DB transaction, and implementing project locking.
--   ****: **NEW** API for CSV template download.
+    -   **Summary:** Defines PostgreSQL schema. Continually updated to reflect new features.
+    -   **Changes:**
+        -    and  now have  JSONB.  has  JSONB.
+        -    has  JSONB, .  removed.
+        -    now includes a  column (VARCHAR, default 'Queued').
+        -   New tables  and  created.
+        -   :  removed (now in junction table), pricing columns removed,  is .
+        -   New  junction table added.
+-   ****: API for CSV uploads.
+    -   **Summary:** Handles processing uploaded estimation item CSVs, inserting data into  and  within a DB transaction.
+    -   **Changes:** Updated to use  for calculations and to set  from CSV or default to 'Queued'.
+-   ****: API for CSV template download.
     -   **Summary:** Provides a CSV template for estimation item uploads.
--   ****: **NEW** API for listing estimation versions.
-    -   **Summary:** Returns a list of all estimation versions for a given project.
--   ****: **NEW** API for fetching a specific estimation version.
-    -   **Summary:** Retrieves details for a specific estimation version.
--   ****: **NEW** API to load a specific estimation version.
-    -   **Summary:** Loads a specific estimation version by processing its archived CSV.
+    -   **Changes:** Updated to include the  column in the template.
+-   ****: API for manual estimation item creation.
+    -   **Summary:** Handles creating individual estimation items.
+    -   **Changes:** Updated to set  to 'Queued' by default.
+-   ****: **NEW** API for downloading a specific estimation version's CSV.
+    -   **Summary:** Allows downloading an archived CSV for a given estimation version.
+-   ****: **NEW** API for Purchase Request CRUD (list and create).
+    -   **Summary:** Handles fetching all PRs for a project and creating new PRs based on the new architecture.
+-   ****: **NEW** API for fetching estimation items available for PR creation.
+    -   **Summary:** Returns estimation items along with their available quantities, considering quantities already linked in PRs.
+    -   **Changes:** Modified to handle the new junction table based linking for calculating .
+-   ****: **NEW** API for specific Purchase Request operations.
+    -   **Summary:** Handles GET, PUT, DELETE for a single purchase request.
 -   ****: Project detail page.
     -   **Summary:** Displays project info and estimation summary.
-    -   **Changes:** Fixed bug in  to correctly access . Refactored to dynamically display category summary cards using  based on .
+    -   **Changes:** Incorporated version management UI (dropdown to select versions, conditional visibility for Upload CSV and Edit Estimation buttons).  updated to include status column.
 -   ****: Project estimation form.
     -   **Summary:** Critical for creating/modifying estimations.
-    -   **Changes:** Major refactor.  moved outside.  updated to use dynamic accumulator. The page now renders multiple  components (a new component) grouped by category, each with a summary, and an  component.  now accepts  prop. A backup file  was created for the original.
--   ****: UI for managing customer payments.
-    -   **Summary:** Allows recording and tracking customer payments against milestones.
-    -   **Changes:** Refactored to dynamically display milestone percentages and payment calculations across all categories, removing hardcoded references. Cleaned up old state fields.
--   ****: **NEW** UI page for CSV upload.
-    -   **Summary:** Provides an interface for users to upload estimation item CSVs, offering client-side validation using .
--   ****: BizModel management UI.
-    -   **Summary:** Interface for creating and editing BizModels.
-    -   **Changes:** Completely refactored to dynamically manage categories and their rates. Milestone configuration now uses dynamic category percentages (JSONB). Removed all hardcoded category defaults from creation, editing, and display logic.
+    -   **Changes:** Refactored to use  for calculation functions.
+-   ****: UI page for CSV upload.
+    -   **Summary:** Provides an interface for users to upload estimation item CSVs, with client-side validation.
+    -   **Changes:**  field name fixed to  (matching API), description updated. Validation updated to include  as an optional column with allowed values.
+-   ****: Project-specific layout with navigation tabs.
+    -   **Summary:** Provides layout and navigation for project sub-pages.
+    -   **Changes:** Added a new tab for Purchase Requests.
+-   ****: **NEW** UI page for listing Purchase Requests.
+    -   **Summary:** Displays a table of Purchase Requests for the project.
+    -   **Changes:** Initial page created, designed to list PRs in a table format.
+-   ****: **NEW** UI page for creating Purchase Requests.
+    -   **Summary:** Dedicated page for creating PRs, allowing users to select estimation items and define quantities/components.
+    -   **Changes:** Initial page created, designed to display estimation items grouped by category in tables with quantity inputs.
+-   ****: **NEW** UI page for viewing a specific Purchase Request.
+    -   **Summary:** Dedicated page to view details of a single Purchase Request.
+    -   **Changes:** Initial page created.
 -   ****: Application constants.
     -   **Summary:** Centralizes static values.
-    -   **Changes:**  constant was removed.
--   ****: Database migration.
-    -   **Summary:** Updates  table.
-    -   **Changes:** Drops , ,  columns and adds  JSONB.
--   ****: Database migration.
-    -   **Summary:** Adds columns for CSV upload and project locking.
-    -   **Changes:** Adds  and  to , and  to .
--   ****: Temporary script.
-    -   **Summary:** Used to manually run database migrations.
-    -   **Changes:** Created to execute  directly. (Later deleted).
--   ****: **NEW** directory.
+    -   **Changes:** Added  constants (, ). Added  constants (, , ).
+-   ****: **NEW** Calculation utility functions.
+    -   **Summary:** Centralizes  and  for reuse across frontend and backend.
+    -   **Changes:** Created this file and moved calculation logic into it.
+-   ****: **NEW** Database migration.
+    -   **Summary:** Adds the  column to the  table.
+-   ****: **NEW** Database migration.
+    -   **Summary:** Creates  and  tables.
+    -   **Changes:** Modified to drop and recreate tables to fix previous  error.
+-   ****: **NEW** Database migration.
+    -   **Summary:** Modifies unique constraint on  to be composite (, ).
+-   ****: **NEW** Database migration.
+    -   **Summary:** Removes pricing-related columns from  and makes  .
+-   ****: **NEW** Database migration.
+    -   **Summary:** Implements the new junction table () architecture for PR items, and removes  from .
+-   ****: Directory.
     -   **Summary:** Stores uploaded estimation CSV files.
+
 </code_architecture>
 
 <pending_tasks>
--   Complete the  ().
--   Integrate version management APIs into the  UI for version dropdown, loading older versions, and managing Edit Estimation button visibility and behavior.
--   Integrate project locking feedback and UI elements to prevent concurrent saves/uploads.
--   Implement client-side validation logic in  for uploaded CSVs.
--   Refine the  UI and logic to handle loading older versions (disabling save) versus editing the latest version.
--   Centralize  and  into a common function for use by both the CSV uploader and the  page.
+-   Complete the UI for the Create PR page () to allow users to select/define components and quantities with the new junction table architecture.
+-   Implement the View PR page () to display PR details based on the new architecture.
+-   Integrate validation in the PR creation UI (e.g., entered quantity <= available quantity).
+-   Update PR financial summary displays based on vendor BOQ (future feature implied by removal of pricing columns from PR items).
 </pending_tasks>
 
 <current_work>
-Immediately before this summary, the AI engineer was implementing the CSV Upload feature for estimation items.
+Immediately before this summary request, the AI engineer was implementing the  feature. The database schema for PRs has undergone several major architectural changes based on user feedback, moving from a simple 1:1 item mapping to a sophisticated component-based breakdown using a junction table.
+
 **Current state:**
-1.  **Dependencies:**  has been installed for client-side CSV parsing.
-2.  **Database Migration:** A new migration script  was created to add  and  columns to the  and  tables for the project locking mechanism. The execution of this migration failed due to a database connection issue () but was deferred.
-3.  **CSV Upload UI ():** The new page for CSV uploads has been created. The  hook from  has been correctly integrated into this client-side component.
-4.  **Upload Directory:** The  directory has been created to store uploaded CSV files.
-5.  **CSV Upload API ():** This API endpoint has been created, designed to handle CSV processing, insertion into  and  within a database transaction, and project locking.
-6.  **CSV Template Download API ():** This API has been created to allow users to download a CSV template for estimation items.
-7.  **Version Management APIs:** APIs for listing estimation versions (), getting specific version details (), and loading a version from its CSV () have been created.
-The work stopped while creating the . The user confirmed previous bug fixes and requested to proceed with Phase 3 (Version Management).
+1.  **Constants:** New  constants (, , ) have been added to .
+2.  **Database Migrations:**
+    *    created initial PR tables.
+    *    fixed the unique constraint on  to be composite (, ).
+    *    removed pricing columns (, , , , , ) from  and made  .
+    *    implemented the final, sophisticated architecture, creating the  junction table and removing the direct  from . All migrations have been successfully applied.
+3.  **Schema Update:**  has been updated to reflect all the new tables and column changes.
+4.  **API Routes:**
+    *    (for listing and creating PRs) has been created.
+    *    (for fetching estimation items available for PR creation with quantity tracking) has been updated to the new junction table architecture.
+    *    (for single PR operations) has been created.
+    *   The API implementation for the new Purchase Request architecture is confirmed as complete by the last AI message.
+5.  **Frontend (Initial Structure):**
+    *    has been updated to include a Purchase Requests navigation tab.
+    *    (main PR listing page),  (dedicated PR creation page), and  (dedicated PR view page) have been created as placeholders based on the refined UX design.
+
+The work paused after confirming that all necessary APIs for the redesigned Purchase Request feature have been implemented. The next phase is to build out the frontend components.
 </current_work>
 
 <optional_next_step>
-Complete the creation of the .
+Proceed with implementing the UI for the Purchase Request feature, starting with the .
 </optional_next_step>
-

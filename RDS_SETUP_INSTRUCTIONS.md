@@ -166,7 +166,7 @@ Once the schema is imported:
 
 1. Your application `.env` is already configured ✅
 2. The Next.js server will auto-reload
-3. Visit: https://interiors-finance.preview.emergentagent.com
+3. Visit: https://finance-flow-878.preview.emergentagent.com
 4. Try to log in with Google OAuth
 5. If successful, you should see the dashboard
 
