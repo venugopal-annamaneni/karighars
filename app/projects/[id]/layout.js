@@ -54,7 +54,7 @@ function ProjectLayoutInner({ children }) {
   const [stages, setStages] = useState([]);
 
   const pathname = usePathname();
-  const last_segment = pathname.split("/").pop();
+  const last_segment = pathname.split("/")[3];
   const activeTabs = ["estimation", "customer-payments", "purchase-requests", "vendor-boqs", "vendor-payments", "ledger", "invoices", "documents", "base-rates", "details"];
   const activeTab = activeTabs.indexOf(last_segment) !== -1 ? last_segment : "estimation";
 
