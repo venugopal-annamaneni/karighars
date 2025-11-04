@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for KG Interiors Finance Platform - Invoice Management
-Tests the Invoice Management backend APIs comprehensively.
+Backend API Testing for KG Interiors Finance Platform - Purchase Request Management
+Tests the Purchase Request Management backend APIs comprehensively with Junction Table Architecture.
 """
 
 import requests
