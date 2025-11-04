@@ -52,6 +52,14 @@ export async function POST(request) {
 
 
     await query("BEGIN");
+    
+    // Make all existing estimations inactive before creating new one
+    await query(`
+        UPDATE project_estimations
+        SET is_active = false
+        WHERE project_id = $1 AND is_active = true
+      `, [body.project_id]);
+    
     const result = await query(
       `INSERT INTO project_estimations (
       project_id, created_by, version,
