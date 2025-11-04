@@ -164,7 +164,7 @@ export default function ViewPurchaseRequestPage() {
         </div>
 
         <div className="flex gap-2">
-          {canDeletePR && pr.status !== PURCHASE_REQUEST_STATUS.CANCELLED && (
+          {canDeletePR && pr.status !== 'cancelled' && (
             <Button
               variant="destructive"
               onClick={handleDeletePR}
@@ -236,96 +236,97 @@ export default function ViewPurchaseRequestPage() {
             </div>
           </div>
 
-          {pr.payment_terms && (
+          {pr.notes && (
             <div className="mt-6 pt-6 border-t space-y-1">
-              <p className="text-sm text-muted-foreground">Payment Terms</p>
-              <p>{pr.payment_terms}</p>
-            </div>
-          )}
-
-          {pr.remarks && (
-            <div className="mt-4 space-y-1">
-              <p className="text-sm text-muted-foreground">Remarks</p>
-              <p className="text-sm">{pr.remarks}</p>
+              <p className="text-sm text-muted-foreground">Notes</p>
+              <p className="text-sm">{pr.notes}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Items by Category */}
+      {/* Purchase Request Items */}
       <div className="space-y-6">
-        {Object.entries(itemsByCategory).map(([category, categoryItems]) => {
-          const categoryTotal = categoryItems.reduce((sum, item) => sum + parseFloat(item.item_total || 0), 0);
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchase Request Items</CardTitle>
+            <CardDescription>Items being ordered from the vendor</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {items.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No items in this purchase request
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {items.map((item) => (
+                  <div key={item.id} className="border rounded-lg p-4">
+                    {/* PR Item Header */}
+                    <div className="flex justify-between items-start mb-4 pb-4 border-b">
+                      <div>
+                        <h3 className="font-semibold text-lg">{item.purchase_request_item_name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Quantity: {item.quantity} {item.unit}
+                        </p>
+                        <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="mt-2">
+                          {item.status}
+                        </Badge>
+                      </div>
+                    </div>
 
-          return (
-            <Card key={category}>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="capitalize">{category}</CardTitle>
-                    <CardDescription>{categoryItems.length} items</CardDescription>
+                    {/* Estimation Links */}
+                    {item.estimation_links && item.estimation_links.length > 0 ? (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Link2 className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="text-sm font-medium">Linked to Estimation Items</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {item.estimation_links.map((link) => (
+                            <div key={link.id} className="bg-accent/50 rounded p-3 text-sm">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <p className="font-medium capitalize">
+                                    {link.estimation_item_category}
+                                  </p>
+                                  <p className="text-muted-foreground">
+                                    {link.estimation_item_room} - {link.estimation_item_name}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs text-muted-foreground">Linked Qty</p>
+                                  <p className="font-medium">{link.linked_qty}</p>
+                                </div>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-border/50 flex justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  Weightage: <span className="font-medium">{link.weightage}</span> per unit
+                                </span>
+                                {link.notes && (
+                                  <span className="text-muted-foreground italic">{link.notes}</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No estimation links</p>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Category Total</p>
-                    <p className="text-xl font-bold">{formatCurrency(categoryTotal)}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-3 text-sm font-medium">Room</th>
-                        <th className="text-left p-3 text-sm font-medium">Item Name</th>
-                        <th className="text-right p-3 text-sm font-medium">Qty</th>
-                        <th className="text-left p-3 text-sm font-medium">Unit</th>
-                        <th className="text-right p-3 text-sm font-medium">Unit Price</th>
-                        <th className="text-right p-3 text-sm font-medium">Subtotal</th>
-                        <th className="text-right p-3 text-sm font-medium">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {categoryItems.map((item) => (
-                        <tr key={item.id} className="border-t">
-                          <td className="p-3 text-sm">{item.room_name}</td>
-                          <td className="p-3 text-sm">{item.item_name}</td>
-                          <td className="p-3 text-sm text-right">{item.quantity}</td>
-                          <td className="p-3 text-sm">{item.unit}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.unit_price)}</td>
-                          <td className="p-3 text-sm text-right">{formatCurrency(item.subtotal)}</td>
-                          <td className="p-3 text-sm text-right font-medium">{formatCurrency(item.item_total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Financial Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Financial Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium">{formatCurrency(pr.total_amount)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">GST:</span>
-              <span className="font-medium">{formatCurrency(pr.gst_amount)}</span>
-            </div>
-            <div className="border-t pt-3 flex justify-between">
-              <span className="font-semibold">Total Amount:</span>
-              <span className="text-2xl font-bold">{formatCurrency(pr.final_amount)}</span>
-            </div>
-          </div>
+      {/* Info Note */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <p className="text-sm text-blue-900">
+            <strong>Note:</strong> Pricing information will be captured when the vendor provides their Bill of Quantities (BOQ). This feature is coming soon.
+          </p>
         </CardContent>
       </Card>
     </div>
