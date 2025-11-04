@@ -52,10 +52,16 @@
 - ✅ Database migrations completed (010, 011, 012, 013)
 - ✅ Junction table architecture implemented (purchase_request_estimation_links)
 - ✅ All PR API endpoints created and ready
-- ✅ Purchase Request Create UI implemented with 3-step workflow
-- ✅ Purchase Request List UI implemented
-- ✅ Purchase Request View UI implemented
-- ⏸️ Backend API testing (in progress)
+- ✅ Backend API testing completed - All tests passed
+- ✅ Two-path UI redesign completed:
+  - Mode selection screen (Full Unit vs Component-wise)
+  - Full Unit Flow: 4-step wizard with draft PR support
+  - Component Flow: Placeholder (to be implemented)
+- ✅ Backend enhancements:
+  - available-items API now shows confirmed_qty, draft_qty, available_qty
+  - POST endpoint accepts status field (draft/confirmed)
+  - GET endpoint accepts query params (status, vendor_id)
+  - New PUT endpoint for adding items to existing draft PRs
 - ⏸️ Frontend testing (pending user approval)
 
 ---
