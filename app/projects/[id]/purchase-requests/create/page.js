@@ -892,83 +892,90 @@ function ComponentFlow({ projectId, onBack }) {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {components.map((comp, index) => (
-                    <div key={index} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex justify-between items-start">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Component {index + 1}
-                        </span>
-                        {components.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeComponent(index)}
-                            className="h-8 text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Component Name *</Label>
-                          <Input
-                            placeholder="e.g., Plywood 18mm"
-                            value={comp.name}
-                            onChange={(e) => updateComponent(index, 'name', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Vendor *</Label>
-                          <Select 
-                            value={comp.vendor_id} 
-                            onValueChange={(v) => updateComponent(index, 'vendor_id', v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {vendors.map(vendor => (
-                                <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                                  {vendor.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Quantity *</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0"
-                            value={comp.quantity}
-                            onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Unit *</Label>
-                          <Input
-                            placeholder="e.g., sheets"
-                            value={comp.unit}
-                            onChange={(e) => updateComponent(index, 'unit', e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Label className="text-xs">Fulfillment % *</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="0"
-                            value={comp.percentage}
-                            onChange={(e) => updateComponent(index, 'percentage', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium w-[200px]">Component Name</th>
+                        <th className="text-left p-3 text-sm font-medium w-[180px]">Vendor</th>
+                        <th className="text-right p-3 text-sm font-medium w-[120px]">Quantity</th>
+                        <th className="text-left p-3 text-sm font-medium w-[100px]">Unit</th>
+                        <th className="text-right p-3 text-sm font-medium w-[120px]">Fulfillment %</th>
+                        <th className="text-center p-3 text-sm font-medium w-[80px]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {components.map((comp, index) => (
+                        <tr key={index} className="border-t">
+                          <td className="p-3">
+                            <Input
+                              placeholder="e.g., Plywood 18mm"
+                              value={comp.name}
+                              onChange={(e) => updateComponent(index, 'name', e.target.value)}
+                              className="h-9"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Select 
+                              value={comp.vendor_id} 
+                              onValueChange={(v) => updateComponent(index, 'vendor_id', v)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {vendors.map(vendor => (
+                                  <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                                    {vendor.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0"
+                              value={comp.quantity}
+                              onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
+                              className="h-9 text-right"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              placeholder="e.g., sheets"
+                              value={comp.unit}
+                              onChange={(e) => updateComponent(index, 'unit', e.target.value)}
+                              className="h-9"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="0"
+                              value={comp.percentage}
+                              onChange={(e) => updateComponent(index, 'percentage', e.target.value)}
+                              className="h-9 text-right"
+                            />
+                          </td>
+                          <td className="p-3 text-center">
+                            {components.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeComponent(index)}
+                                className="h-8 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
                 <Button onClick={addComponent} variant="outline" className="w-full gap-2 mt-2">
