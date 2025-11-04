@@ -125,13 +125,14 @@ export async function POST(request, { params }) {
           active,
           status,
           created_at
-        ) VALUES ($1, $2, $3, $4, true, 'confirmed', NOW())
+        ) VALUES ($1, $2, $3, $4, true, $5, NOW())
         RETURNING id
       `, [
         purchaseRequestId,
         item.name,
         item.quantity,
-        item.unit
+        item.unit,
+        status
       ]);
 
       const prItemId = prItemResult.rows[0].id;
