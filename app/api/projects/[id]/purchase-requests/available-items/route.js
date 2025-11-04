@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
-import { ESTIMATION_ITEM_STATUS } from '@/app/constants';
 
 // GET /api/projects/[id]/purchase-requests/available-items
+// Returns estimation items with fulfillment calculation via junction table
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -14,47 +14,87 @@ export async function GET(request, { params }) {
   const projectId = params.id;
 
   try {
-    // Get all estimation items with Queued status
-    const result = await query(`
+    // Get active estimation for project
+    const estimationResult = await query(`
+      SELECT id FROM project_estimations
+      WHERE project_id = $1 AND is_active = true
+      LIMIT 1
+    `, [projectId]);
+
+    if (estimationResult.rows.length === 0) {
+      return NextResponse.json({
+        items: [],
+        message: 'No active estimation found for this project'
+      });
+    }
+
+    const estimationId = estimationResult.rows[0].id;
+
+    // Calculate fulfilled quantity using junction table with weightage
+    const items = await query(`
       SELECT 
         ei.id,
         ei.category,
         ei.room_name,
         ei.item_name,
-        ei.quantity,
+        ei.quantity as total_qty,
         ei.unit,
         ei.width,
         ei.height,
-        ei.unit_price,
-        ei.subtotal,
-        ei.karighar_charges_amount,
-        ei.item_discount_amount,
-        ei.discount_kg_charges_amount,
-        ei.gst_percentage,
-        ei.gst_amount,
-        ei.item_total,
-        ei.status
+        COALESCE(
+          SUM(
+            prel.linked_qty * prel.unit_purchase_request_item_weightage
+          ) FILTER (
+            WHERE pr.status = 'confirmed' AND pri.active = true
+          ), 
+          0
+        ) as fulfilled_qty,
+        (
+          ei.quantity - COALESCE(
+            SUM(
+              prel.linked_qty * prel.unit_purchase_request_item_weightage
+            ) FILTER (
+              WHERE pr.status = 'confirmed' AND pri.active = true
+            ), 
+            0
+          )
+        ) as available_qty
       FROM estimation_items ei
-      INNER JOIN project_estimations pe ON ei.estimation_id = pe.id
-      WHERE pe.project_id = $1 
-        AND ei.status = $2
-        AND pe.is_active = true
+      LEFT JOIN purchase_request_estimation_links prel 
+        ON ei.id = prel.estimation_item_id
+      LEFT JOIN purchase_request_items pri 
+        ON prel.purchase_request_item_id = pri.id
+      LEFT JOIN purchase_requests pr 
+        ON pri.purchase_request_id = pr.id
+      WHERE ei.estimation_id = $1
+      GROUP BY ei.id
       ORDER BY ei.category, ei.room_name, ei.item_name
-    `, [projectId, ESTIMATION_ITEM_STATUS.QUEUED]);
+    `, [estimationId]);
 
-    // Group by category for easier UI rendering
+    // Group by category
     const groupedByCategory = {};
-    result.rows.forEach(item => {
+    items.rows.forEach(item => {
       if (!groupedByCategory[item.category]) {
         groupedByCategory[item.category] = [];
       }
-      groupedByCategory[item.category].push(item);
+      groupedByCategory[item.category].push({
+        ...item,
+        total_qty: parseFloat(item.total_qty),
+        fulfilled_qty: parseFloat(item.fulfilled_qty),
+        available_qty: parseFloat(item.available_qty)
+      });
     });
 
     return NextResponse.json({
-      items: result.rows,
+      estimation_id: estimationId,
+      items: items.rows.map(item => ({
+        ...item,
+        total_qty: parseFloat(item.total_qty),
+        fulfilled_qty: parseFloat(item.fulfilled_qty),
+        available_qty: parseFloat(item.available_qty)
+      })),
       grouped_by_category: groupedByCategory,
-      total_count: result.rows.length
+      total_count: items.rows.length
     });
 
   } catch (error) {
