@@ -25,6 +25,13 @@ import { toast } from 'sonner';
 import { USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
 
+// Helper function to check if unit is area-based (sqft)
+const isAreaBasedUnit = (unit) => {
+  if (!unit) return false;
+  const areaUnits = ['sqft', 'sq.ft', 'square feet', 'sq ft', 'sq. ft'];
+  return areaUnits.includes(unit.toLowerCase().trim());
+};
+
 export default function CreatePurchaseRequestPage() {
   const { data: session } = useSession();
   const params = useParams();
