@@ -28,8 +28,9 @@ import Link from 'next/link';
 // Helper function to check if unit is area-based (sqft)
 const isAreaBasedUnit = (unit) => {
   if (!unit) return false;
+  const unitLower = unit.toLowerCase().trim();
   const areaUnits = ['sqft', 'sq.ft', 'square feet', 'sq ft', 'sq. ft'];
-  return areaUnits.includes(unit.toLowerCase().trim());
+  return areaUnits.includes(unitLower);
 };
 
 export default function CreatePurchaseRequestPage() {
