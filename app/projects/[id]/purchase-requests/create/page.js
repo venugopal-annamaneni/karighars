@@ -317,7 +317,7 @@ function FullUnitFlow({ projectId, onBack }) {
           Back
         </Button>
         <h1 className="text-2xl font-bold">Full Unit Fulfillment</h1>
-        <p className="text-muted-foreground">Step {step} of 4</p>
+        <p className="text-muted-foreground">Step {step} of 3</p>
       </div>
 
       {step === 1 && (
