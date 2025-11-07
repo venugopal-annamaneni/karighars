@@ -54,17 +54,21 @@ export async function PUT(request, { params }) {
         INSERT INTO purchase_request_items (
           purchase_request_id, 
           purchase_request_item_name, 
-          quantity, 
+          quantity,
+          width,
+          height,
           unit,
           active,
           status,
           created_at
-        ) VALUES ($1, $2, $3, $4, true, 'draft', NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, true, 'draft', NOW())
         RETURNING id
       `, [
         prId,
         item.name,
         item.quantity,
+        item.width || null,
+        item.height || null,
         item.unit
       ]);
 
