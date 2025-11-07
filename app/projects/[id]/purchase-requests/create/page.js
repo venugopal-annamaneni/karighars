@@ -283,6 +283,8 @@ function FullUnitFlow({ projectId, onBack }) {
 
       const items = selectedItems.map(sel => ({
         name: sel.item.item_name,
+        width: sel.width || null,
+        height: sel.height || null,
         quantity: sel.quantity,
         unit: sel.item.unit,
         links: [{
