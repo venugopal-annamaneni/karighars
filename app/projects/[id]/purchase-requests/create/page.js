@@ -882,11 +882,38 @@ function ComponentFlow({ projectId, onBack }) {
           <Card>
             <CardHeader>
               <CardTitle>Define Components</CardTitle>
-              <CardDescription>
-                Breaking down: {selectedItem.room_name} - {selectedItem.item_name}
-              </CardDescription>
+              <CardDescription>Selected item to break down:</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Selected Item Display */}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-medium">Room</th>
+                      <th className="text-left p-3 text-sm font-medium">Item Name</th>
+                      <th className="text-right p-3 text-sm font-medium">Total</th>
+                      <th className="text-right p-3 text-sm font-medium">Confirmed</th>
+                      <th className="text-right p-3 text-sm font-medium">Draft</th>
+                      <th className="text-right p-3 text-sm font-medium">Available</th>
+                      <th className="text-left p-3 text-sm font-medium">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t bg-accent/30">
+                      <td className="p-3 text-sm">{selectedItem.room_name}</td>
+                      <td className="p-3 text-sm font-medium">{selectedItem.item_name}</td>
+                      <td className="p-3 text-sm text-right">{selectedItem.total_qty}</td>
+                      <td className="p-3 text-sm text-right">{selectedItem.confirmed_qty}</td>
+                      <td className="p-3 text-sm text-right">{selectedItem.draft_qty}</td>
+                      <td className="p-3 text-sm text-right">
+                        <span className="text-green-600 font-medium">{selectedItem.available_qty}</span>
+                      </td>
+                      <td className="p-3 text-sm">{selectedItem.unit}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               {/* Info Alert */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                 <p className="font-medium text-blue-900 mb-2">How Component Breakdown Works</p>
