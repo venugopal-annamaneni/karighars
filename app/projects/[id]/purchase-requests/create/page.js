@@ -227,11 +227,31 @@ function FullUnitFlow({ projectId, onBack }) {
       setSelectedItems(selectedItems.filter(s => s.id !== itemId));
     } else {
       setSelectedItems([...selectedItems, { 
-        id: itemId, 
+        id: itemId,
+        width: item.width || '',
+        height: item.height || '',
         quantity: item.available_qty,
         item: item 
       }]);
     }
+  };
+
+  const handleDimensionChange = (itemId, field, value) => {
+    const item = allItems.find(i => i.id === itemId);
+    const updated = selectedItems.map(s => {
+      if (s.id === itemId) {
+        const newData = { ...s, [field]: value };
+        // Auto-calculate quantity for area-based units
+        if (isAreaBasedUnit(item.unit)) {
+          const w = parseFloat(field === 'width' ? value : newData.width) || 0;
+          const h = parseFloat(field === 'height' ? value : newData.height) || 0;
+          newData.quantity = w * h;
+        }
+        return newData;
+      }
+      return s;
+    });
+    setSelectedItems(updated);
   };
 
   const handleQuantityChange = (itemId, newQty) => {
