@@ -41,6 +41,8 @@ export async function GET(request, { params }) {
         pri.id,
         pri.purchase_request_item_name,
         pri.quantity,
+        pri.width,
+        pri.height,
         pri.unit,
         pri.active,
         pri.status,
