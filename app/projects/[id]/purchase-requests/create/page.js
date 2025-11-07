@@ -470,36 +470,78 @@ function FullUnitFlow({ projectId, onBack }) {
           <Card>
             <CardHeader>
               <CardTitle>Enter Quantities</CardTitle>
-              <CardDescription>Specify how much to order for each item</CardDescription>
+              <CardDescription>Specify dimensions or quantities for each item</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg overflow-hidden">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
                       <th className="text-left p-3">Item</th>
                       <th className="text-right p-3">Available</th>
-                      <th className="text-right p-3">Order Qty</th>
+                      <th className="text-center p-3">Width</th>
+                      <th className="text-center p-3">Height</th>
+                      <th className="text-right p-3">Quantity</th>
                       <th className="text-left p-3">Unit</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedItems.map(sel => (
-                      <tr key={sel.id} className="border-t">
-                        <td className="p-3">{sel.item.item_name}</td>
-                        <td className="p-3 text-right">{sel.item.available_qty}</td>
-                        <td className="p-3">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={sel.quantity}
-                            onChange={(e) => handleQuantityChange(sel.id, e.target.value)}
-                            className="w-24 text-right"
-                          />
-                        </td>
-                        <td className="p-3">{sel.item.unit}</td>
-                      </tr>
-                    ))}
+                    {selectedItems.map(sel => {
+                      const isAreaBased = isAreaBasedUnit(sel.item.unit);
+                      return (
+                        <tr key={sel.id} className="border-t">
+                          <td className="p-3">{sel.item.item_name}</td>
+                          <td className="p-3 text-right text-green-600 font-medium">
+                            {sel.item.available_qty}
+                          </td>
+                          {isAreaBased ? (
+                            <>
+                              <td className="p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={sel.width}
+                                  onChange={(e) => handleDimensionChange(sel.id, 'width', e.target.value)}
+                                  className="w-20 text-right"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="p-3 text-center">×</td>
+                              <td className="p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={sel.height}
+                                  onChange={(e) => handleDimensionChange(sel.id, 'height', e.target.value)}
+                                  className="w-20 text-right"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="p-3 text-right font-medium">
+                                = {sel.quantity || 0}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="p-3 text-center text-muted-foreground">-</td>
+                              <td className="p-3 text-center text-muted-foreground"></td>
+                              <td className="p-3 text-center text-muted-foreground">-</td>
+                              <td className="p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={sel.quantity}
+                                  onChange={(e) => handleQuantityChange(sel.id, e.target.value)}
+                                  className="w-24 text-right"
+                                  placeholder="0"
+                                />
+                              </td>
+                            </>
+                          )}
+                          <td className="p-3">{sel.item.unit}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
