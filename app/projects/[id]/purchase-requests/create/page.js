@@ -1073,6 +1073,15 @@ function ComponentFlow({ projectId, onBack }) {
                       </p>
                     </div>
 
+                    {/* Estimation Item Being Fulfilled */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs font-medium text-blue-900 mb-1">Fulfilling Estimation Item:</p>
+                      <p className="text-sm text-blue-800">
+                        <span className="font-medium">{selectedItem.room_name}</span> - {selectedItem.item_name}
+                        <span className="text-xs ml-2">({fulfillQty} {selectedItem.unit})</span>
+                      </p>
+                    </div>
+
                     {/* Components List Table */}
                     <div className="border rounded-lg overflow-hidden">
                       <table className="w-full text-sm">
