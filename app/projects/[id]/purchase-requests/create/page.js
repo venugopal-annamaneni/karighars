@@ -237,42 +237,6 @@ function FullUnitFlow({ projectId, onBack }) {
     }
   };
 
-  const handleDimensionChange = (itemId, field, value) => {
-    const item = allItems.find(i => i.id === itemId);
-    const updated = selectedItems.map(s => {
-      if (s.id === itemId) {
-        const newData = { ...s, [field]: value };
-        // Auto-calculate quantity for area-based units
-        if (isAreaBasedUnit(item.unit)) {
-          const w = parseFloat(field === 'width' ? value : newData.width) || 0;
-          const h = parseFloat(field === 'height' ? value : newData.height) || 0;
-          newData.quantity = w * h;
-        }
-        return newData;
-      }
-      return s;
-    });
-    setSelectedItems(updated);
-  };
-
-  const handleQuantityChange = (itemId, newQty) => {
-    const item = allItems.find(i => i.id === itemId);
-    const qty = parseFloat(newQty);
-
-    if (isNaN(qty) || qty <= 0) {
-      toast.error('Quantity must be positive');
-      return;
-    }
-    if (qty > item.available_qty) {
-      toast.error(`Cannot exceed available quantity (${item.available_qty})`);
-      return;
-    }
-
-    setSelectedItems(selectedItems.map(s =>
-      s.id === itemId ? { ...s, quantity: qty } : s
-    ));
-  };
-
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
       toast.error('Please select at least one item');
