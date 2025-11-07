@@ -17,7 +17,9 @@ import {
   Calendar,
   User,
   Building2,
-  Link2
+  Link2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
