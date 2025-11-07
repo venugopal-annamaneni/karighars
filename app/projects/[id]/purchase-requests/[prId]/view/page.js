@@ -268,3 +268,125 @@ export default function ViewPurchaseRequestPage() {
     </div>
   );
 }
+
+// PR Items Table Component with expandable estimation links
+function PRItemsTable({ items }) {
+  const [expandedItems, setExpandedItems] = useState({});
+
+  const toggleItem = (itemId) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-muted">
+          <tr>
+            <th className="text-left p-3 font-medium">Item Name</th>
+            <th className="text-right p-3 font-medium">Width</th>
+            <th className="text-right p-3 font-medium">Height</th>
+            <th className="text-right p-3 font-medium">Quantity</th>
+            <th className="text-left p-3 font-medium">Unit</th>
+            <th className="text-center p-3 font-medium">Status</th>
+            <th className="text-center p-3 font-medium w-[80px]">Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => {
+            const hasLinks = item.estimation_links && item.estimation_links.length > 0;
+            const isExpanded = expandedItems[item.id];
+
+            return (
+              <>
+                {/* Main Item Row */}
+                <tr key={item.id} className="border-t hover:bg-accent/50">
+                  <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
+                  <td className="p-3 text-right">{item.width || '-'}</td>
+                  <td className="p-3 text-right">{item.height || '-'}</td>
+                  <td className="p-3 text-right font-medium">{item.quantity}</td>
+                  <td className="p-3">{item.unit}</td>
+                  <td className="p-3 text-center">
+                    <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
+                      {item.status}
+                    </Badge>
+                  </td>
+                  <td className="p-3 text-center">
+                    {hasLinks ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleItem(item.id)}
+                        className="h-8 gap-1"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronUp className="h-4 w-4" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4" />
+                            Show ({item.estimation_links.length})
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </td>
+                </tr>
+
+                {/* Expanded Estimation Links Row */}
+                {isExpanded && hasLinks && (
+                  <tr className="bg-accent/20">
+                    <td colSpan="7" className="p-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Link2 className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase">
+                            Linked Estimation Items
+                          </h4>
+                        </div>
+                        <div className="border rounded-lg overflow-hidden bg-background">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2 font-medium">Category</th>
+                                <th className="text-left p-2 font-medium">Room</th>
+                                <th className="text-left p-2 font-medium">Item</th>
+                                <th className="text-right p-2 font-medium">Linked Qty</th>
+                                <th className="text-right p-2 font-medium">Weightage</th>
+                                <th className="text-left p-2 font-medium">Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.estimation_links.map((link) => (
+                                <tr key={link.id} className="border-t">
+                                  <td className="p-2 capitalize">{link.estimation_item_category}</td>
+                                  <td className="p-2">{link.estimation_item_room}</td>
+                                  <td className="p-2">{link.estimation_item_name}</td>
+                                  <td className="p-2 text-right font-medium">{link.linked_qty}</td>
+                                  <td className="p-2 text-right">{link.weightage}</td>
+                                  <td className="p-2 text-muted-foreground italic">
+                                    {link.notes || '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
