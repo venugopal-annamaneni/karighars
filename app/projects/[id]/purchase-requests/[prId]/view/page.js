@@ -249,70 +249,7 @@ export default function ViewPurchaseRequestPage() {
                 No items in this purchase request
               </div>
             ) : (
-              <div className="space-y-6">
-                {items.map((item) => (
-                  <div key={item.id} className="border rounded-lg p-4">
-                    {/* PR Item Header */}
-                    <div className="flex justify-between items-start mb-4 pb-4 border-b">
-                      <div>
-                        <h3 className="font-semibold text-lg">{item.purchase_request_item_name}</h3>
-                        {item.width && item.height ? (
-                          <p className="text-sm text-muted-foreground">
-                            Dimensions: {item.width} × {item.height} ft = {item.quantity} {item.unit}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            Quantity: {item.quantity} {item.unit}
-                          </p>
-                        )}
-                        <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="mt-2">
-                          {item.status}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Estimation Links */}
-                    {item.estimation_links && item.estimation_links.length > 0 ? (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Link2 className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="text-sm font-medium">Linked to Estimation Items</h4>
-                        </div>
-                        <div className="space-y-2">
-                          {item.estimation_links.map((link) => (
-                            <div key={link.id} className="bg-accent/50 rounded p-3 text-sm">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <p className="font-medium capitalize">
-                                    {link.estimation_item_category}
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    {link.estimation_item_room} - {link.estimation_item_name}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-muted-foreground">Linked Qty</p>
-                                  <p className="font-medium">{link.linked_qty}</p>
-                                </div>
-                              </div>
-                              <div className="mt-2 pt-2 border-t border-border/50 flex justify-between text-xs">
-                                <span className="text-muted-foreground">
-                                  Weightage: <span className="font-medium">{link.weightage}</span> per unit
-                                </span>
-                                {link.notes && (
-                                  <span className="text-muted-foreground italic">{link.notes}</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No estimation links</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <PRItemsTable items={items} />
             )}
           </CardContent>
         </Card>
