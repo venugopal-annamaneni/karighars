@@ -633,7 +633,7 @@ function ComponentFlow({ projectId, onBack }) {
 
   const [fulfillQty, setFulfillQty] = useState('');
   const [components, setComponents] = useState([
-    { name: '', quantity: '', unit: '', vendor_id: '', percentage: '' }
+    { name: '', width: '', height: '', quantity: '', unit: '', vendor_id: '', percentage: '' }
   ]);
 
   const [prSelections, setPRSelections] = useState({}); // {vendor_id: {pr_id: 'new' or prId, delivery_date, notes}}
