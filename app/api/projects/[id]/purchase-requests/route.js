@@ -141,17 +141,21 @@ export async function POST(request, { params }) {
         INSERT INTO purchase_request_items (
           purchase_request_id, 
           purchase_request_item_name, 
-          quantity, 
+          quantity,
+          width,
+          height,
           unit,
           active,
           status,
           created_at
-        ) VALUES ($1, $2, $3, $4, true, $5, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, true, $7, NOW())
         RETURNING id
       `, [
         purchaseRequestId,
         item.name,
         item.quantity,
+        item.width || null,
+        item.height || null,
         item.unit,
         status
       ]);
