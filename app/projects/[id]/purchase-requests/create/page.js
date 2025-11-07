@@ -816,28 +816,60 @@ function ComponentFlow({ projectId, onBack }) {
               </div>
             ) : (
               <div className="space-y-6">
-                {Object.entries(groupedItems).map(([category, items]) => (
-                  <div key={category}>
-                    <h3 className="font-semibold capitalize mb-3">{category}</h3>
-                    <div className="space-y-2">
-                      {items.filter(item => item.available_qty > 0).map(item => (
-                        <button
-                          key={item.id}
-                          onClick={() => handleItemSelect(item)}
-                          className="w-full text-left p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-all"
-                        >
-                          <p className="font-medium">{item.room_name} - {item.item_name}</p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Total: {item.total_qty} {item.unit} • 
-                            Confirmed: {item.confirmed_qty} • 
-                            Draft: {item.draft_qty} • 
-                            <span className="text-green-600 font-medium">Available: {item.available_qty}</span>
-                          </p>
-                        </button>
-                      ))}
+                {Object.entries(groupedItems).map(([category, items]) => {
+                  const availableItems = items.filter(item => item.available_qty > 0);
+                  if (availableItems.length === 0) return null;
+                  
+                  return (
+                    <div key={category}>
+                      <h3 className="font-semibold capitalize mb-3">{category}</h3>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="w-12 p-3"></th>
+                              <th className="text-left p-3 text-sm font-medium">Room</th>
+                              <th className="text-left p-3 text-sm font-medium">Item Name</th>
+                              <th className="text-right p-3 text-sm font-medium">Total</th>
+                              <th className="text-right p-3 text-sm font-medium">Confirmed</th>
+                              <th className="text-right p-3 text-sm font-medium">Draft</th>
+                              <th className="text-right p-3 text-sm font-medium">Available</th>
+                              <th className="text-left p-3 text-sm font-medium">Unit</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {availableItems.map(item => (
+                              <tr 
+                                key={item.id}
+                                onClick={() => handleItemSelect(item)}
+                                className="border-t hover:bg-accent/50 cursor-pointer transition-colors"
+                              >
+                                <td className="p-3 text-center">
+                                  <input
+                                    type="radio"
+                                    name="selected-item"
+                                    checked={selectedItem?.id === item.id}
+                                    onChange={() => handleItemSelect(item)}
+                                    className="w-4 h-4 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="p-3 text-sm">{item.room_name}</td>
+                                <td className="p-3 text-sm font-medium">{item.item_name}</td>
+                                <td className="p-3 text-sm text-right">{item.total_qty}</td>
+                                <td className="p-3 text-sm text-right">{item.confirmed_qty}</td>
+                                <td className="p-3 text-sm text-right">{item.draft_qty}</td>
+                                <td className="p-3 text-sm text-right">
+                                  <span className="text-green-600 font-medium">{item.available_qty}</span>
+                                </td>
+                                <td className="p-3 text-sm">{item.unit}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
