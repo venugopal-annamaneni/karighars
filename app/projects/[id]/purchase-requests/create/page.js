@@ -1244,20 +1244,28 @@ function ComponentFlow({ projectId, onBack }) {
                         <thead className="bg-muted">
                           <tr>
                             <th className="text-left p-2 font-medium">Component</th>
+                            <th className="text-right p-2 font-medium">Width × Height</th>
                             <th className="text-right p-2 font-medium">Quantity</th>
                             <th className="text-left p-2 font-medium">Unit</th>
                             <th className="text-right p-2 font-medium">%</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {vendorComps.map((comp, idx) => (
-                            <tr key={idx} className="border-t">
-                              <td className="p-2">{comp.name}</td>
-                              <td className="p-2 text-right">{comp.quantity}</td>
-                              <td className="p-2">{comp.unit}</td>
-                              <td className="p-2 text-right">{comp.percentage}%</td>
-                            </tr>
-                          ))}
+                          {vendorComps.map((comp, idx) => {
+                            const isAreaBased = isAreaBasedUnit(comp.unit);
+                            const dimensionDisplay = isAreaBased && comp.width && comp.height 
+                              ? `${comp.width} × ${comp.height}` 
+                              : '-';
+                            return (
+                              <tr key={idx} className="border-t">
+                                <td className="p-2">{comp.name}</td>
+                                <td className="p-2 text-right text-muted-foreground">{dimensionDisplay}</td>
+                                <td className="p-2 text-right font-medium">{comp.quantity}</td>
+                                <td className="p-2">{comp.unit}</td>
+                                <td className="p-2 text-right">{comp.percentage}%</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
