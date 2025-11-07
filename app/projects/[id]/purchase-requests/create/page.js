@@ -414,16 +414,15 @@ function FullUnitFlow({ projectId, onBack }) {
                             <thead className="bg-muted">
                               <tr>
                                 <th className="w-12 p-3"></th>
-                                <th className="text-left p-3 font-medium">Room</th>
-                                <th className="text-left p-3 font-medium">Item Name</th>
-                                <th className="text-right p-3 font-medium">Width</th>
-                                <th className="text-right p-3 font-medium">Height</th>
-                                <th className="text-right p-3 font-medium">Quantity</th>
-                                <th className="text-right p-3 font-medium">Total</th>
-                                <th className="text-right p-3 font-medium">Confirmed</th>
-                                <th className="text-right p-3 font-medium">Draft</th>
-                                <th className="text-right p-3 font-medium">Available</th>
-                                <th className="text-left p-3 font-medium">Unit</th>
+                                <th className="text-left p-3 text-sm font-medium">Room</th>
+                                <th className="text-left p-3 text-sm font-medium">Item Name</th>
+                                <th className="text-left p-3 text-sm font-medium">Unit</th>
+                                <th className="text-left p-3 text-sm font-medium">Width</th>
+                                <th className="text-left p-3 text-sm font-medium">Height</th>
+                                <th className="text-right p-3 text-sm font-medium">Quantity</th>
+                                <th className="text-right p-3 text-sm font-medium">Confirmed</th>
+                                <th className="text-right p-3 text-sm font-medium">Draft</th>
+                                <th className="text-right p-3 text-sm font-medium">Pending</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -440,16 +439,23 @@ function FullUnitFlow({ projectId, onBack }) {
                                   </td>
                                   <td className="p-3">{item.room_name}</td>
                                   <td className="p-3 font-medium">{item.item_name}</td>
-                                  <td className="p-3 text-right">{item.width || '-'}</td>
-                                  <td className="p-3 text-right">{item.height || '-'}</td>
-                                  <td className="p-3 text-right">{item.quantity || '-'}</td>
-                                  <td className="p-3 text-right">{item.total_qty}</td>
-                                  <td className="p-3 text-right">{item.confirmed_qty}</td>
-                                  <td className="p-3 text-right">{item.draft_qty}</td>
-                                  <td className="p-3 text-right">
-                                    <span className="text-green-600 font-medium">{item.available_qty}</span>
-                                  </td>
                                   <td className="p-3">{item.unit}</td>
+                                  <td className="p-3 text-left">{item.width || '-'}</td>
+                                  <td className="p-3 text-left">{item.height || '-'}</td>
+                                  <td className="p-3 text-right">
+                                    {item.quantity ? `${item.quantity} ${item.unit}` : '-'}
+                                  </td>
+                                  <td className="p-3 text-right text-green-600">
+                                    {item.confirmed_qty ? `${item.confirmed_qty} ${item.unit}` : '-'}
+                                  </td>
+                                  <td className="p-3 text-right text-blue-600">
+                                    {item.draft_qty ? `${item.draft_qty} ${item.unit}` : '-'}
+                                  </td>
+                                  <td className="p-3 text-right">
+                                    <span className="text-green-600 font-medium">
+                                      {item.available_qty ? `${item.available_qty} ${item.unit}` : '-'}
+                                    </span>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
