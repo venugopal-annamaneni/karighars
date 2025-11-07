@@ -1068,87 +1068,127 @@ function ComponentFlow({ projectId, onBack }) {
                 </div>
 
                 <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-3 text-sm font-medium w-[200px]">Component Name</th>
-                        <th className="text-left p-3 text-sm font-medium w-[180px]">Vendor</th>
-                        <th className="text-right p-3 text-sm font-medium w-[120px]">Quantity</th>
-                        <th className="text-left p-3 text-sm font-medium w-[100px]">Unit</th>
-                        <th className="text-right p-3 text-sm font-medium w-[120px]">Fulfillment %</th>
-                        <th className="text-center p-3 text-sm font-medium w-[80px]">Actions</th>
+                        <th className="text-left p-3 font-medium">Component Name</th>
+                        <th className="text-left p-3 font-medium">Vendor</th>
+                        <th className="text-left p-3 font-medium">Unit</th>
+                        <th className="text-right p-3 font-medium">Width</th>
+                        <th className="text-center p-3 font-medium"></th>
+                        <th className="text-right p-3 font-medium">Height</th>
+                        <th className="text-right p-3 font-medium">Quantity</th>
+                        <th className="text-right p-3 font-medium">%</th>
+                        <th className="text-center p-3 font-medium w-[80px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {components.map((comp, index) => (
-                        <tr key={index} className="border-t">
-                          <td className="p-3">
-                            <Input
-                              placeholder="e.g., Plywood 18mm"
-                              value={comp.name}
-                              onChange={(e) => updateComponent(index, 'name', e.target.value)}
-                              className="h-9"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Select 
-                              value={comp.vendor_id} 
-                              onValueChange={(v) => updateComponent(index, 'vendor_id', v)}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {vendors.map(vendor => (
-                                  <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                                    {vendor.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0"
-                              value={comp.quantity}
-                              onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
-                              className="h-9 text-right"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              placeholder="e.g., sheets"
-                              value={comp.unit}
-                              onChange={(e) => updateComponent(index, 'unit', e.target.value)}
-                              className="h-9"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              type="number"
-                              step="0.1"
-                              placeholder="0"
-                              value={comp.percentage}
-                              onChange={(e) => updateComponent(index, 'percentage', e.target.value)}
-                              className="h-9 text-right"
-                            />
-                          </td>
-                          <td className="p-3 text-center">
-                            {components.length > 1 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeComponent(index)}
-                                className="h-8 text-destructive hover:text-destructive"
+                      {components.map((comp, index) => {
+                        const isAreaBased = isAreaBasedUnit(comp.unit);
+                        return (
+                          <tr key={index} className="border-t">
+                            <td className="p-3">
+                              <Input
+                                placeholder="e.g., Plywood 18mm"
+                                value={comp.name}
+                                onChange={(e) => updateComponent(index, 'name', e.target.value)}
+                                className="h-9"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Select 
+                                value={comp.vendor_id} 
+                                onValueChange={(v) => updateComponent(index, 'vendor_id', v)}
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {vendors.map(vendor => (
+                                    <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                                      {vendor.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                placeholder="e.g., sheets"
+                                value={comp.unit}
+                                onChange={(e) => updateComponent(index, 'unit', e.target.value)}
+                                className="h-9"
+                              />
+                            </td>
+                            {isAreaBased ? (
+                              <>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={comp.width}
+                                    onChange={(e) => updateComponent(index, 'width', e.target.value)}
+                                    className="h-9 w-20 text-right"
+                                  />
+                                </td>
+                                <td className="p-3 text-center">×</td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={comp.height}
+                                    onChange={(e) => updateComponent(index, 'height', e.target.value)}
+                                    className="h-9 w-20 text-right"
+                                  />
+                                </td>
+                                <td className="p-3 text-right font-medium">
+                                  = {comp.quantity || 0}
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="p-3 text-center text-muted-foreground">-</td>
+                                <td className="p-3"></td>
+                                <td className="p-3 text-center text-muted-foreground">-</td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={comp.quantity}
+                                    onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
+                                    className="h-9 w-24 text-right"
+                                  />
+                                </td>
+                              </>
                             )}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className="p-3">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="0"
+                                value={comp.percentage}
+                                onChange={(e) => updateComponent(index, 'percentage', e.target.value)}
+                                className="h-9 w-20 text-right"
+                              />
+                            </td>
+                            <td className="p-3 text-center">
+                              {components.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeComponent(index)}
+                                  className="h-8 text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
