@@ -432,7 +432,7 @@ function FullUnitFlow({ projectId, onBack }) {
               )}
             </CardContent>
           </Card>
-          <Button onClick={() => setStep(3)} disabled={selectedItems.length === 0}>Next: Enter Quantities</Button>
+          <Button onClick={() => setStep(3)} disabled={selectedItems.length === 0}>Next: Choose PR</Button>
         </>
       )}
 
