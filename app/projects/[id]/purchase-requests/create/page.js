@@ -816,6 +816,8 @@ function ComponentFlow({ projectId, onBack }) {
         const selection = prSelections[vendorId];
         const items = vendorComponents.map(comp => ({
           name: comp.name,
+          width: comp.width || null,
+          height: comp.height || null,
           quantity: parseFloat(comp.quantity),
           unit: comp.unit,
           links: [{
