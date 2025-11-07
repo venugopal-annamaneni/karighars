@@ -1113,12 +1113,19 @@ function ComponentFlow({ projectId, onBack }) {
                               </Select>
                             </td>
                             <td className="p-3">
-                              <Input
-                                placeholder="e.g., sheets"
-                                value={comp.unit}
-                                onChange={(e) => updateComponent(index, 'unit', e.target.value)}
-                                className="h-9"
-                              />
+                              <Select 
+                                value={comp.unit} 
+                                onValueChange={(v) => updateComponent(index, 'unit', v)}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sqft">Sq.ft</SelectItem>
+                                  <SelectItem value="no">No</SelectItem>
+                                  <SelectItem value="lumpsum">Lumpsum</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </td>
                             {isAreaBased ? (
                               <>
