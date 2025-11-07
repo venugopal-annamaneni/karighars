@@ -705,6 +705,17 @@ function ComponentFlow({ projectId, onBack }) {
   const updateComponent = (index, field, value) => {
     const updated = [...components];
     updated[index][field] = value;
+    
+    // Auto-calculate quantity for area-based units
+    if (field === 'width' || field === 'height' || field === 'unit') {
+      const comp = updated[index];
+      if (isAreaBasedUnit(comp.unit)) {
+        const w = parseFloat(comp.width) || 0;
+        const h = parseFloat(comp.height) || 0;
+        updated[index].quantity = w * h;
+      }
+    }
+    
     setComponents(updated);
   };
 
