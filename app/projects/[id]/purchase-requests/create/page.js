@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
+import {
   ArrowLeft,
   Loader2,
   PackagePlus,
@@ -72,8 +72,8 @@ export default function CreatePurchaseRequestPage() {
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
           {/* Full Unit Option */}
-          <Card 
-            className="cursor-pointer hover:border-primary transition-all" 
+          <Card
+            className="cursor-pointer hover:border-primary transition-all"
             onClick={() => setMode('full_unit')}
           >
             <CardHeader>
@@ -100,8 +100,8 @@ export default function CreatePurchaseRequestPage() {
           </Card>
 
           {/* Component Option */}
-          <Card 
-            className="cursor-pointer hover:border-primary transition-all" 
+          <Card
+            className="cursor-pointer hover:border-primary transition-all"
             onClick={() => setMode('component')}
           >
             <CardHeader>
@@ -148,7 +148,7 @@ function FullUnitFlow({ projectId, onBack }) {
 
   const [vendors, setVendors] = useState([]);
   const [selectedVendor, setSelectedVendor] = useState('');
-  
+
   const [groupedItems, setGroupedItems] = useState({});
   const [allItems, setAllItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]); // [{id, quantity}]
@@ -156,7 +156,7 @@ function FullUnitFlow({ projectId, onBack }) {
 
   const [draftPRs, setDraftPRs] = useState([]);
   const [selectedPR, setSelectedPR] = useState('new');
-  
+
   const [formData, setFormData] = useState({
     expected_delivery_date: '',
     notes: ''
@@ -223,16 +223,16 @@ function FullUnitFlow({ projectId, onBack }) {
   const handleItemToggle = (itemId) => {
     const item = allItems.find(i => i.id === itemId);
     const existing = selectedItems.find(s => s.id === itemId);
-    
+
     if (existing) {
       setSelectedItems(selectedItems.filter(s => s.id !== itemId));
     } else {
-      setSelectedItems([...selectedItems, { 
+      setSelectedItems([...selectedItems, {
         id: itemId,
         width: item.width || '',
         height: item.height || '',
         quantity: item.available_qty,
-        item: item 
+        item: item
       }]);
     }
   };
@@ -258,7 +258,7 @@ function FullUnitFlow({ projectId, onBack }) {
   const handleQuantityChange = (itemId, newQty) => {
     const item = allItems.find(i => i.id === itemId);
     const qty = parseFloat(newQty);
-    
+
     if (isNaN(qty) || qty <= 0) {
       toast.error('Quantity must be positive');
       return;
@@ -267,8 +267,8 @@ function FullUnitFlow({ projectId, onBack }) {
       toast.error(`Cannot exceed available quantity (${item.available_qty})`);
       return;
     }
-    
-    setSelectedItems(selectedItems.map(s => 
+
+    setSelectedItems(selectedItems.map(s =>
       s.id === itemId ? { ...s, quantity: qty } : s
     ));
   };
@@ -405,7 +405,7 @@ function FullUnitFlow({ projectId, onBack }) {
                   {Object.entries(groupedItems).map(([category, items]) => {
                     const availableItems = items.filter(item => item.available_qty > 0);
                     if (availableItems.length === 0) return null;
-                    
+
                     return (
                       <div key={category}>
                         <h3 className="font-semibold capitalize mb-3">{category}</h3>
@@ -428,7 +428,7 @@ function FullUnitFlow({ projectId, onBack }) {
                             </thead>
                             <tbody>
                               {availableItems.map(item => (
-                                <tr 
+                                <tr
                                   key={item.id}
                                   className="border-t hover:bg-accent/50"
                                 >
@@ -591,14 +591,14 @@ function FullUnitFlow({ projectId, onBack }) {
                     <Input
                       type="date"
                       value={formData.expected_delivery_date}
-                      onChange={(e) => setFormData({...formData, expected_delivery_date: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, expected_delivery_date: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label>Notes</Label>
                     <Textarea
                       value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       rows={3}
                     />
                   </div>
@@ -706,7 +706,7 @@ function ComponentFlow({ projectId, onBack }) {
   const updateComponent = (index, field, value) => {
     const updated = [...components];
     updated[index][field] = value;
-    
+
     // Auto-calculate quantity for area-based units
     if (field === 'width' || field === 'height' || field === 'unit') {
       const comp = updated[index];
@@ -716,7 +716,7 @@ function ComponentFlow({ projectId, onBack }) {
         updated[index].quantity = w * h;
       }
     }
-    
+
     setComponents(updated);
   };
 
@@ -771,7 +771,7 @@ function ComponentFlow({ projectId, onBack }) {
     // Group components by vendor and fetch draft PRs
     const vendorIds = [...new Set(components.map(c => c.vendor_id))];
     const selections = {};
-    
+
     for (const vendorId of vendorIds) {
       const draftPRs = await fetchDraftPRsForVendor(vendorId);
       selections[vendorId] = {
@@ -870,7 +870,7 @@ function ComponentFlow({ projectId, onBack }) {
       // Show success message
       const created = results.filter(r => r.type === 'created');
       const updated = results.filter(r => r.type === 'updated');
-      
+
       let message = '';
       if (created.length > 0) {
         message += `Created: ${created.map(r => r.pr_number).join(', ')}. `;
@@ -878,16 +878,16 @@ function ComponentFlow({ projectId, onBack }) {
       if (updated.length > 0) {
         message += `Updated ${updated.length} PR(s). `;
       }
-      
+
       toast.success(message);
 
       // Navigate to first PR
       if (results.length > 0) {
         const firstResult = results[0];
-        const targetId = firstResult.type === 'created' ? 
-          results[0].pr_id : 
+        const targetId = firstResult.type === 'created' ?
+          results[0].pr_id :
           prSelections[Object.keys(prSelections)[0]].pr_id;
-        
+
         router.push(`/projects/${projectId}/purchase-requests`);
       }
 
@@ -906,10 +906,10 @@ function ComponentFlow({ projectId, onBack }) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="gap-2 mb-2" 
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 mb-2"
           onClick={step === 1 ? onBack : () => setStep(step - 1)}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -936,7 +936,7 @@ function ComponentFlow({ projectId, onBack }) {
                 {Object.entries(groupedItems).map(([category, items]) => {
                   const availableItems = items.filter(item => item.available_qty > 0);
                   if (availableItems.length === 0) return null;
-                  
+
                   return (
                     <div key={category}>
                       <h3 className="font-semibold capitalize mb-3">{category}</h3>
@@ -947,16 +947,18 @@ function ComponentFlow({ projectId, onBack }) {
                               <th className="w-12 p-3"></th>
                               <th className="text-left p-3 text-sm font-medium">Room</th>
                               <th className="text-left p-3 text-sm font-medium">Item Name</th>
-                              <th className="text-right p-3 text-sm font-medium">Total</th>
+                              <th className="text-left p-3 text-sm font-medium">Unit</th>
+                              <th className="text-left p-3 text-sm font-medium">Width</th>
+                              <th className="text-left p-3 text-sm font-medium">Height</th>
+                              <th className="text-right p-3 text-sm font-medium">Quantity</th>
                               <th className="text-right p-3 text-sm font-medium">Confirmed</th>
                               <th className="text-right p-3 text-sm font-medium">Draft</th>
-                              <th className="text-right p-3 text-sm font-medium">Available</th>
-                              <th className="text-left p-3 text-sm font-medium">Unit</th>
+                              <th className="text-right p-3 text-sm font-medium">Pending</th>
                             </tr>
                           </thead>
                           <tbody>
                             {availableItems.map(item => (
-                              <tr 
+                              <tr
                                 key={item.id}
                                 onClick={() => handleItemSelect(item)}
                                 className="border-t hover:bg-accent/50 cursor-pointer transition-colors"
@@ -972,13 +974,16 @@ function ComponentFlow({ projectId, onBack }) {
                                 </td>
                                 <td className="p-3 text-sm">{item.room_name}</td>
                                 <td className="p-3 text-sm font-medium">{item.item_name}</td>
-                                <td className="p-3 text-sm text-right">{item.total_qty}</td>
-                                <td className="p-3 text-sm text-right">{item.confirmed_qty}</td>
-                                <td className="p-3 text-sm text-right">{item.draft_qty}</td>
-                                <td className="p-3 text-sm text-right">
-                                  <span className="text-green-600 font-medium">{item.available_qty}</span>
-                                </td>
                                 <td className="p-3 text-sm">{item.unit}</td>
+                                <td className="p-3 text-sm">{item.width ?? "-"}</td>
+                                <td className="p-3 text-sm">{item.height ?? "-"}</td>
+                                <td className="p-3 text-sm text-right">{item.total_qty} {item.unit}</td>
+                                <td className="p-3 text-sm text-right font-bold text-green-600">{item.confirmed_qty} {item.unit}</td>
+                                <td className="p-3 text-sm text-right font-bold text-blue-600">{item.draft_qty} {item.unit}</td>
+                                <td className="p-3 text-sm text-right">
+                                  <span className="text-green-600 font-medium">{item.available_qty} {item.unit}</span>
+                                </td>
+
                               </tr>
                             ))}
                           </tbody>
@@ -1009,24 +1014,30 @@ function ComponentFlow({ projectId, onBack }) {
                     <tr>
                       <th className="text-left p-3 text-sm font-medium">Room</th>
                       <th className="text-left p-3 text-sm font-medium">Item Name</th>
-                      <th className="text-right p-3 text-sm font-medium">Total</th>
+                      <th className="text-left p-3 text-sm font-medium">Unit</th>
+                      <th className="text-left p-3 text-sm font-medium">Width</th>
+                      <th className="text-left p-3 text-sm font-medium">Height</th>
+                      <th className="text-right p-3 text-sm font-medium">Quantity</th>
                       <th className="text-right p-3 text-sm font-medium">Confirmed</th>
                       <th className="text-right p-3 text-sm font-medium">Draft</th>
-                      <th className="text-right p-3 text-sm font-medium">Available</th>
-                      <th className="text-left p-3 text-sm font-medium">Unit</th>
+                      <th className="text-right p-3 text-sm font-medium">Pending</th>
+
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-t bg-accent/30">
                       <td className="p-3 text-sm">{selectedItem.room_name}</td>
                       <td className="p-3 text-sm font-medium">{selectedItem.item_name}</td>
-                      <td className="p-3 text-sm text-right">{selectedItem.total_qty}</td>
-                      <td className="p-3 text-sm text-right">{selectedItem.confirmed_qty}</td>
-                      <td className="p-3 text-sm text-right">{selectedItem.draft_qty}</td>
-                      <td className="p-3 text-sm text-right">
-                        <span className="text-green-600 font-medium">{selectedItem.available_qty}</span>
-                      </td>
                       <td className="p-3 text-sm">{selectedItem.unit}</td>
+                      <td className="p-3 text-sm">{selectedItem.width ?? "-"}</td>
+                      <td className="p-3 text-sm">{selectedItem.height ?? "-"}</td>
+                      <td className="p-3 text-sm text-right">{selectedItem.total_qty} {selectedItem.unit}</td>
+                      <td className="p-3 text-sm text-right font-bold text-green-600">{selectedItem.confirmed_qty} {selectedItem.unit}</td>
+                      <td className="p-3 text-sm text-right font-bold text-blue-600">{selectedItem.draft_qty} {selectedItem.unit}</td>
+                      <td className="p-3 text-sm text-right">
+                        <span className="text-green-600 font-medium">{selectedItem.available_qty} {selectedItem.unit}</span>
+                      </td>
+
                     </tr>
                   </tbody>
                 </table>
@@ -1043,7 +1054,7 @@ function ComponentFlow({ projectId, onBack }) {
               </div>
 
               {/* Fulfill Quantity */}
-              <div>
+              {/* <div>
                 <Label>Quantity to Fulfill</Label>
                 <div className="flex gap-2 items-center">
                   <Input
@@ -1057,7 +1068,7 @@ function ComponentFlow({ projectId, onBack }) {
                     {selectedItem.unit} (max: {selectedItem.available_qty})
                   </span>
                 </div>
-              </div>
+              </div> */}
 
               {/* Components */}
               <div>
@@ -1072,15 +1083,14 @@ function ComponentFlow({ projectId, onBack }) {
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
-                        <th className="text-left p-3 font-medium">Component Name</th>
-                        <th className="text-left p-3 font-medium">Vendor</th>
-                        <th className="text-left p-3 font-medium">Unit</th>
-                        <th className="text-right p-3 font-medium">Width</th>
-                        <th className="text-center p-3 font-medium"></th>
-                        <th className="text-right p-3 font-medium">Height</th>
-                        <th className="text-right p-3 font-medium">Quantity</th>
-                        <th className="text-right p-3 font-medium">%</th>
-                        <th className="text-center p-3 font-medium w-[80px]">Actions</th>
+                        <th className="text-left p-3 font-medium" width="30%">Component Name</th>
+                        <th className="text-left p-3 font-medium" width="10%">Vendor</th>
+                        <th className="text-left p-3 font-medium" width="5%">Unit</th>
+                        <th className="text-right p-3 font-medium" width="10%">Width</th>
+                        <th className="text-right p-3 font-medium" width="10%">Height</th>
+                        <th className="text-right p-3 font-medium" width="10%">Quantity</th>
+                        <th className="text-right p-3 font-medium" width="10%">%</th>
+                        <th className="text-center p-3 font-medium w-[80px]" width="15%">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1097,8 +1107,8 @@ function ComponentFlow({ projectId, onBack }) {
                               />
                             </td>
                             <td className="p-3">
-                              <Select 
-                                value={comp.vendor_id} 
+                              <Select
+                                value={comp.vendor_id}
                                 onValueChange={(v) => updateComponent(index, 'vendor_id', v)}
                               >
                                 <SelectTrigger className="h-9">
@@ -1114,8 +1124,8 @@ function ComponentFlow({ projectId, onBack }) {
                               </Select>
                             </td>
                             <td className="p-3">
-                              <Select 
-                                value={comp.unit} 
+                              <Select
+                                value={comp.unit}
                                 onValueChange={(v) => updateComponent(index, 'unit', v)}
                               >
                                 <SelectTrigger className="h-9">
@@ -1130,7 +1140,7 @@ function ComponentFlow({ projectId, onBack }) {
                             </td>
                             {isAreaBased ? (
                               <>
-                                <td className="p-3">
+                                <td className="p-3" align='right'>
                                   <Input
                                     type="number"
                                     step="0.01"
@@ -1140,8 +1150,7 @@ function ComponentFlow({ projectId, onBack }) {
                                     className="h-9 w-20 text-right"
                                   />
                                 </td>
-                                <td className="p-3 text-center">×</td>
-                                <td className="p-3">
+                                <td className="p-3" align='right'>
                                   <Input
                                     type="number"
                                     step="0.01"
@@ -1152,15 +1161,14 @@ function ComponentFlow({ projectId, onBack }) {
                                   />
                                 </td>
                                 <td className="p-3 text-right font-medium">
-                                  = {comp.quantity || 0}
+                                  {comp.quantity || 0}
                                 </td>
                               </>
                             ) : (
                               <>
-                                <td className="p-3 text-center text-muted-foreground">-</td>
-                                <td className="p-3"></td>
-                                <td className="p-3 text-center text-muted-foreground">-</td>
-                                <td className="p-3">
+                                <td className="p-3 text-center text-muted-foreground" align='right'>-</td>
+                                <td className="p-3 text-center text-muted-foreground" align='right'>-</td>
+                                <td className="p-3" align='right'>
                                   <Input
                                     type="number"
                                     step="0.01"
@@ -1172,7 +1180,7 @@ function ComponentFlow({ projectId, onBack }) {
                                 </td>
                               </>
                             )}
-                            <td className="p-3">
+                            <td className="p-3" align='right'>
                               <Input
                                 type="number"
                                 step="0.1"
@@ -1242,7 +1250,14 @@ function ComponentFlow({ projectId, onBack }) {
                       <p className="text-xs font-medium text-blue-900 mb-1">Fulfilling Estimation Item:</p>
                       <p className="text-sm text-blue-800">
                         <span className="font-medium">{selectedItem.room_name}</span> - {selectedItem.item_name}
-                        <span className="text-xs ml-2">({fulfillQty} {selectedItem.unit})</span>
+                        {isAreaBasedUnit(selectedItem.unit) && (
+                          <span className="text-xs ml-2">({selectedItem.width}x{selectedItem.height} {selectedItem.unit})</span>
+                        )}
+                        {!isAreaBasedUnit(selectedItem.unit) && (
+                          <span className="text-xs ml-2">({selectedItem.quantity} {selectedItem.unit})</span>
+                        )}
+
+                        
                       </p>
                     </div>
 
@@ -1261,8 +1276,8 @@ function ComponentFlow({ projectId, onBack }) {
                         <tbody>
                           {vendorComps.map((comp, idx) => {
                             const isAreaBased = isAreaBasedUnit(comp.unit);
-                            const dimensionDisplay = isAreaBased && comp.width && comp.height 
-                              ? `${comp.width} × ${comp.height}` 
+                            const dimensionDisplay = isAreaBased && comp.width && comp.height
+                              ? `${comp.width} × ${comp.height}`
                               : '-';
                             return (
                               <tr key={idx} className="border-t">
@@ -1278,8 +1293,8 @@ function ComponentFlow({ projectId, onBack }) {
                       </table>
                     </div>
 
-                    <RadioGroup 
-                      value={selection.pr_id} 
+                    <RadioGroup
+                      value={selection.pr_id}
                       onValueChange={(v) => updatePRSelection(vendorId, 'pr_id', v)}
                     >
                       {selection.draft_prs?.length > 0 && (
