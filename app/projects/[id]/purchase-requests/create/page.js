@@ -695,7 +695,7 @@ function ComponentFlow({ projectId, onBack }) {
   };
 
   const addComponent = () => {
-    setComponents([...components, { name: '', quantity: '', unit: '', vendor_id: '', percentage: '' }]);
+    setComponents([...components, { name: '', width: '', height: '', quantity: '', unit: '', vendor_id: '', percentage: '' }]);
   };
 
   const removeComponent = (index) => {
