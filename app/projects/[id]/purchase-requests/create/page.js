@@ -1069,8 +1069,32 @@ function ComponentFlow({ projectId, onBack }) {
                     <div>
                       <h3 className="font-semibold">{vendor?.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {vendorComps.length} component(s): {vendorComps.map(c => c.name).join(', ')}
+                        {vendorComps.length} component(s)
                       </p>
+                    </div>
+
+                    {/* Components List Table */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="text-left p-2 font-medium">Component</th>
+                            <th className="text-right p-2 font-medium">Quantity</th>
+                            <th className="text-left p-2 font-medium">Unit</th>
+                            <th className="text-right p-2 font-medium">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vendorComps.map((comp, idx) => (
+                            <tr key={idx} className="border-t">
+                              <td className="p-2">{comp.name}</td>
+                              <td className="p-2 text-right">{comp.quantity}</td>
+                              <td className="p-2">{comp.unit}</td>
+                              <td className="p-2 text-right">{comp.percentage}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
 
                     <RadioGroup 
@@ -1103,21 +1127,14 @@ function ComponentFlow({ projectId, onBack }) {
                     </RadioGroup>
 
                     {selection.pr_id === 'new' && (
-                      <div className="space-y-3 pt-3 border-t">
-                        <div>
-                          <Label className="text-xs">Expected Delivery</Label>
-                          <Input
-                            type="date"
-                            value={selection.delivery_date}
-                            onChange={(e) => updatePRSelection(vendorId, 'delivery_date', e.target.value)}
-                          />
-                        </div>
+                      <div className="pt-3 border-t">
                         <div>
                           <Label className="text-xs">Notes</Label>
                           <Textarea
                             value={selection.notes}
                             onChange={(e) => updatePRSelection(vendorId, 'notes', e.target.value)}
                             rows={2}
+                            placeholder="Optional notes for this PR"
                           />
                         </div>
                       </div>
