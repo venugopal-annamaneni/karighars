@@ -256,9 +256,15 @@ export default function ViewPurchaseRequestPage() {
                     <div className="flex justify-between items-start mb-4 pb-4 border-b">
                       <div>
                         <h3 className="font-semibold text-lg">{item.purchase_request_item_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity} {item.unit}
-                        </p>
+                        {item.width && item.height ? (
+                          <p className="text-sm text-muted-foreground">
+                            Dimensions: {item.width} × {item.height} ft = {item.quantity} {item.unit}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Quantity: {item.quantity} {item.unit}
+                          </p>
+                        )}
                         <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="mt-2">
                           {item.status}
                         </Badge>
