@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   ArrowLeft,
   Loader2,
   Trash2,
@@ -261,11 +261,11 @@ function PRItemsByFlowType({ items }) {
 
   items.forEach(item => {
     const hasLinks = item.estimation_links && item.estimation_links.length > 0;
-    
+
     if (hasLinks) {
       // Check if all links have weightage = 1.0 (Full Item Flow)
       const allWeightageOne = item.estimation_links.every(link => parseFloat(link.weightage) === 1.0);
-      
+
       if (allWeightageOne) {
         fullItemFlowItems.push(item);
       } else {
@@ -277,6 +277,9 @@ function PRItemsByFlowType({ items }) {
               category: link.estimation_item_category,
               room: link.estimation_item_room,
               name: link.estimation_item_name,
+              unit: link.estimation_item_unit,
+              width: link.estimation_item_width,
+              height: link.estimation_item_height,
               linked_qty: link.linked_qty,
               components: []
             };
@@ -314,22 +317,26 @@ function PRItemsByFlowType({ items }) {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
+                    <th className="text-left p-3 font-medium">Room Name</th>
+                    <th className="text-left p-3 font-medium">Category</th>
                     <th className="text-left p-3 font-medium">Item Name</th>
                     <th className="text-right p-3 font-medium">Width</th>
                     <th className="text-right p-3 font-medium">Height</th>
                     <th className="text-right p-3 font-medium">Quantity</th>
-                    <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Unit</th>
                     <th className="text-center p-3 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {fullItemFlowItems.map((item) => (
                     <tr key={item.id} className="border-t hover:bg-accent/50">
+                      <td className="p-3 font-medium">{item.estimation_links[0].estimation_item_room}</td>
+                      <td className="p-3 font-medium capitalize">{item.estimation_links[0].estimation_item_category}</td>
                       <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
                       <td className="p-3 text-right">{item.width || '-'}</td>
                       <td className="p-3 text-right">{item.height || '-'}</td>
                       <td className="p-3 text-right font-medium">{item.quantity}</td>
-                      <td className="p-3">{item.unit}</td>
+                      <td className="p-3 text-right">{item.unit}</td>
                       <td className="p-3 text-center">
                         <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
                           {item.status}
@@ -385,9 +392,12 @@ function ComponentFlowTable({ estimationItems }) {
       <table className="w-full text-sm">
         <thead className="bg-muted">
           <tr>
-            <th className="text-left p-3 font-medium">Category</th>
             <th className="text-left p-3 font-medium">Room</th>
+            <th className="text-left p-3 font-medium">Category</th>
             <th className="text-left p-3 font-medium">Estimation Item</th>
+            <th className="text-right p-3 font-medium">Width</th>
+            <th className="text-right p-3 font-medium">Height</th>
+            <th className="text-right p-3 font-medium">Unit</th>
             <th className="text-right p-3 font-medium">Quantity</th>
             <th className="text-center p-3 font-medium w-[120px]">Components</th>
           </tr>
@@ -398,12 +408,15 @@ function ComponentFlowTable({ estimationItems }) {
             const componentsCount = estItem.components.length;
 
             return (
-              <>
+              <React.Fragment key={itemKey} >
                 {/* Estimation Item Row */}
-                <tr key={itemKey} className="border-t hover:bg-accent/50">
-                  <td className="p-3 capitalize">{estItem.category}</td>
+                <tr className="border-t hover:bg-accent/50">
                   <td className="p-3">{estItem.room}</td>
+                  <td className="p-3 capitalize">{estItem.category}</td>
                   <td className="p-3 font-medium">{estItem.name}</td>
+                  <td className="p-3 text-right">{estItem.width || 0}</td>
+                  <td className="p-3 text-right">{estItem.height || 0}</td>
+                  <td className="p-3 text-right">{estItem.unit}</td>
                   <td className="p-3 text-right">{estItem.linked_qty}</td>
                   <td className="p-3 text-center">
                     <Button
@@ -430,7 +443,7 @@ function ComponentFlowTable({ estimationItems }) {
                 {/* Expanded Components Row */}
                 {isExpanded && (
                   <tr className="bg-accent/20">
-                    <td colSpan="5" className="p-4">
+                    <td colSpan="8" className="p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-2">
                           <Link2 className="h-4 w-4 text-muted-foreground" />
@@ -478,7 +491,7 @@ function ComponentFlowTable({ estimationItems }) {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             );
           })}
         </tbody>

@@ -53,6 +53,9 @@ export async function GET(request, { params }) {
             'estimation_item_name', ei.item_name,
             'estimation_item_category', ei.category,
             'estimation_item_room', ei.room_name,
+            'estimation_item_unit', ei.unit,
+            'estimation_item_width', ei.width,
+            'estimation_item_height', ei.height,
             'linked_qty', prel.linked_qty,
             'weightage', prel.unit_purchase_request_item_weightage,
             'notes', prel.notes
