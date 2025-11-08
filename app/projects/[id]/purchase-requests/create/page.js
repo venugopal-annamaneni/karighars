@@ -407,7 +407,7 @@ function FullUnitFlow({ projectId, onBack }) {
                                   <td className="p-3 text-left">{item.width || '-'}</td>
                                   <td className="p-3 text-left">{item.height || '-'}</td>
                                   <td className="p-3 text-right">
-                                    {item.quantity ? `${item.quantity} ${item.unit}` : '-'}
+                                    {item.total_qty ? `${item.total_qty} ${item.unit}` : '-'}
                                   </td>
                                   <td className="p-3 text-right text-green-600">
                                     {item.confirmed_qty ? `${item.confirmed_qty} ${item.unit}` : '-'}
