@@ -253,14 +253,130 @@ export default function ViewPurchaseRequestPage() {
   );
 }
 
-// PR Items Table Component with expandable estimation links
-function PRItemsTable({ items }) {
+// Component to display PR Items split by Flow Type
+function PRItemsByFlowType({ items }) {
+  // Separate items by flow type based on weightage
+  const fullItemFlowItems = [];
+  const componentFlowEstimationItems = {};
+
+  items.forEach(item => {
+    const hasLinks = item.estimation_links && item.estimation_links.length > 0;
+    
+    if (hasLinks) {
+      // Check if all links have weightage = 1.0 (Full Item Flow)
+      const allWeightageOne = item.estimation_links.every(link => parseFloat(link.weightage) === 1.0);
+      
+      if (allWeightageOne) {
+        fullItemFlowItems.push(item);
+      } else {
+        // Component Flow - group by estimation item
+        item.estimation_links.forEach(link => {
+          const estItemKey = link.estimation_item_id;
+          if (!componentFlowEstimationItems[estItemKey]) {
+            componentFlowEstimationItems[estItemKey] = {
+              category: link.estimation_item_category,
+              room: link.estimation_item_room,
+              name: link.estimation_item_name,
+              linked_qty: link.linked_qty,
+              components: []
+            };
+          }
+          componentFlowEstimationItems[estItemKey].components.push({
+            pr_item_name: item.purchase_request_item_name,
+            pr_item_id: item.id,
+            width: item.width,
+            height: item.height,
+            quantity: item.quantity,
+            unit: item.unit,
+            status: item.status,
+            weightage: link.weightage,
+            notes: link.notes
+          });
+        });
+      }
+    } else {
+      // No links - treat as full item flow
+      fullItemFlowItems.push(item);
+    }
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Full Item Flow Section */}
+      {fullItemFlowItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Full Item Fulfillment</CardTitle>
+            <CardDescription>Items ordered as complete units from estimation</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="text-left p-3 font-medium">Item Name</th>
+                    <th className="text-right p-3 font-medium">Width</th>
+                    <th className="text-right p-3 font-medium">Height</th>
+                    <th className="text-right p-3 font-medium">Quantity</th>
+                    <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-center p-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fullItemFlowItems.map((item) => (
+                    <tr key={item.id} className="border-t hover:bg-accent/50">
+                      <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
+                      <td className="p-3 text-right">{item.width || '-'}</td>
+                      <td className="p-3 text-right">{item.height || '-'}</td>
+                      <td className="p-3 text-right font-medium">{item.quantity}</td>
+                      <td className="p-3">{item.unit}</td>
+                      <td className="p-3 text-center">
+                        <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
+                          {item.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Component Flow Section */}
+      {Object.keys(componentFlowEstimationItems).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Component-wise Fulfillment</CardTitle>
+            <CardDescription>Estimation items fulfilled through component breakdown</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ComponentFlowTable estimationItems={componentFlowEstimationItems} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {fullItemFlowItems.length === 0 && Object.keys(componentFlowEstimationItems).length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground">No items in this purchase request</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Component Flow Table with expandable components
+function ComponentFlowTable({ estimationItems }) {
   const [expandedItems, setExpandedItems] = useState({});
 
-  const toggleItem = (itemId) => {
+  const toggleItem = (itemKey) => {
     setExpandedItems(prev => ({
       ...prev,
-      [itemId]: !prev[itemId]
+      [itemKey]: !prev[itemKey]
     }));
   };
 
@@ -269,93 +385,89 @@ function PRItemsTable({ items }) {
       <table className="w-full text-sm">
         <thead className="bg-muted">
           <tr>
-            <th className="text-left p-3 font-medium">Item Name</th>
-            <th className="text-right p-3 font-medium">Width</th>
-            <th className="text-right p-3 font-medium">Height</th>
+            <th className="text-left p-3 font-medium">Category</th>
+            <th className="text-left p-3 font-medium">Room</th>
+            <th className="text-left p-3 font-medium">Estimation Item</th>
             <th className="text-right p-3 font-medium">Quantity</th>
-            <th className="text-left p-3 font-medium">Unit</th>
-            <th className="text-center p-3 font-medium">Status</th>
-            <th className="text-center p-3 font-medium w-[80px]">Links</th>
+            <th className="text-center p-3 font-medium w-[120px]">Components</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => {
-            const hasLinks = item.estimation_links && item.estimation_links.length > 0;
-            const isExpanded = expandedItems[item.id];
+          {Object.entries(estimationItems).map(([itemKey, estItem]) => {
+            const isExpanded = expandedItems[itemKey];
+            const componentsCount = estItem.components.length;
 
             return (
               <>
-                {/* Main Item Row */}
-                <tr key={item.id} className="border-t hover:bg-accent/50">
-                  <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
-                  <td className="p-3 text-right">{item.width || '-'}</td>
-                  <td className="p-3 text-right">{item.height || '-'}</td>
-                  <td className="p-3 text-right font-medium">{item.quantity}</td>
-                  <td className="p-3">{item.unit}</td>
+                {/* Estimation Item Row */}
+                <tr key={itemKey} className="border-t hover:bg-accent/50">
+                  <td className="p-3 capitalize">{estItem.category}</td>
+                  <td className="p-3">{estItem.room}</td>
+                  <td className="p-3 font-medium">{estItem.name}</td>
+                  <td className="p-3 text-right">{estItem.linked_qty}</td>
                   <td className="p-3 text-center">
-                    <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
-                      {item.status}
-                    </Badge>
-                  </td>
-                  <td className="p-3 text-center">
-                    {hasLinks ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleItem(item.id)}
-                        className="h-8 gap-1"
-                      >
-                        {isExpanded ? (
-                          <>
-                            <ChevronUp className="h-4 w-4" />
-                            Hide
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="h-4 w-4" />
-                            Show ({item.estimation_links.length})
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleItem(itemKey)}
+                      className="h-8 gap-1"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          Hide
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show ({componentsCount})
+                        </>
+                      )}
+                    </Button>
                   </td>
                 </tr>
 
-                {/* Expanded Estimation Links Row */}
-                {isExpanded && hasLinks && (
+                {/* Expanded Components Row */}
+                {isExpanded && (
                   <tr className="bg-accent/20">
-                    <td colSpan="7" className="p-4">
+                    <td colSpan="5" className="p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-2">
                           <Link2 className="h-4 w-4 text-muted-foreground" />
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase">
-                            Linked Estimation Items
+                            Purchase Request Components
                           </h4>
                         </div>
                         <div className="border rounded-lg overflow-hidden bg-background">
                           <table className="w-full text-xs">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="text-left p-2 font-medium">Category</th>
-                                <th className="text-left p-2 font-medium">Room</th>
-                                <th className="text-left p-2 font-medium">Item</th>
-                                <th className="text-right p-2 font-medium">Linked Qty</th>
-                                <th className="text-right p-2 font-medium">Weightage</th>
+                                <th className="text-left p-2 font-medium">Component Name</th>
+                                <th className="text-right p-2 font-medium">Width</th>
+                                <th className="text-right p-2 font-medium">Height</th>
+                                <th className="text-right p-2 font-medium">Quantity</th>
+                                <th className="text-left p-2 font-medium">Unit</th>
+                                <th className="text-right p-2 font-medium">Weightage (%)</th>
+                                <th className="text-center p-2 font-medium">Status</th>
                                 <th className="text-left p-2 font-medium">Notes</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {item.estimation_links.map((link) => (
-                                <tr key={link.id} className="border-t">
-                                  <td className="p-2 capitalize">{link.estimation_item_category}</td>
-                                  <td className="p-2">{link.estimation_item_room}</td>
-                                  <td className="p-2">{link.estimation_item_name}</td>
-                                  <td className="p-2 text-right font-medium">{link.linked_qty}</td>
-                                  <td className="p-2 text-right">{link.weightage}</td>
+                              {estItem.components.map((comp, idx) => (
+                                <tr key={`${comp.pr_item_id}-${idx}`} className="border-t">
+                                  <td className="p-2 font-medium">{comp.pr_item_name}</td>
+                                  <td className="p-2 text-right">{comp.width || '-'}</td>
+                                  <td className="p-2 text-right">{comp.height || '-'}</td>
+                                  <td className="p-2 text-right">{comp.quantity}</td>
+                                  <td className="p-2">{comp.unit}</td>
+                                  <td className="p-2 text-right">{(parseFloat(comp.weightage) * 100).toFixed(1)}%</td>
+                                  <td className="p-2 text-center">
+                                    <Badge variant={comp.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
+                                      {comp.status}
+                                    </Badge>
+                                  </td>
                                   <td className="p-2 text-muted-foreground italic">
-                                    {link.notes || '-'}
+                                    {comp.notes || '-'}
                                   </td>
                                 </tr>
                               ))}
