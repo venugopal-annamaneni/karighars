@@ -407,17 +407,17 @@ function FullUnitFlow({ projectId, onBack }) {
                                   <td className="p-3 text-left">{item.width || '-'}</td>
                                   <td className="p-3 text-left">{item.height || '-'}</td>
                                   <td className="p-3 text-right">
-                                    {item.total_qty ? `${item.total_qty} ${item.unit}` : '-'}
+                                    {`${item.total_qty || 0} ${item.unit}`}
                                   </td>
                                   <td className="p-3 text-right text-green-600">
-                                    {item.confirmed_qty ? `${item.confirmed_qty} ${item.unit}` : '-'}
+                                    {`${item.confirmed_qty || 0} ${item.unit}`}
                                   </td>
                                   <td className="p-3 text-right text-blue-600">
-                                    {item.draft_qty ? `${item.draft_qty} ${item.unit}` : '-'}
+                                    {`${item.draft_qty || 0} ${item.unit}`}
                                   </td>
                                   <td className="p-3 text-right">
                                     <span className="text-green-600 font-medium">
-                                      {item.available_qty ? `${item.available_qty} ${item.unit}` : '-'}
+                                      {`${item.available_qty || 0} ${item.unit}`}
                                     </span>
                                   </td>
                                 </tr>
