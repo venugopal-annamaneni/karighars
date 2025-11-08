@@ -238,24 +238,8 @@ export default function ViewPurchaseRequestPage() {
         </CardContent>
       </Card>
 
-      {/* Purchase Request Items */}
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Purchase Request Items</CardTitle>
-            <CardDescription>Items being ordered from the vendor</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {items.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No items in this purchase request
-              </div>
-            ) : (
-              <PRItemsTable items={items} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Purchase Request Items - Split by Flow Type */}
+      <PRItemsByFlowType items={items} />
 
       {/* Info Note */}
       <Card className="bg-blue-50 border-blue-200">
