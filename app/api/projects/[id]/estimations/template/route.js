@@ -50,22 +50,61 @@ export async function GET(request, { params }) {
       'status'
     ];
 
-    // Create sample rows for each category
-    const sampleRows = categoryRates.categories
-      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(category => ({
-        category: category.id,
-        room_name: 'Sample Room',
-        item_name: `Sample ${category.category_name} Item`,
-        quantity: category.id === 'woodwork' ? '120' : '1',
-        unit: category.id === 'woodwork' ? 'sqft' : 'no',
-        unit_price: '1000',
-        width: category.id === 'woodwork' ? '10' : '',
-        height: category.id === 'woodwork' ? '12' : '',
-        item_discount_percentage: '0',
-        discount_kg_charges_percentage: '0',
-        status: ESTIMATION_ITEM_STATUS.QUEUED
+    // Fetch actual estimation items from the project's active estimation
+    const estimationItemsRes = await query(`
+      SELECT 
+        ei.category,
+        ei.room_name,
+        ei.item_name,
+        ei.quantity,
+        ei.unit,
+        ei.unit_amount as unit_price,
+        ei.width,
+        ei.height,
+        ei.item_discount_percentage,
+        ei.discount_kg_charges_percentage,
+        ei.status
+      FROM estimation_items ei
+      INNER JOIN project_estimations pe ON ei.estimation_id = pe.id
+      WHERE pe.project_id = $1 AND pe.is_active = true
+      ORDER BY ei.category, ei.room_name, ei.item_name
+    `, [projectId]);
+
+    // Use actual items if available, otherwise create sample rows
+    let dataRows;
+    if (estimationItemsRes.rows.length > 0) {
+      // Use actual estimation items
+      dataRows = estimationItemsRes.rows.map(item => ({
+        category: item.category,
+        room_name: item.room_name,
+        item_name: item.item_name,
+        quantity: item.quantity || '',
+        unit: item.unit || '',
+        unit_price: item.unit_price || '',
+        width: item.width || '',
+        height: item.height || '',
+        item_discount_percentage: item.item_discount_percentage || '0',
+        discount_kg_charges_percentage: item.discount_kg_charges_percentage || '0',
+        status: item.status || ESTIMATION_ITEM_STATUS.QUEUED
       }));
+    } else {
+      // Fallback to sample rows if no active estimation exists
+      dataRows = categoryRates.categories
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map(category => ({
+          category: category.id,
+          room_name: 'Sample Room',
+          item_name: `Sample ${category.category_name} Item`,
+          quantity: category.id === 'woodwork' ? '120' : '1',
+          unit: category.id === 'woodwork' ? 'sqft' : 'no',
+          unit_price: '1000',
+          width: category.id === 'woodwork' ? '10' : '',
+          height: category.id === 'woodwork' ? '12' : '',
+          item_discount_percentage: '0',
+          discount_kg_charges_percentage: '0',
+          status: ESTIMATION_ITEM_STATUS.QUEUED
+        }));
+    }
 
     // Generate CSV
     const csv = Papa.unparse({
