@@ -169,6 +169,10 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
     const [value, setValue] = useState(getValue() ?? "");
     useEffect(() => setValue(getValue() ?? ""), [getValue]);
 
+    // Check if basic info is complete (for fields other than room_name, category, item_name)
+    const isBasicFieldsIncomplete = !["room_name", "category", "item_name"].includes(column.id) 
+      && !isRowBasicInfoComplete(row.original);
+
     const onBlur = () => table.options.meta.updateData(row.index, column.id, value);
 
     const onKeyDown = (e) => {
