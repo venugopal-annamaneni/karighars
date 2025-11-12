@@ -22,10 +22,10 @@ export async function GET(request, { params }) {
           (SELECT COUNT(*) FROM projects WHERE status = 'active') as active_projects,
           (SELECT COALESCE(SUM(COALESCE(final_value)), 0) 
            FROM project_estimations 
-           WHERE status IN ($1, $2, $3)) as total_project_value,
-          (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE status = $4) as total_received,
+           WHERE is_active = true) as total_project_value,
+          (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE status = $1) as total_received,
           (SELECT COALESCE(SUM(amount), 0) FROM payments_out) as total_paid
-      `, [ESTIMATION_STATUS.APPROVED, ESTIMATION_STATUS.DRAFT, ESTIMATION_STATUS.FINALIZED, PAYMENT_STATUS.APPROVED]);
+      `, [PAYMENT_STATUS.APPROVED]);
         return NextResponse.json({ stats: stats.rows[0] });
       case "activities":
         const activities = await query(`

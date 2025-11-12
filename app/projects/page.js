@@ -167,8 +167,8 @@ export default function ProjectsPage() {
                               <div>
                                 <p className="text-muted-foreground">Estimated Value</p>
                                 <p className="font-medium text-green-700">
-                                  {project.estimated_value_with_gst
-                                    ? `₹${parseFloat(project.estimated_value_with_gst).toLocaleString('en-IN')}`
+                                  {project.final_value
+                                    ? `₹${parseFloat(project.final_value).toLocaleString('en-IN')}`
                                     : 'Not estimated'}
                                 </p>
                               </div>

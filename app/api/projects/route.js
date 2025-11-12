@@ -24,14 +24,12 @@ export async function GET(request, { params }) {
             c.name AS customer_name,
             u.name AS created_by_name,
             e.final_value,
-            e.gst_amount,
-            (e.final_value + COALESCE(e.gst_amount, 0)) AS estimated_value_with_gst,
             COUNT(*) OVER() AS total_records
           FROM projects p
           LEFT JOIN customers c ON p.customer_id = c.id
           LEFT JOIN users u ON p.created_by = u.id
           LEFT JOIN LATERAL (
-            SELECT final_value, gst_amount 
+            SELECT final_value
             FROM project_estimations 
             WHERE project_id = p.id 
             ORDER BY created_at DESC 
