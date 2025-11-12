@@ -234,14 +234,24 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
   }) {
     const selectRef = useRef(null);
     registerCellRef(table, row.index, column.id, selectRef);
+    
+    // Check if basic info is complete (for fields other than room_name, category, item_name)
+    const isBasicFieldsIncomplete = !["room_name", "category", "item_name"].includes(column.id) 
+      && !isRowBasicInfoComplete(row.original);
+    
     return (
       <Select
         value={getValue()}
         onValueChange={(value) =>
           table.options.meta.updateData(row.index, column.id, value)
         }
+        disabled={isBasicFieldsIncomplete}
       >
-        <SelectTrigger ref={selectRef} className="h-8 text-sm">
+        <SelectTrigger 
+          ref={selectRef} 
+          className={`h-8 text-sm ${isBasicFieldsIncomplete ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+          title={isBasicFieldsIncomplete ? "Please fill Room, Category, and Item Name first" : ""}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
