@@ -201,19 +201,22 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
       }
     };
 
+    const isReadOnly = readOnly || isBasicFieldsIncomplete;
+
     return (
       <Input
         ref={inputRef}
         type={type}
         value={value}
-        readOnly={readOnly}
+        readOnly={isReadOnly}
         onChange={(e) => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className={`h-8 text-sm ${readOnly
-          ? "bg-gray-100 text-gray-400 border-gray-200"
+        className={`h-8 text-sm ${isReadOnly
+          ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
           : "border-gray-300"
           } ${type === 'number' ? "text-right" : "text-left"}`}
+        title={isBasicFieldsIncomplete ? "Please fill Room, Category, and Item Name first" : ""}
       />
     );
   });
