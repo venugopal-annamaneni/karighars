@@ -58,7 +58,7 @@ export async function GET(request, { params }) {
         ei.item_name,
         ei.quantity,
         ei.unit,
-        ei.unit_amount as unit_price,
+        ei.unit_price,
         ei.width,
         ei.height,
         ei.item_discount_percentage,
