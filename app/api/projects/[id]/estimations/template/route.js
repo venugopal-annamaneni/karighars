@@ -109,7 +109,7 @@ export async function GET(request, { params }) {
     // Generate CSV
     const csv = Papa.unparse({
       fields: headers,
-      data: sampleRows
+      data: dataRows
     });
 
     // Return CSV file
