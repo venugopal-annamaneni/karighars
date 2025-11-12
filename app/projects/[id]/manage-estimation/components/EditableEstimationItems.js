@@ -38,6 +38,54 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
           if (i !== index) return item;
           const updated = { ...item, [field]: value };
 
+          // Validate item_discount_percentage
+          if (field === "item_discount_percentage") {
+            const discount = parseFloat(value) || 0;
+            
+            // Check for negative values
+            if (discount < 0) {
+              toast.error("Item discount cannot be negative");
+              return item; // Revert to old value
+            }
+            
+            // Check against max allowed
+            const category = baseRates.category_rates?.categories?.find(
+              (c) => c.id === item.category
+            );
+            const maxDiscount = category?.max_item_discount_percentage || 0;
+            
+            if (discount > maxDiscount) {
+              toast.error(
+                `Item discount cannot exceed ${maxDiscount}% for ${category?.category_name || 'this category'}`
+              );
+              return item; // Revert to old value
+            }
+          }
+
+          // Validate discount_kg_charges_percentage
+          if (field === "discount_kg_charges_percentage") {
+            const discount = parseFloat(value) || 0;
+            
+            // Check for negative values
+            if (discount < 0) {
+              toast.error("KG discount cannot be negative");
+              return item; // Revert to old value
+            }
+            
+            // Check against max allowed
+            const category = baseRates.category_rates?.categories?.find(
+              (c) => c.id === item.category
+            );
+            const maxDiscount = category?.max_kg_discount_percentage || 0;
+            
+            if (discount > maxDiscount) {
+              toast.error(
+                `KG discount cannot exceed ${maxDiscount}% for ${category?.category_name || 'this category'}`
+              );
+              return item; // Revert to old value
+            }
+          }
+
           // Auto compute sqft qty
           if (["width", "height", "unit"].includes(field)) {
             if (updated.unit === "sqft" && updated.width && updated.height) {
