@@ -109,6 +109,11 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
     [setData, baseRates]
   );
 
+  /** 🧩 Helper to check if basic fields are filled */
+  const isRowBasicInfoComplete = useCallback((item) => {
+    return !!(item.room_name?.trim() && item.category && item.item_name?.trim());
+  }, []);
+
   /** 🧩 Stable duplicate + remove functions */
   const duplicateItem = useCallback(
     (index) => {
