@@ -1268,7 +1268,7 @@ function ComponentFlow({ projectId, onBack }) {
       )}
     </div>
   );
-
+}
 
 // Direct Purchase Flow Component
 function DirectPurchaseFlow({ projectId, onBack }) {
@@ -1702,4 +1702,3 @@ function DirectPurchaseFlow({ projectId, onBack }) {
   );
 }
 
-}
