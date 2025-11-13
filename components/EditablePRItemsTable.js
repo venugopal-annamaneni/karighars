@@ -20,7 +20,6 @@ export const EditablePRItemsTable = memo(function EditablePRItemsTable({
       width: null,
       height: null,
       quantity: 1,
-      unit_price: null,
     };
     setItems((prev) => [...prev, newItem]);
     toast.success('New row added');
@@ -101,7 +100,6 @@ export const EditablePRItemsTable = memo(function EditablePRItemsTable({
               <th className="p-2 border-b font-semibold text-left w-[90px]">Width</th>
               <th className="p-2 border-b font-semibold text-left w-[90px]">Height</th>
               <th className="p-2 border-b font-semibold text-right w-[100px]">Quantity *</th>
-              <th className="p-2 border-b font-semibold text-right w-[120px]">Unit Price (₹)</th>
               <th className="p-2 border-b font-semibold text-center w-[100px]">Actions</th>
             </tr>
           </thead>
@@ -209,18 +207,7 @@ export const EditablePRItemsTable = memo(function EditablePRItemsTable({
                       }`}
                     />
                   </td>
-
-                  {/* Unit Price */}
-                  <td className="p-2">
-                    <Input
-                      type="number"
-                      value={item.unit_price || ''}
-                      onChange={(e) => updateItem(index, 'unit_price', e.target.value)}
-                      placeholder="Optional"
-                      className="h-8 text-sm text-right"
-                    />
-                  </td>
-
+                
                   {/* Actions */}
                   <td className="p-2">
                     <div className="flex gap-1 justify-center">
@@ -257,7 +244,6 @@ export const EditablePRItemsTable = memo(function EditablePRItemsTable({
         <ul className="space-y-1 list-disc list-inside">
           <li>Item Name and Category are required</li>
           <li>For Sq.ft unit, enter Width and Height - Quantity will auto-calculate</li>
-          <li>Unit Price is optional for draft PRs</li>
           <li>Use Duplicate button to quickly add similar items</li>
         </ul>
       </div>

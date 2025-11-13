@@ -88,10 +88,9 @@ export async function PUT(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
-            active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, true, 'draft', NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 'draft', NOW())
         `, [
           prId,
           item.name,
@@ -137,10 +136,9 @@ export async function PUT(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
-            active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, true, 'draft', NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, 'draft', NOW())
           RETURNING id
         `, [
           prId,
@@ -188,7 +186,7 @@ export async function PUT(request, { params }) {
     const allItemsResult = await query(`
       SELECT subtotal, gst_amount, item_total
       FROM purchase_request_items
-      WHERE purchase_request_id = $1 AND active = true
+      WHERE purchase_request_id = $1
     `, [prId]);
     
     const prTotals = calculatePRTotals(allItemsResult.rows);

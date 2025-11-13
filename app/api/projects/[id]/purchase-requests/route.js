@@ -177,10 +177,9 @@ export async function POST(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
-            active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, true, $15, NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, NOW())
         `, [
           purchaseRequestId,
           item.name,
@@ -227,10 +226,9 @@ export async function POST(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
-            active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, true, $13, NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, $13, NOW())
           RETURNING id
         `, [
           purchaseRequestId,
