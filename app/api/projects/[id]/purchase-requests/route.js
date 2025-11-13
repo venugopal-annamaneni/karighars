@@ -138,51 +138,87 @@ export async function POST(request, { params }) {
     const purchaseRequestId = prResult.rows[0].id;
 
     // 4. Create purchase request items and links
-    for (const item of body.items) {
-      // Insert PR item
-      const prItemResult = await query(`
-        INSERT INTO purchase_request_items (
-          purchase_request_id, 
-          purchase_request_item_name, 
-          quantity,
-          width,
-          height,
-          unit,
-          active,
-          status,
-          created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, true, $7, NOW())
-        RETURNING id
-      `, [
-        purchaseRequestId,
-        item.name,
-        item.quantity,
-        item.width || null,
-        item.height || null,
-        item.unit,
-        status
-      ]);
-
-      const prItemId = prItemResult.rows[0].id;
-
-      // Insert estimation links
-      for (const link of item.links) {
+    if (mode === 'direct') {
+      // Direct mode: Create items without estimation links
+      for (const item of body.items) {
         await query(`
-          INSERT INTO purchase_request_estimation_links (
-            estimation_item_id,
-            purchase_request_item_id,
-            linked_qty,
-            unit_purchase_request_item_weightage,
-            notes,
+          INSERT INTO purchase_request_items (
+            purchase_request_id, 
+            purchase_request_item_name,
+            category,
+            room_name,
+            quantity,
+            width,
+            height,
+            unit,
+            unit_price,
+            is_direct_purchase,
+            active,
+            status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, true, $10, NOW())
         `, [
-          link.estimation_item_id,
-          prItemId,
-          link.linked_qty,
-          link.weightage,
-          link.notes || null
+          purchaseRequestId,
+          item.name,
+          item.category,
+          item.room_name || null,
+          item.quantity,
+          item.width || null,
+          item.height || null,
+          item.unit,
+          item.unit_price || null,
+          status
         ]);
+      }
+    } else {
+      // Full unit / Component mode: Create items with estimation links
+      for (const item of body.items) {
+        // Insert PR item
+        const prItemResult = await query(`
+          INSERT INTO purchase_request_items (
+            purchase_request_id, 
+            purchase_request_item_name, 
+            quantity,
+            width,
+            height,
+            unit,
+            is_direct_purchase,
+            active,
+            status,
+            created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, false, true, $7, NOW())
+          RETURNING id
+        `, [
+          purchaseRequestId,
+          item.name,
+          item.quantity,
+          item.width || null,
+          item.height || null,
+          item.unit,
+          status
+        ]);
+
+        const prItemId = prItemResult.rows[0].id;
+
+        // Insert estimation links
+        for (const link of item.links) {
+          await query(`
+            INSERT INTO purchase_request_estimation_links (
+              estimation_item_id,
+              purchase_request_item_id,
+              linked_qty,
+              unit_purchase_request_item_weightage,
+              notes,
+              created_at
+            ) VALUES ($1, $2, $3, $4, $5, NOW())
+          `, [
+            link.estimation_item_id,
+            prItemId,
+            link.linked_qty,
+            link.weightage,
+            link.notes || null
+          ]);
+        }
       }
     }
 
