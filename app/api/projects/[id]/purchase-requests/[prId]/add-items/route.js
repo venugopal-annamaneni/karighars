@@ -26,7 +26,14 @@ export async function PUT(request, { params }) {
   try {
     await query('BEGIN');
 
-    // 1. Verify PR exists and is in draft state
+    // 1. Fetch GST percentage from project's base_rates
+    const projectResult = await query(`
+      SELECT base_rates FROM projects WHERE id = $1
+    `, [projectId]);
+    
+    const gstPercentage = projectResult.rows[0]?.base_rates?.gst_percentage || 0;
+
+    // 2. Verify PR exists and is in draft state
     const prCheck = await query(`
       SELECT id, status, vendor_id 
       FROM purchase_requests
