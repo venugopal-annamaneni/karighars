@@ -1322,11 +1322,12 @@ function DirectPurchaseFlow({ projectId, onBack }) {
 
   const fetchBaseRates = async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBaseRates(data.project.base_rates);
+      const baseRateRes = await fetch(`/api/projects/${projectId}/base-rates/active`);
+      if (!baseRateRes.ok) {
+        throw new Error('Failed to fetch active base rates');
       }
+      const baseRateData = await baseRateRes.json();
+      setBaseRates(baseRateData.activeRate);
     } catch (error) {
       console.error('Error fetching base rates:', error);
     }
