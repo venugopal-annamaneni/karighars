@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS purchase_request_items_history (
   
   -- Flags
   is_direct_purchase BOOLEAN,
-  active BOOLEAN,
   status VARCHAR(20),
   
   -- Original timestamps
