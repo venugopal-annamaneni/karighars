@@ -94,11 +94,12 @@ export async function PUT(request, { params }) {
             width,
             height,
             unit,
+            unit_price,
             is_direct_purchase,
             active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, false, true, 'draft', NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 'draft', NOW())
           RETURNING id
         `, [
           prId,
@@ -106,7 +107,8 @@ export async function PUT(request, { params }) {
           item.quantity,
           item.width || null,
           item.height || null,
-          item.unit
+          item.unit,
+          item.unit_price || null
         ]);
 
         const prItemId = prItemResult.rows[0].id;
