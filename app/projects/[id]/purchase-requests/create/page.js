@@ -72,7 +72,7 @@ export default function CreatePurchaseRequestPage() {
           <p className="text-muted-foreground">Choose how you want to fulfill items</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl">
           {/* Full Unit Option */}
           <Card
             className="cursor-pointer hover:border-primary transition-all"
