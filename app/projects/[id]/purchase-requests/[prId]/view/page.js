@@ -325,30 +325,42 @@ function PRItemsByFlowType({ items }) {
             <CardDescription>Items ordered as complete units from estimation</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
                     <th className="text-left p-3 font-medium">Room Name</th>
                     <th className="text-left p-3 font-medium">Category</th>
                     <th className="text-left p-3 font-medium">Item Name</th>
-                    <th className="text-right p-3 font-medium">Width</th>
-                    <th className="text-right p-3 font-medium">Height</th>
-                    <th className="text-right p-3 font-medium">Quantity</th>
-                    <th className="text-right p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
+                    <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Unit Price</th>
+                    <th className="text-right p-3 font-medium">Subtotal</th>
+                    <th className="text-right p-3 font-medium">GST ({fullItemFlowItems[0]?.gst_percentage || 0}%)</th>
+                    <th className="text-right p-3 font-medium">Total</th>
                     <th className="text-center p-3 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {fullItemFlowItems.map((item) => (
                     <tr key={item.id} className="border-t hover:bg-accent/50">
-                      <td className="p-3 font-medium">{item.estimation_links[0].estimation_item_room}</td>
-                      <td className="p-3 font-medium capitalize">{item.estimation_links[0].estimation_item_category}</td>
+                      <td className="p-3">{item.estimation_links[0].estimation_item_room}</td>
+                      <td className="p-3 capitalize">{item.estimation_links[0].estimation_item_category}</td>
                       <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
-                      <td className="p-3 text-right">{item.width || '-'}</td>
-                      <td className="p-3 text-right">{item.height || '-'}</td>
-                      <td className="p-3 text-right font-medium">{item.quantity}</td>
-                      <td className="p-3 text-right">{item.unit}</td>
+                      <td className="p-3 text-right">{item.quantity}</td>
+                      <td className="p-3">{item.unit}</td>
+                      <td className="p-3 text-right">
+                        {item.unit_price ? formatCurrency(item.unit_price) : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {item.subtotal ? formatCurrency(item.subtotal) : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {item.gst_amount ? formatCurrency(item.gst_amount) : '-'}
+                      </td>
+                      <td className="p-3 text-right font-medium">
+                        {item.item_total ? formatCurrency(item.item_total) : '-'}
+                      </td>
                       <td className="p-3 text-center">
                         <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
                           {item.status}
@@ -357,6 +369,21 @@ function PRItemsByFlowType({ items }) {
                     </tr>
                   ))}
                 </tbody>
+                <tfoot className="bg-muted/50 border-t-2">
+                  <tr>
+                    <td colSpan="6" className="p-3 text-right font-semibold">Total:</td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatCurrency(fullItemFlowItems.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0))}
+                    </td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatCurrency(fullItemFlowItems.reduce((sum, item) => sum + (parseFloat(item.gst_amount) || 0), 0))}
+                    </td>
+                    <td className="p-3 text-right font-semibold text-primary">
+                      {formatCurrency(fullItemFlowItems.reduce((sum, item) => sum + (parseFloat(item.item_total) || 0), 0))}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </CardContent>
