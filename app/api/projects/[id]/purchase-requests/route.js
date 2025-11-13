@@ -127,7 +127,7 @@ export async function POST(request, { params }) {
     `, [
       prNumber,
       projectId,
-      body.estimation_id,
+      mode === 'direct' ? null : body.estimation_id, // NULL for direct mode
       body.vendor_id || null,
       status,
       session.user.id,
