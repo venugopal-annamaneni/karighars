@@ -18,6 +18,7 @@ import {
   User,
   Building2,
   Link2,
+  IndianRupee,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
