@@ -255,11 +255,18 @@ export default function ViewPurchaseRequestPage() {
 
 // Component to display PR Items split by Flow Type
 function PRItemsByFlowType({ items }) {
-  // Separate items by flow type based on weightage
+  // Separate items by flow type
   const fullItemFlowItems = [];
   const componentFlowEstimationItems = {};
+  const directPurchaseItems = [];
 
   items.forEach(item => {
+    // Check if it's a direct purchase item
+    if (item.is_direct_purchase) {
+      directPurchaseItems.push(item);
+      return;
+    }
+
     const hasLinks = item.estimation_links && item.estimation_links.length > 0;
 
     if (hasLinks) {
@@ -291,6 +298,11 @@ function PRItemsByFlowType({ items }) {
             height: item.height,
             quantity: item.quantity,
             unit: item.unit,
+            unit_price: item.unit_price,
+            subtotal: item.subtotal,
+            gst_percentage: item.gst_percentage,
+            gst_amount: item.gst_amount,
+            item_total: item.item_total,
             status: item.status,
             weightage: link.weightage,
             notes: link.notes
@@ -298,7 +310,7 @@ function PRItemsByFlowType({ items }) {
         });
       }
     } else {
-      // No links - treat as full item flow
+      // No links - treat as full item flow (shouldn't happen for new items)
       fullItemFlowItems.push(item);
     }
   });
