@@ -1268,4 +1268,437 @@ function ComponentFlow({ projectId, onBack }) {
       )}
     </div>
   );
+
+
+// Direct Purchase Flow Component
+function DirectPurchaseFlow({ projectId, onBack }) {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState('');
+  const [baseRates, setBaseRates] = useState(null);
+  
+  const [items, setItems] = useState([{
+    id: Date.now(),
+    name: '',
+    category: '',
+    room_name: '',
+    unit: 'no',
+    width: null,
+    height: null,
+    quantity: 1,
+    unit_price: null,
+  }]);
+
+  const [draftPRs, setDraftPRs] = useState([]);
+  const [selectedPR, setSelectedPR] = useState('new');
+
+  const [formData, setFormData] = useState({
+    expected_delivery_date: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    fetchVendors();
+    fetchBaseRates();
+  }, [projectId]);
+
+  const fetchVendors = async () => {
+    try {
+      const res = await fetch(`/api/vendors`);
+      if (res.ok) {
+        const data = await res.json();
+        setVendors(data.vendors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBaseRates = async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBaseRates(data.project.base_rates);
+      }
+    } catch (error) {
+      console.error('Error fetching base rates:', error);
+    }
+  };
+
+  const fetchDraftPRs = async (vendorId) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/purchase-requests?status=draft&vendor_id=${vendorId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDraftPRs(data.purchase_requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching draft PRs:', error);
+    }
+  };
+
+  const handleVendorChange = (value) => {
+    setSelectedVendor(value);
+    if (value) {
+      fetchDraftPRs(value);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!selectedVendor) {
+        toast.error('Please select a vendor');
+        return;
+      }
+      setStep(2);
+    } else if (step === 2) {
+      // Validate items
+      const hasInvalidItems = items.some(item => !item.name?.trim() || !item.category);
+      if (hasInvalidItems) {
+        toast.error('Please fill Item Name and Category for all items');
+        return;
+      }
+      setStep(3);
+    } else if (step === 3) {
+      setStep(4);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 1) {
+      onBack();
+    } else {
+      setStep(step - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setSaving(true);
+
+      if (selectedPR === 'new') {
+        // Create new PR
+        const payload = {
+          mode: 'direct',
+          estimation_id: null,
+          vendor_id: parseInt(selectedVendor),
+          status: 'draft',
+          expected_delivery_date: formData.expected_delivery_date || null,
+          notes: formData.notes || null,
+          items: items.map(item => ({
+            name: item.name,
+            category: item.category,
+            room_name: item.room_name || null,
+            quantity: parseFloat(item.quantity) || 1,
+            unit: item.unit,
+            width: item.width ? parseFloat(item.width) : null,
+            height: item.height ? parseFloat(item.height) : null,
+            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+          })),
+        };
+
+        const res = await fetch(`/api/projects/${projectId}/purchase-requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          toast.success(`Purchase Request ${data.purchase_request.pr_number} created successfully!`);
+          router.push(`/projects/${projectId}/purchase-requests`);
+        } else {
+          const error = await res.json();
+          toast.error(error.error || 'Failed to create purchase request');
+        }
+      } else {
+        // Add to existing draft PR
+        const payload = {
+          items: items.map(item => ({
+            name: item.name,
+            category: item.category,
+            room_name: item.room_name || null,
+            quantity: parseFloat(item.quantity) || 1,
+            unit: item.unit,
+            width: item.width ? parseFloat(item.width) : null,
+            height: item.height ? parseFloat(item.height) : null,
+            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+          })),
+          mode: 'direct',
+        };
+
+        const res = await fetch(`/api/projects/${projectId}/purchase-requests/${selectedPR}/add-items`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          toast.success('Items added to draft PR successfully!');
+          router.push(`/projects/${projectId}/purchase-requests`);
+        } else {
+          const error = await res.json();
+          toast.error(error.error || 'Failed to add items');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting:', error);
+      toast.error('An error occurred. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <Button variant="ghost" size="sm" className="gap-2 mb-2" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+          {step === 1 ? 'Back to Mode Selection' : 'Previous Step'}
+        </Button>
+        <h1 className="text-2xl font-bold">Direct Purchase</h1>
+        <p className="text-muted-foreground">Purchase items not linked to estimation</p>
+      </div>
+
+      {/* Progress Indicator */}
+      <div className="flex items-center gap-2">
+        {[1, 2, 3, 4].map((s) => (
+          <div key={s} className="flex items-center gap-2">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                s === step
+                  ? 'bg-primary text-primary-foreground'
+                  : s < step
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {s < step ? '✓' : s}
+            </div>
+            {s < 4 && <div className="w-12 h-0.5 bg-gray-300" />}
+          </div>
+        ))}
+      </div>
+
+      {/* Step 1: Vendor & Details */}
+      {step === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 1: Vendor & Basic Details</CardTitle>
+            <CardDescription>Select vendor and enter basic information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="vendor">Vendor *</Label>
+              <Select value={selectedVendor} onValueChange={handleVendorChange}>
+                <SelectTrigger id="vendor">
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="delivery_date">Expected Delivery Date</Label>
+              <Input
+                id="delivery_date"
+                type="date"
+                value={formData.expected_delivery_date}
+                onChange={(e) => setFormData({ ...formData, expected_delivery_date: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Any special instructions or notes"
+                rows={3}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 2: Add Items */}
+      {step === 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 2: Add Items</CardTitle>
+            <CardDescription>Add all items you want to purchase</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {baseRates && (
+              <EditablePRItemsTable
+                items={items}
+                setItems={setItems}
+                categories={baseRates.category_rates?.categories || []}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3: PR Destination */}
+      {step === 3 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 3: Purchase Request Destination</CardTitle>
+            <CardDescription>Choose where to save these items</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup value={selectedPR} onValueChange={setSelectedPR}>
+              <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                <RadioGroupItem value="new" id="new" />
+                <Label htmlFor="new" className="cursor-pointer flex-1">
+                  <div className="font-medium">Create New Draft PR</div>
+                  <div className="text-sm text-muted-foreground">Start a fresh purchase request</div>
+                </Label>
+              </div>
+
+              {draftPRs.length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <p className="text-sm font-medium">Or add to existing draft:</p>
+                  {draftPRs.map((pr) => (
+                    <div key={pr.id} className="flex items-center space-x-2 p-4 border rounded-lg">
+                      <RadioGroupItem value={pr.id.toString()} id={`pr-${pr.id}`} />
+                      <Label htmlFor={`pr-${pr.id}`} className="cursor-pointer flex-1">
+                        <div className="font-medium">{pr.pr_number}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {pr.items_count} items • Created {new Date(pr.created_at).toLocaleDateString()}
+                        </div>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </RadioGroup>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 4: Review & Create */}
+      {step === 4 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 4: Review & Create</CardTitle>
+            <CardDescription>Review your purchase request before creating</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+              <div>
+                <p className="text-sm text-muted-foreground">Vendor</p>
+                <p className="font-medium">{vendors.find(v => v.id.toString() === selectedVendor)?.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Items</p>
+                <p className="font-medium">{items.length}</p>
+              </div>
+              {formData.expected_delivery_date && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Expected Delivery</p>
+                  <p className="font-medium">{new Date(formData.expected_delivery_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-muted-foreground">Destination</p>
+                <p className="font-medium">
+                  {selectedPR === 'new' ? 'New Draft PR' : draftPRs.find(pr => pr.id.toString() === selectedPR)?.pr_number}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium mb-2">Items Summary</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="text-left p-2 border-b">Item Name</th>
+                      <th className="text-left p-2 border-b">Category</th>
+                      <th className="text-left p-2 border-b">Room</th>
+                      <th className="text-right p-2 border-b">Quantity</th>
+                      <th className="text-left p-2 border-b">Unit</th>
+                      <th className="text-right p-2 border-b">Unit Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, idx) => {
+                      const category = baseRates?.category_rates?.categories?.find(c => c.id === item.category);
+                      return (
+                        <tr key={idx} className="border-b">
+                          <td className="p-2">{item.name}</td>
+                          <td className="p-2">{category?.category_name || '-'}</td>
+                          <td className="p-2">{item.room_name || '-'}</td>
+                          <td className="p-2 text-right">{item.quantity}</td>
+                          <td className="p-2">{item.unit}</td>
+                          <td className="p-2 text-right">{item.unit_price ? `₹${item.unit_price}` : '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {formData.notes && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                <p className="text-sm p-3 bg-slate-50 rounded-lg">{formData.notes}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {step === 1 ? 'Cancel' : 'Back'}
+        </Button>
+
+        {step < 4 ? (
+          <Button onClick={handleNext}>
+            Next Step
+            <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+          </Button>
+        ) : (
+          <Button onClick={handleSubmit} disabled={saving} size="lg" className="gap-2">
+            {saving ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>
+            ) : (
+              <><PackagePlus className="h-4 w-4" /> {selectedPR === 'new' ? 'Create Draft PR' : 'Add to Draft PR'}</>
+            )}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 }
