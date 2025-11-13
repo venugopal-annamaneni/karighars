@@ -162,11 +162,13 @@ export default function CreatePurchaseRequestPage() {
   }
 
   // Render appropriate flow based on mode
-  return mode === 'full_unit' ? (
-    <FullUnitFlow projectId={projectId} onBack={() => setMode(null)} />
-  ) : (
-    <ComponentFlow projectId={projectId} onBack={() => setMode(null)} />
-  );
+  if (mode === 'full_unit') {
+    return <FullUnitFlow projectId={projectId} onBack={() => setMode(null)} />;
+  } else if (mode === 'component') {
+    return <ComponentFlow projectId={projectId} onBack={() => setMode(null)} />;
+  } else if (mode === 'direct') {
+    return <DirectPurchaseFlow projectId={projectId} onBack={() => setMode(null)} />;
+  }
 }
 
 // Full Unit Flow Component
