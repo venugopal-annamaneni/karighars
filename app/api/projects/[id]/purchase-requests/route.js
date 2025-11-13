@@ -86,21 +86,24 @@ export async function POST(request, { params }) {
 
   const projectId = params.id;
   const body = await request.json();
+  const mode = body.mode || 'full_unit'; // 'full_unit', 'component', or 'direct'
 
   try {
     await query('BEGIN');
 
-    // 1. Validate estimation exists
-    const estimationCheck = await query(`
-      SELECT id FROM project_estimations
-      WHERE id = $1 AND project_id = $2 AND is_active = true
-    `, [body.estimation_id, projectId]);
+    // 1. Validate estimation exists (skip for direct mode)
+    if (mode !== 'direct') {
+      const estimationCheck = await query(`
+        SELECT id FROM project_estimations
+        WHERE id = $1 AND project_id = $2 AND is_active = true
+      `, [body.estimation_id, projectId]);
 
-    if (estimationCheck.rows.length === 0) {
-      await query('ROLLBACK');
-      return NextResponse.json({
-        error: 'Active estimation not found'
-      }, { status: 404 });
+      if (estimationCheck.rows.length === 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({
+          error: 'Active estimation not found'
+        }, { status: 404 });
+      }
     }
 
     // 2. Generate PR number
