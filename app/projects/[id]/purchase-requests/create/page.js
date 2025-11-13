@@ -128,6 +128,34 @@ export default function CreatePurchaseRequestPage() {
               </ul>
             </CardContent>
           </Card>
+
+          {/* Direct Purchase Option */}
+          <Card
+            className="cursor-pointer hover:border-primary transition-all"
+            onClick={() => setMode('direct')}
+          >
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-green-100">
+                  <ShoppingCart className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle>Direct Purchase</CardTitle>
+                  <CardDescription className="mt-2">
+                    Ad-hoc items not in estimation
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>✓ Unlinked to estimation</li>
+                <li>✓ Emergency purchases</li>
+                <li>✓ Custom item entry</li>
+                <li>✓ Quick procurement</li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
