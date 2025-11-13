@@ -182,11 +182,12 @@ export async function POST(request, { params }) {
             width,
             height,
             unit,
+            unit_price,
             is_direct_purchase,
             active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, false, true, $7, NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, NOW())
           RETURNING id
         `, [
           purchaseRequestId,
@@ -195,6 +196,7 @@ export async function POST(request, { params }) {
           item.width || null,
           item.height || null,
           item.unit,
+          item.unit_price || null,
           status
         ]);
 
