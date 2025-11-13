@@ -518,35 +518,58 @@ function ComponentFlowTable({ estimationItems }) {
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="text-left p-3 font-medium">Component Name</th>
-                    <th className="text-right p-3 font-medium">Width</th>
-                    <th className="text-right p-3 font-medium">Height</th>
-                    <th className="text-right p-3 font-medium">Quantity</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
                     <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Unit Price</th>
+                    <th className="text-right p-3 font-medium">Subtotal</th>
+                    <th className="text-right p-3 font-medium">GST ({estItem.components[0]?.gst_percentage || 0}%)</th>
+                    <th className="text-right p-3 font-medium">Total</th>
                     <th className="text-right p-3 font-medium">Weightage (%)</th>
                     <th className="text-center p-3 font-medium">Status</th>
-                    <th className="text-left p-3 font-medium">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {estItem.components.map((comp, idx) => (
                     <tr key={`${comp.pr_item_id}-${idx}`} className="border-t hover:bg-accent/50">
                       <td className="p-3 font-medium">{comp.pr_item_name}</td>
-                      <td className="p-3 text-right">{comp.width || '-'}</td>
-                      <td className="p-3 text-right">{comp.height || '-'}</td>
                       <td className="p-3 text-right">{comp.quantity}</td>
                       <td className="p-3">{comp.unit}</td>
+                      <td className="p-3 text-right">
+                        {comp.unit_price ? formatCurrency(comp.unit_price) : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {comp.subtotal ? formatCurrency(comp.subtotal) : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {comp.gst_amount ? formatCurrency(comp.gst_amount) : '-'}
+                      </td>
+                      <td className="p-3 text-right font-medium">
+                        {comp.item_total ? formatCurrency(comp.item_total) : '-'}
+                      </td>
                       <td className="p-3 text-right">{(parseFloat(comp.weightage) * 100).toFixed(1)}%</td>
                       <td className="p-3 text-center">
                         <Badge variant={comp.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
                           {comp.status}
                         </Badge>
                       </td>
-                      <td className="p-3 text-muted-foreground italic text-xs">
-                        {comp.notes || '-'}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot className="bg-muted/50 border-t-2">
+                  <tr>
+                    <td colSpan="4" className="p-3 text-right font-semibold">Total:</td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatCurrency(estItem.components.reduce((sum, comp) => sum + (parseFloat(comp.subtotal) || 0), 0))}
+                    </td>
+                    <td className="p-3 text-right font-semibold">
+                      {formatCurrency(estItem.components.reduce((sum, comp) => sum + (parseFloat(comp.gst_amount) || 0), 0))}
+                    </td>
+                    <td className="p-3 text-right font-semibold text-primary">
+                      {formatCurrency(estItem.components.reduce((sum, comp) => sum + (parseFloat(comp.item_total) || 0), 0))}
+                    </td>
+                    <td colSpan="2"></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
