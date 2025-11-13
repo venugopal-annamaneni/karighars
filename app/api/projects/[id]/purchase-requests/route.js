@@ -92,12 +92,14 @@ export async function POST(request, { params }) {
   try {
     await query('BEGIN');
 
-    // 1. Fetch GST percentage from project's base_rates
-    const projectResult = await query(`
-      SELECT base_rates FROM projects WHERE id = $1
+    // 1. Fetch GST percentage from active project_base_rates
+    const baseRateResult = await query(`
+      SELECT gst_percentage FROM project_base_rates 
+      WHERE project_id = $1 AND active = true
+      LIMIT 1
     `, [projectId]);
     
-    const gstPercentage = projectResult.rows[0]?.base_rates?.gst_percentage || 0;
+    const gstPercentage = baseRateResult.rows[0]?.gst_percentage || 0;
 
     // 2. Validate estimation exists (skip for direct mode)
     if (mode !== 'direct') {
