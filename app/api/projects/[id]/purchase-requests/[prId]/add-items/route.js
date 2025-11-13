@@ -55,12 +55,20 @@ export async function PUT(request, { params }) {
       }, { status: 400 });
     }
 
-    // 2. Add each item based on mode
+    // 3. Add each item based on mode
     let itemsAdded = 0;
+    const addedItems = []; // Track added items for totals calculation
     
     if (mode === 'direct') {
       // Direct mode: Add items without estimation links
       for (const item of body.items) {
+        // Calculate pricing
+        const pricing = calculateItemPricing(
+          item.quantity,
+          item.unit_price,
+          gstPercentage
+        );
+        
         await query(`
           INSERT INTO purchase_request_items (
             purchase_request_id, 
@@ -72,11 +80,16 @@ export async function PUT(request, { params }) {
             height,
             unit,
             unit_price,
+            subtotal,
+            gst_percentage,
+            gst_amount,
+            amount_before_gst,
+            item_total,
             is_direct_purchase,
             active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, true, 'draft', NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, true, 'draft', NOW())
         `, [
           prId,
           item.name,
@@ -86,13 +99,26 @@ export async function PUT(request, { params }) {
           item.width || null,
           item.height || null,
           item.unit,
-          item.unit_price || null
+          item.unit_price || null,
+          pricing.subtotal,
+          pricing.gst_percentage,
+          pricing.gst_amount,
+          pricing.amount_before_gst,
+          pricing.item_total
         ]);
+        addedItems.push(pricing);
         itemsAdded++;
       }
     } else {
       // Full unit / Component mode: Add items with estimation links
       for (const item of body.items) {
+        // Calculate pricing
+        const pricing = calculateItemPricing(
+          item.quantity,
+          item.unit_price,
+          gstPercentage
+        );
+        
         // Insert PR item
         const prItemResult = await query(`
           INSERT INTO purchase_request_items (
@@ -103,11 +129,16 @@ export async function PUT(request, { params }) {
             height,
             unit,
             unit_price,
+            subtotal,
+            gst_percentage,
+            gst_amount,
+            amount_before_gst,
+            item_total,
             is_direct_purchase,
             active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 'draft', NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, true, 'draft', NOW())
           RETURNING id
         `, [
           prId,
@@ -116,10 +147,16 @@ export async function PUT(request, { params }) {
           item.width || null,
           item.height || null,
           item.unit,
-          item.unit_price || null
+          item.unit_price || null,
+          pricing.subtotal,
+          pricing.gst_percentage,
+          pricing.gst_amount,
+          pricing.amount_before_gst,
+          pricing.item_total
         ]);
 
         const prItemId = prItemResult.rows[0].id;
+        addedItems.push(pricing);
 
         // Insert estimation links
         for (const link of item.links) {
