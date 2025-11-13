@@ -114,7 +114,7 @@ export async function POST(request, { params }) {
       }
     }
 
-    // 2. Generate PR number
+    // 3. Generate PR number
     const prNumberResult = await query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(pr_number FROM 'PR-${projectId}-(\\d+)') AS INTEGER)), 0) + 1 as next_seq
       FROM purchase_requests
