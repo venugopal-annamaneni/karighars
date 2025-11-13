@@ -191,7 +191,6 @@ export async function DELETE(request, { params }) {
     // 3. Create new version with items marked as deleted
     const deletedItems = stable_item_ids.map(id => ({
       stable_item_id: id,
-      active: false,
       deleted_at: new Date(),
       deleted_by: session.user.id
     }));
