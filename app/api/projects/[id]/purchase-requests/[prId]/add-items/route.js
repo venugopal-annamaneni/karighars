@@ -182,12 +182,21 @@ export async function PUT(request, { params }) {
       }
     }
 
-    // 3. Update PR updated_at timestamp
+    // 4. Recalculate PR totals from ALL items (existing + newly added)
+    const allItemsResult = await query(`
+      SELECT subtotal, gst_amount, item_total
+      FROM purchase_request_items
+      WHERE purchase_request_id = $1 AND active = true
+    `, [prId]);
+    
+    const prTotals = calculatePRTotals(allItemsResult.rows);
+    
+    // 5. Update PR with new totals and timestamp
     await query(`
       UPDATE purchase_requests
-      SET updated_at = NOW()
-      WHERE id = $1
-    `, [prId]);
+      SET items_value = $1, gst_amount = $2, final_value = $3, updated_at = NOW()
+      WHERE id = $4
+    `, [prTotals.items_value, prTotals.gst_amount, prTotals.final_value, prId]);
 
     await query('COMMIT');
 
