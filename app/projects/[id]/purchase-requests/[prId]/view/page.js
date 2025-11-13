@@ -238,6 +238,40 @@ export default function ViewPurchaseRequestPage() {
         </CardContent>
       </Card>
 
+      {/* PR Pricing Summary */}
+      {(pr.items_value || pr.gst_amount || pr.final_value) && (
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <IndianRupee className="h-5 w-5" />
+              Purchase Request Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Items Value</p>
+                <p className="text-2xl font-bold">
+                  {pr.items_value ? formatCurrency(pr.items_value) : '-'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">GST Amount</p>
+                <p className="text-2xl font-bold">
+                  {pr.gst_amount ? formatCurrency(pr.gst_amount) : '-'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Final Value</p>
+                <p className="text-3xl font-bold text-primary">
+                  {pr.final_value ? formatCurrency(pr.final_value) : '-'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Purchase Request Items - Split by Flow Type */}
       <PRItemsByFlowType items={items} />
 
