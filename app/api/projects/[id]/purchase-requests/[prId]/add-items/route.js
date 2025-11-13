@@ -193,14 +193,18 @@ export async function PUT(request, { params }) {
             INSERT INTO purchase_request_estimation_links (
               estimation_item_id,
               purchase_request_item_id,
+              stable_item_id,
+              version,
               linked_qty,
               unit_purchase_request_item_weightage,
               notes,
               created_at
-            ) VALUES ($1, $2, $3, $4, $5, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
           `, [
             link.estimation_item_id,
             prItemId,
+            stableItemId,
+            currentVersion,
             link.linked_qty,
             link.weightage,
             link.notes || null
