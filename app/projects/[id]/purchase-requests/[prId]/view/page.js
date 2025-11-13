@@ -22,7 +22,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { PURCHASE_REQUEST_STATUS, USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
 
