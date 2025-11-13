@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import { USER_ROLE } from '@/app/constants';
+import { calculateItemPricing, calculatePRTotals } from '@/lib/pricing-utils';
 
 // GET /api/projects/[id]/purchase-requests - List all purchase requests
 export async function GET(request, { params }) {
