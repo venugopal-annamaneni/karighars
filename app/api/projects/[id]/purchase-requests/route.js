@@ -231,10 +231,14 @@ export async function POST(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
+            version,
+            lifecycle_status,
+            active,
             status,
-            created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, $13, NOW())
-          RETURNING id
+            created_at,
+            created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, 1, 'pending', true, $13, NOW(), $14)
+          RETURNING id, stable_item_id
         `, [
           purchaseRequestId,
           item.name,
@@ -248,7 +252,8 @@ export async function POST(request, { params }) {
           pricing.gst_amount,
           pricing.amount_before_gst,
           pricing.item_total,
-          status
+          status,
+          session.user.id
         ]);
 
         const prItemId = prItemResult.rows[0].id;
