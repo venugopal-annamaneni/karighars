@@ -107,8 +107,12 @@ export default function ViewPurchaseRequestPage() {
       'cancelled': <XCircle className="h-4 w-4" />
     };
 
+    const className = {
+      'cancelled': 'bg-red-700 text-red-100'
+    }
+
     return (
-      <Badge variant={variants[statusLower] || 'default'} className="gap-1">
+      <Badge variant={variants[statusLower] || 'default'} className={`gap-1 ${className[statusLower]}`}>
         {icons[statusLower]}
         {status}
       </Badge>
@@ -274,13 +278,13 @@ export default function ViewPurchaseRequestPage() {
       )}
 
       {/* Purchase Request Items - Split by Flow Type */}
-      <PRItemsByFlowType items={items} />
+      <PRItemsByFlowType items={items} getStatusBadge={getStatusBadge}/>
     </div>
   );
 }
 
 // Component to display PR Items split by Flow Type
-function PRItemsByFlowType({ items }) {
+function PRItemsByFlowType({ items, getStatusBadge }) {
   // Separate items by flow type
   const fullItemFlowItems = [];
   const componentFlowEstimationItems = {};
@@ -355,16 +359,16 @@ function PRItemsByFlowType({ items }) {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="text-left p-3 font-medium">Room Name</th>
-                    <th className="text-left p-3 font-medium">Category</th>
-                    <th className="text-left p-3 font-medium">Item Name</th>
-                    <th className="text-right p-3 font-medium">Qty</th>
-                    <th className="text-left p-3 font-medium">Unit</th>
-                    <th className="text-right p-3 font-medium">Unit Price</th>
-                    <th className="text-right p-3 font-medium">Subtotal</th>
-                    <th className="text-right p-3 font-medium">GST ({fullItemFlowItems[0]?.gst_percentage || 0}%)</th>
-                    <th className="text-right p-3 font-medium">Total</th>
-                    <th className="text-center p-3 font-medium">Status</th>
+                    <th className="text-left p-3 font-medium" width="10%">Room Name</th>
+                    <th className="text-left p-3 font-medium" width="10%">Category</th>
+                    <th className="text-left p-3 font-medium" width="20%">Item Name</th>
+                    <th className="text-right p-3 font-medium" width="5%">Qty</th>
+                    <th className="text-left p-3 font-medium" width="5%"> Unit</th>
+                    <th className="text-right p-3 font-medium" width="7%">Unit Price</th>
+                    <th className="text-right p-3 font-medium" width="8%">Subtotal</th>
+                    <th className="text-right p-3 font-medium" width="5%">GST ({fullItemFlowItems[0]?.gst_percentage || 0}%)</th>
+                    <th className="text-right p-3 font-medium" width="10%">Total</th>
+                    <th className="text-center p-3 font-medium" width="10%">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -388,9 +392,10 @@ function PRItemsByFlowType({ items }) {
                         {item.item_total ? formatCurrency(item.item_total) : '-'}
                       </td>
                       <td className="p-3 text-center">
-                        <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
+                        {/* <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className={`text-xs`}>
                           {item.status}
-                        </Badge>
+                        </Badge> */}
+                        {getStatusBadge(item.status)}
                       </td>
                     </tr>
                   ))}
@@ -441,24 +446,24 @@ function PRItemsByFlowType({ items }) {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="text-left p-3 font-medium">Item Name</th>
-                    <th className="text-left p-3 font-medium">Category</th>
-                    <th className="text-left p-3 font-medium">Room</th>
-                    <th className="text-right p-3 font-medium">Qty</th>
-                    <th className="text-left p-3 font-medium">Unit</th>
-                    <th className="text-right p-3 font-medium">Unit Price</th>
-                    <th className="text-right p-3 font-medium">Subtotal</th>
+                    <th className="text-left p-3 font-medium" width="10%">Room Name</th>
+                    <th className="text-left p-3 font-medium" width="10%">Category</th>
+                    <th className="text-left p-3 font-medium" width="20%">Item Name</th>
+                    <th className="text-right p-3 font-medium" width="5%">Qty</th>
+                    <th className="text-left p-3 font-medium" width="5%"> Unit</th>
+                    <th className="text-right p-3 font-medium" width="7%">Unit Price</th>
+                    <th className="text-right p-3 font-medium" width="8%">Subtotal</th>
                     <th className="text-right p-3 font-medium">GST ({directPurchaseItems[0]?.gst_percentage || 0}%)</th>
-                    <th className="text-right p-3 font-medium">Total</th>
-                    <th className="text-center p-3 font-medium">Status</th>
+                    <th className="text-right p-3 font-medium" width="10%">Total</th>
+                    <th className="text-center p-3 font-medium" width="10%">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {directPurchaseItems.map((item) => (
                     <tr key={item.id} className="border-t hover:bg-accent/50">
-                      <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
-                      <td className="p-3 capitalize">{item.category || '-'}</td>
                       <td className="p-3">{item.room_name || '-'}</td>
+                      <td className="p-3 capitalize">{item.category || '-'}</td>
+                      <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
                       <td className="p-3 text-right">{item.quantity}</td>
                       <td className="p-3">{item.unit}</td>
                       <td className="p-3 text-right">
@@ -474,9 +479,10 @@ function PRItemsByFlowType({ items }) {
                         {item.item_total ? formatCurrency(item.item_total) : '-'}
                       </td>
                       <td className="p-3 text-center">
-                        <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
+                        {/* <Badge variant={item.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
                           {item.status}
-                        </Badge>
+                        </Badge> */}
+                        {getStatusBadge(item.status)}
                       </td>
                     </tr>
                   ))}

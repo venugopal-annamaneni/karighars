@@ -53,7 +53,6 @@ export async function GET(request, { params }) {
         pri.amount_before_gst,
         pri.item_total,
         pri.is_direct_purchase,
-        pri.active,
         pri.status,
         json_agg(
           json_build_object(
@@ -73,7 +72,7 @@ export async function GET(request, { params }) {
       FROM purchase_request_items pri
       LEFT JOIN purchase_request_estimation_links prel ON pri.id = prel.purchase_request_item_id
       LEFT JOIN estimation_items ei ON prel.estimation_item_id = ei.id
-      WHERE pri.purchase_request_id = $1 AND pri.active = true
+      WHERE pri.purchase_request_id = $1
       GROUP BY pri.id
       ORDER BY pri.id
     `, [prId]);
@@ -132,7 +131,7 @@ export async function DELETE(request, { params }) {
     // Also mark all items as cancelled
     await query(`
       UPDATE purchase_request_items
-      SET status = 'cancelled', active = false, updated_at = NOW()
+      SET status = 'cancelled', updated_at = NOW()
       WHERE purchase_request_id = $1
     `, [prId]);
 

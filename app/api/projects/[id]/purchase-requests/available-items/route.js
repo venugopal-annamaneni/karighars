@@ -46,7 +46,7 @@ export async function GET(request, { params }) {
           SUM(
             prel.linked_qty * prel.unit_purchase_request_item_weightage
           ) FILTER (
-            WHERE pr.status = 'confirmed' AND pri.active = true
+            WHERE pr.status = 'confirmed'
           ), 
           0
         ) as confirmed_qty,
@@ -54,7 +54,7 @@ export async function GET(request, { params }) {
           SUM(
             prel.linked_qty * prel.unit_purchase_request_item_weightage
           ) FILTER (
-            WHERE pr.status = 'draft' AND pri.active = true
+            WHERE pr.status = 'draft'
           ), 
           0
         ) as draft_qty,
@@ -63,7 +63,7 @@ export async function GET(request, { params }) {
             SUM(
               prel.linked_qty * prel.unit_purchase_request_item_weightage
             ) FILTER (
-              WHERE pr.status = 'confirmed' AND pri.active = true
+              WHERE pr.status = 'confirmed'
             ), 
             0
           )

@@ -1289,8 +1289,7 @@ function DirectPurchaseFlow({ projectId, onBack }) {
     unit: 'no',
     width: null,
     height: null,
-    quantity: 1,
-    unit_price: null,
+    quantity: 1
   }]);
 
   const [draftPRs, setDraftPRs] = useState([]);
@@ -1400,8 +1399,7 @@ function DirectPurchaseFlow({ projectId, onBack }) {
             quantity: parseFloat(item.quantity) || 1,
             unit: item.unit,
             width: item.width ? parseFloat(item.width) : null,
-            height: item.height ? parseFloat(item.height) : null,
-            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+            height: item.height ? parseFloat(item.height) : null
           })),
         };
 
@@ -1429,8 +1427,7 @@ function DirectPurchaseFlow({ projectId, onBack }) {
             quantity: parseFloat(item.quantity) || 1,
             unit: item.unit,
             width: item.width ? parseFloat(item.width) : null,
-            height: item.height ? parseFloat(item.height) : null,
-            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+            height: item.height ? parseFloat(item.height) : null
           })),
           mode: 'direct',
         };
@@ -1644,7 +1641,6 @@ function DirectPurchaseFlow({ projectId, onBack }) {
                       <th className="text-left p-2 border-b">Room</th>
                       <th className="text-right p-2 border-b">Quantity</th>
                       <th className="text-left p-2 border-b">Unit</th>
-                      <th className="text-right p-2 border-b">Unit Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1657,7 +1653,6 @@ function DirectPurchaseFlow({ projectId, onBack }) {
                           <td className="p-2">{item.room_name || '-'}</td>
                           <td className="p-2 text-right">{item.quantity}</td>
                           <td className="p-2">{item.unit}</td>
-                          <td className="p-2 text-right">{item.unit_price ? `₹${item.unit_price}` : '-'}</td>
                         </tr>
                       );
                     })}

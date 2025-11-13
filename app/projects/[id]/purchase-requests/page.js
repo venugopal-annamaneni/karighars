@@ -71,8 +71,12 @@ export default function PurchaseRequestsPage() {
       'cancelled': <XCircle className="h-3 w-3" />
     };
 
+    const className = {
+      'cancelled': 'bg-red-700 text-red-100'
+    }
+
     return (
-      <Badge variant={variants[statusLower] || 'default'} className="gap-1">
+      <Badge variant={variants[statusLower] || 'default'} className={`gap-1 ${className[statusLower]}`}>
         {icons[statusLower]}
         {status}
       </Badge>
