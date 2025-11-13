@@ -275,15 +275,6 @@ export default function ViewPurchaseRequestPage() {
 
       {/* Purchase Request Items - Split by Flow Type */}
       <PRItemsByFlowType items={items} />
-
-      {/* Info Note */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <p className="text-sm text-blue-900">
-            <strong>Note:</strong> Pricing information will be captured when the vendor provides their Bill of Quantities (BOQ). This feature is coming soon.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
