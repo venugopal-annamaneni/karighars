@@ -19,11 +19,13 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
-  Layers
+  Layers,
+  ShoppingCart
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
+import { EditablePRItemsTable } from '@/components/EditablePRItemsTable';
 
 // Helper function to check if unit is area-based (sqft)
 const isAreaBasedUnit = (unit) => {
