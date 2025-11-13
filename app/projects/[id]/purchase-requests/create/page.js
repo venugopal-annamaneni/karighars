@@ -41,7 +41,7 @@ export default function CreatePurchaseRequestPage() {
   const router = useRouter();
   const projectId = params.id;
 
-  const [mode, setMode] = useState(null); // 'full_unit' or 'component'
+  const [mode, setMode] = useState(null); // 'full_unit', 'component', or 'direct'
   const [loading, setLoading] = useState(true);
 
   const canCreatePR = session?.user?.role === USER_ROLE.ESTIMATOR || session?.user?.role === USER_ROLE.ADMIN;
