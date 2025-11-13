@@ -19,6 +19,7 @@ import {
   Building2,
   Link2,
   IndianRupee,
+  Edit3,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
