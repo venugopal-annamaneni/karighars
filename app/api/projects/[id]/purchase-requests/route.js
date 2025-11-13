@@ -202,6 +202,13 @@ export async function POST(request, { params }) {
     } else {
       // Full unit / Component mode: Create items with estimation links
       for (const item of body.items) {
+        // Calculate pricing
+        const pricing = calculateItemPricing(
+          item.quantity,
+          item.unit_price,
+          gstPercentage
+        );
+        
         // Insert PR item
         const prItemResult = await query(`
           INSERT INTO purchase_request_items (
@@ -212,11 +219,16 @@ export async function POST(request, { params }) {
             height,
             unit,
             unit_price,
+            subtotal,
+            gst_percentage,
+            gst_amount,
+            amount_before_gst,
+            item_total,
             is_direct_purchase,
             active,
             status,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, NOW())
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, true, $13, NOW())
           RETURNING id
         `, [
           purchaseRequestId,
@@ -226,10 +238,16 @@ export async function POST(request, { params }) {
           item.height || null,
           item.unit,
           item.unit_price || null,
+          pricing.subtotal,
+          pricing.gst_percentage,
+          pricing.gst_amount,
+          pricing.amount_before_gst,
+          pricing.item_total,
           status
         ]);
 
         const prItemId = prItemResult.rows[0].id;
+        createdItems.push(pricing);
 
         // Insert estimation links
         for (const link of item.links) {
