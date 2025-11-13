@@ -162,6 +162,15 @@ export default function ViewPurchaseRequestPage() {
         </div>
 
         <div className="flex gap-2">
+          {canDeletePR && (
+            <Link href={`/projects/${projectId}/purchase-requests/${prId}/edit`}>
+              <Button variant="outline" className="gap-2">
+                <Edit3 className="h-4 w-4" />
+                Edit PR
+              </Button>
+            </Link>
+          )}
+          
           {canDeletePR && pr.status !== 'cancelled' && (
             <Button
               variant="destructive"
