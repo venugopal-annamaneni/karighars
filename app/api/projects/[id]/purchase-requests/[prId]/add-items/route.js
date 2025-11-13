@@ -126,6 +126,14 @@ export async function PUT(request, { params }) {
       }
     } else {
       // Full unit / Component mode: Add items with estimation links
+      // Get current version first
+      const versionResult = await query(`
+        SELECT COALESCE(MAX(version), 0) as current_version
+        FROM purchase_request_items
+        WHERE purchase_request_id = $1
+      `, [prId]);
+      const currentVersion = versionResult.rows[0].current_version || 1;
+      
       for (const item of body.items) {
         // Calculate pricing
         const pricing = calculateItemPricing(
@@ -150,10 +158,14 @@ export async function PUT(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
+            version,
+            lifecycle_status,
+            active,
             status,
-            created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, 'draft', NOW())
-          RETURNING id
+            created_at,
+            created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, $13, 'pending', true, 'draft', NOW(), $14)
+          RETURNING id, stable_item_id
         `, [
           prId,
           item.name,
@@ -166,10 +178,13 @@ export async function PUT(request, { params }) {
           pricing.gst_percentage,
           pricing.gst_amount,
           pricing.amount_before_gst,
-          pricing.item_total
+          pricing.item_total,
+          currentVersion,
+          session.user.id
         ]);
 
         const prItemId = prItemResult.rows[0].id;
+        const stableItemId = prItemResult.rows[0].stable_item_id;
         addedItems.push(pricing);
 
         // Insert estimation links
