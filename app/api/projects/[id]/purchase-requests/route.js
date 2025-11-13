@@ -271,6 +271,14 @@ export async function POST(request, { params }) {
       }
     }
 
+    // 6. Calculate and update PR totals
+    const prTotals = calculatePRTotals(createdItems);
+    await query(`
+      UPDATE purchase_requests
+      SET items_value = $1, gst_amount = $2, final_value = $3
+      WHERE id = $4
+    `, [prTotals.items_value, prTotals.gst_amount, prTotals.final_value, purchaseRequestId]);
+
     await query('COMMIT');
 
     return NextResponse.json({
