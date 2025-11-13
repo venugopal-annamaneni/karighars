@@ -71,6 +71,14 @@ export async function PUT(request, { params }) {
           gstPercentage
         );
         
+        // Get current version
+        const versionResult = await query(`
+          SELECT COALESCE(MAX(version), 0) as current_version
+          FROM purchase_request_items
+          WHERE purchase_request_id = $1
+        `, [prId]);
+        const currentVersion = versionResult.rows[0].current_version || 1;
+        
         await query(`
           INSERT INTO purchase_request_items (
             purchase_request_id, 
@@ -88,9 +96,13 @@ export async function PUT(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
+            version,
+            lifecycle_status,
+            active,
             status,
-            created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 'draft', NOW())
+            created_at,
+            created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, 'pending', true, 'draft', NOW(), $16)
         `, [
           prId,
           item.name,
@@ -105,7 +117,9 @@ export async function PUT(request, { params }) {
           pricing.gst_percentage,
           pricing.gst_amount,
           pricing.amount_before_gst,
-          pricing.item_total
+          pricing.item_total,
+          currentVersion,
+          session.user.id
         ]);
         addedItems.push(pricing);
         itemsAdded++;
