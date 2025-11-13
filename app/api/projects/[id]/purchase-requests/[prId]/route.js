@@ -35,15 +35,24 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Purchase request not found' }, { status: 404 });
     }
 
-    // Get PR items with their estimation links
+    // Get PR items with their estimation links and pricing
     const itemsResult = await query(`
       SELECT 
         pri.id,
         pri.purchase_request_item_name,
+        pri.category,
+        pri.room_name,
         pri.quantity,
         pri.width,
         pri.height,
         pri.unit,
+        pri.unit_price,
+        pri.subtotal,
+        pri.gst_percentage,
+        pri.gst_amount,
+        pri.amount_before_gst,
+        pri.item_total,
+        pri.is_direct_purchase,
         pri.active,
         pri.status,
         json_agg(
