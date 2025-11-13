@@ -177,9 +177,13 @@ export async function POST(request, { params }) {
             amount_before_gst,
             item_total,
             is_direct_purchase,
+            version,
+            lifecycle_status,
+            active,
             status,
-            created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, NOW())
+            created_at,
+            created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 1, 'pending', true, $15, NOW(), $16)
         `, [
           purchaseRequestId,
           item.name,
@@ -195,7 +199,8 @@ export async function POST(request, { params }) {
           pricing.gst_amount,
           pricing.amount_before_gst,
           pricing.item_total,
-          status
+          status,
+          session.user.id
         ]);
         
         createdItems.push(pricing);
