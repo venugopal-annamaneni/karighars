@@ -9,17 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   ArrowLeft,
   Loader2,
   Save,
   Trash2,
-  Plus,
   AlertCircle,
-  History,
   Lock,
-  Edit3
+  Edit3,
+  Package,
+  Layers,
+  ShoppingCart
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { USER_ROLE } from '@/app/constants';
@@ -38,8 +38,12 @@ export default function EditPurchaseRequestPage() {
   const [prData, setPRData] = useState(null);
   const [items, setItems] = useState([]);
   const [originalItems, setOriginalItems] = useState([]);
-  const [vendors, setVendors] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Grouped items
+  const [fullUnitItems, setFullUnitItems] = useState([]);
+  const [componentGroups, setComponentGroups] = useState({});
+  const [directItems, setDirectItems] = useState([]);
 
   // Check permissions
   const canEdit = session?.user?.role === USER_ROLE.ESTIMATOR || session?.user?.role === USER_ROLE.ADMIN;
@@ -54,9 +58,14 @@ export default function EditPurchaseRequestPage() {
   useEffect(() => {
     if (canEdit) {
       fetchPRData();
-      fetchVendors();
     }
   }, [canEdit, prId]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      groupItems();
+    }
+  }, [items]);
 
   const fetchPRData = async () => {
     try {
@@ -77,91 +86,168 @@ export default function EditPurchaseRequestPage() {
     }
   };
 
-  const fetchVendors = async () => {
-    try {
-      const res = await fetch(`/api/vendors`);
-      if (res.ok) {
-        const data = await res.json();
-        setVendors(data.vendors || []);
+  const groupItems = () => {
+    const fullUnit = [];
+    const componentGroupsMap = {};
+    const direct = [];
+
+    items.forEach(item => {
+      // Direct purchase items
+      if (item.is_direct_purchase) {
+        direct.push(item);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
-    }
+
+      const hasLinks = item.estimation_links && item.estimation_links.length > 0;
+
+      if (hasLinks) {
+        // Check if all links have weightage = 1.0 (Full Item Flow)
+        const allWeightageOne = item.estimation_links.every(link => parseFloat(link.weightage) === 1.0);
+
+        if (allWeightageOne) {
+          fullUnit.push(item);
+        } else {
+          // Component Flow - group by estimation item
+          item.estimation_links.forEach(link => {
+            const estItemKey = link.estimation_item_id;
+            if (!componentGroupsMap[estItemKey]) {
+              componentGroupsMap[estItemKey] = {
+                category: link.estimation_item_category,
+                room: link.estimation_item_room,
+                name: link.estimation_item_name,
+                unit: link.estimation_item_unit,
+                width: link.estimation_item_width,
+                height: link.estimation_item_height,
+                linked_qty: link.linked_qty,
+                estimation_item_id: link.estimation_item_id,
+                components: []
+              };
+            }
+            
+            // Add component with its link info
+            componentGroupsMap[estItemKey].components.push({
+              ...item,
+              link_info: link // Store link info with the item
+            });
+          });
+        }
+      } else {
+        // No links - treat as full item flow (shouldn't happen for new items)
+        fullUnit.push(item);
+      }
+    });
+
+    setFullUnitItems(fullUnit);
+    setComponentGroups(componentGroupsMap);
+    setDirectItems(direct);
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemChange = (stable_item_id, field, value) => {
     setItems(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const updated = prev.map(item => 
+        item.stable_item_id === stable_item_id 
+          ? { ...item, [field]: value }
+          : item
+      );
       return updated;
     });
     setHasChanges(true);
   };
 
-  const handleDeleteItem = (index) => {
-    const item = items[index];
+  const handleLinkChange = (stable_item_id, link_index, field, value) => {
+    setItems(prev => {
+      const updated = prev.map(item => {
+        if (item.stable_item_id === stable_item_id) {
+          const newLinks = [...(item.estimation_links || [])];
+          if (newLinks[link_index]) {
+            newLinks[link_index] = { ...newLinks[link_index], [field]: value };
+          }
+          return { ...item, estimation_links: newLinks };
+        }
+        return item;
+      });
+      return updated;
+    });
+    setHasChanges(true);
+  };
+
+  const handleDeleteItem = (stable_item_id) => {
+    const item = items.find(i => i.stable_item_id === stable_item_id);
+    
+    if (!item) return;
     
     if (item.lifecycle_status !== 'pending') {
       toast.error(`Cannot delete item with status: ${item.lifecycle_status}`);
       return;
     }
 
-    setItems(prev => prev.filter((_, i) => i !== index));
+    setItems(prev => prev.filter(i => i.stable_item_id !== stable_item_id));
     setHasChanges(true);
     toast.success('Item marked for deletion');
   };
 
   const handleSaveChanges = async () => {
     try {
-      debugger;
       setSaving(true);
 
-      // Find items that were edited
-      const editedItems = items
-        .map((item, index) => {
-          const original = originalItems.find(o => o.stable_item_id === item.stable_item_id);
-          if (!original) return null;
+      // Prepare items with their links
+      const editedItemsWithLinks = [];
+      const deletedItemIds = [];
 
-          // Check if any field changed
-          const hasChanged = 
-            original.purchase_request_item_name !== item.purchase_request_item_name ||
-            original.quantity !== item.quantity ||
-            original.unit_price !== item.unit_price ||
-            original.category !== item.category ||
-            original.room_name !== item.room_name;
+      // Find deleted items
+      originalItems.forEach(original => {
+        if (!items.find(i => i.stable_item_id === original.stable_item_id)) {
+          deletedItemIds.push(original.stable_item_id);
+        }
+      });
 
-          if (hasChanged) {
-            return {
-              stable_item_id: item.stable_item_id,
-              purchase_request_item_name: item.purchase_request_item_name,
-              quantity: parseFloat(item.quantity),
-              unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
-              category: item.category,
-              room_name: item.room_name
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+      // Find edited items
+      items.forEach(item => {
+        const original = originalItems.find(o => o.stable_item_id === item.stable_item_id);
+        
+        if (!original) {
+          // New item (shouldn't happen in edit page, but handle it)
+          return;
+        }
 
-      // Find items that were deleted
-      const deletedItemIds = originalItems
-        .filter(original => !items.find(i => i.stable_item_id === original.stable_item_id))
-        .map(item => item.stable_item_id);
+        // Check if item or its links changed
+        const itemChanged = 
+          original.purchase_request_item_name !== item.purchase_request_item_name ||
+          original.quantity !== item.quantity ||
+          original.unit_price !== item.unit_price ||
+          original.category !== item.category ||
+          original.room_name !== item.room_name;
 
-      if (editedItems.length === 0 && deletedItemIds.length === 0) {
+        const linksChanged = JSON.stringify(original.estimation_links) !== JSON.stringify(item.estimation_links);
+
+        if (itemChanged || linksChanged) {
+          editedItemsWithLinks.push({
+            stable_item_id: item.stable_item_id,
+            purchase_request_item_name: item.purchase_request_item_name,
+            quantity: parseFloat(item.quantity),
+            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+            category: item.category,
+            room_name: item.room_name,
+            is_direct_purchase: item.is_direct_purchase,
+            estimation_links: item.estimation_links || []
+          });
+        }
+      });
+
+      if (editedItemsWithLinks.length === 0 && deletedItemIds.length === 0) {
         toast.info('No changes to save');
+        setSaving(false);
         return;
       }
 
       // Save edits
-      if (editedItems.length > 0) {
+      if (editedItemsWithLinks.length > 0) {
         const res = await fetch(`/api/projects/${projectId}/purchase-requests/${prId}/edit`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: editedItems,
-            change_summary: `Edited ${editedItems.length} item(s)`,
+            items: editedItemsWithLinks,
+            change_summary: `Edited ${editedItemsWithLinks.length} item(s)`,
             vendor_id: prData.vendor_id,
             expected_delivery_date: prData.expected_delivery_date,
             notes: prData.notes
@@ -288,125 +374,399 @@ export default function EditPurchaseRequestPage() {
         </CardContent>
       </Card>
 
-      {/* Editable Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Items</CardTitle>
-          <CardDescription>
-            Edit quantities and prices for pending items
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left p-3 font-medium">Item Name</th>
-                  <th className="text-left p-3 font-medium">Category</th>
-                  <th className="text-right p-3 font-medium">Quantity</th>
-                  <th className="text-left p-3 font-medium">Unit</th>
-                  <th className="text-right p-3 font-medium">Unit Price</th>
-                  <th className="text-center p-3 font-medium">Status</th>
-                  <th className="text-center p-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => {
-                  debugger;
-                  const isEditable = item.lifecycle_status === 'pending';
-                  
-                  return (
-                    <tr key={item.stable_item_id || index} className="border-t hover:bg-accent/50">
-                      <td className="p-3">
-                        {isEditable ? (
-                          <Input
-                            value={item.purchase_request_item_name}
-                            onChange={(e) => handleItemChange(index, 'purchase_request_item_name', e.target.value)}
-                            className="h-8"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">{item.purchase_request_item_name}</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {item.is_direct_purchase ? (
-                          <span className="capitalize">{item.category}</span>
-                        ) : (
-                          <span className="capitalize">
-                            {item.estimation_links?.[0]?.estimation_item_category || '-'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {isEditable ? (
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                            className="h-8 text-right"
-                            step="0.01"
-                          />
-                        ) : (
-                          <span className="text-right block text-muted-foreground">{item.quantity}</span>
-                        )}
-                      </td>
-                      <td className="p-3">{item.unit}</td>
-                      <td className="p-3">
-                        {isEditable ? (
-                          <Input
-                            type="number"
-                            value={item.unit_price || ''}
-                            onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
-                            placeholder="0.00"
-                            className="h-8 text-right"
-                            step="0.01"
-                          />
-                        ) : (
-                          <span className="text-right block text-muted-foreground">
-                            {item.unit_price ? formatCurrency(item.unit_price) : '-'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Badge 
-                          variant={isEditable ? 'default' : 'secondary'}
-                          className="text-xs gap-1"
-                        >
-                          {!isEditable && <Lock className="h-3 w-3" />}
-                          {item.lifecycle_status || 'pending'}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        {isEditable ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteItem(index)}
-                            className="text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Locked</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {items.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No items in this purchase request
+      {/* Full Unit Items */}
+      {fullUnitItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-blue-600" />
+              <CardTitle>Full Unit Fulfillment</CardTitle>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <CardDescription>
+              Items fulfilling complete estimation items (weightage = 1.0)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="text-left p-3 font-medium">From Estimation</th>
+                    <th className="text-left p-3 font-medium">PR Item</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
+                    <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Unit Price</th>
+                    <th className="text-center p-3 font-medium">Status</th>
+                    <th className="text-center p-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fullUnitItems.map((item) => {
+                    const isEditable = item.lifecycle_status === 'pending';
+                    const estLink = item.estimation_links?.[0];
+                    
+                    return (
+                      <tr key={item.stable_item_id} className="border-t hover:bg-accent/50">
+                        <td className="p-3">
+                          <div className="text-sm">
+                            <div className="font-medium">{estLink?.estimation_item_name}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {estLink?.estimation_item_room} • {estLink?.estimation_item_category}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              value={item.purchase_request_item_name}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'purchase_request_item_name', e.target.value)}
+                              className="h-8"
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">{item.purchase_request_item_name}</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'quantity', e.target.value)}
+                              className="h-8 text-right"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">{item.quantity}</span>
+                          )}
+                        </td>
+                        <td className="p-3">{item.unit}</td>
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              value={item.unit_price || ''}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'unit_price', e.target.value)}
+                              placeholder="0.00"
+                              className="h-8 text-right"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">
+                              {item.unit_price ? formatCurrency(item.unit_price) : '-'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant={isEditable ? 'default' : 'secondary'}
+                            className="text-xs gap-1"
+                          >
+                            {!isEditable && <Lock className="h-3 w-3" />}
+                            {item.lifecycle_status || 'pending'}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-center">
+                          {isEditable ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.stable_item_id)}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Locked</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Component-wise Items */}
+      {Object.keys(componentGroups).length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-orange-600" />
+              <CardTitle>Component-wise Fulfillment</CardTitle>
+            </div>
+            <CardDescription>
+              Items broken down into components with weightage
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {Object.entries(componentGroups).map(([estItemId, estItem]) => (
+              <div key={estItemId} className="border rounded-lg p-4 bg-slate-50">
+                {/* Estimation Item Header */}
+                <div className="mb-4 pb-3 border-b">
+                  <h3 className="font-semibold text-lg">{estItem.name}</h3>
+                  <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                    <span>{estItem.room}</span>
+                    <span>•</span>
+                    <span className="capitalize">{estItem.category}</span>
+                    <span>•</span>
+                    <span>{estItem.linked_qty} {estItem.unit}</span>
+                  </div>
+                </div>
+
+                {/* Components Table */}
+                <div className="border rounded-lg overflow-hidden bg-white">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Component Name</th>
+                        <th className="text-right p-3 font-medium">Qty</th>
+                        <th className="text-left p-3 font-medium">Unit</th>
+                        <th className="text-right p-3 font-medium">Unit Price</th>
+                        <th className="text-right p-3 font-medium">Weightage (%)</th>
+                        <th className="text-center p-3 font-medium">Status</th>
+                        <th className="text-center p-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {estItem.components.map((comp) => {
+                        const isEditable = comp.lifecycle_status === 'pending';
+                        const linkIndex = comp.estimation_links?.findIndex(l => l.estimation_item_id === parseInt(estItemId));
+                        
+                        return (
+                          <tr key={comp.stable_item_id} className="border-t hover:bg-accent/50">
+                            <td className="p-3">
+                              {isEditable ? (
+                                <Input
+                                  value={comp.purchase_request_item_name}
+                                  onChange={(e) => handleItemChange(comp.stable_item_id, 'purchase_request_item_name', e.target.value)}
+                                  className="h-8"
+                                />
+                              ) : (
+                                <span className="text-muted-foreground">{comp.purchase_request_item_name}</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {isEditable ? (
+                                <Input
+                                  type="number"
+                                  value={comp.quantity}
+                                  onChange={(e) => handleItemChange(comp.stable_item_id, 'quantity', e.target.value)}
+                                  className="h-8 text-right"
+                                  step="0.01"
+                                />
+                              ) : (
+                                <span className="text-right block text-muted-foreground">{comp.quantity}</span>
+                              )}
+                            </td>
+                            <td className="p-3">{comp.unit}</td>
+                            <td className="p-3">
+                              {isEditable ? (
+                                <Input
+                                  type="number"
+                                  value={comp.unit_price || ''}
+                                  onChange={(e) => handleItemChange(comp.stable_item_id, 'unit_price', e.target.value)}
+                                  placeholder="0.00"
+                                  className="h-8 text-right"
+                                  step="0.01"
+                                />
+                              ) : (
+                                <span className="text-right block text-muted-foreground">
+                                  {comp.unit_price ? formatCurrency(comp.unit_price) : '-'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {isEditable && linkIndex !== -1 ? (
+                                <Input
+                                  type="number"
+                                  value={(parseFloat(comp.estimation_links[linkIndex].weightage) * 100).toFixed(1)}
+                                  onChange={(e) => {
+                                    const newWeightage = parseFloat(e.target.value) / 100;
+                                    handleLinkChange(comp.stable_item_id, linkIndex, 'weightage', newWeightage);
+                                  }}
+                                  className="h-8 text-right"
+                                  step="0.1"
+                                  min="0"
+                                  max="100"
+                                />
+                              ) : (
+                                <span className="text-right block text-muted-foreground">
+                                  {(parseFloat(comp.link_info?.weightage || 0) * 100).toFixed(1)}%
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Badge 
+                                variant={isEditable ? 'default' : 'secondary'}
+                                className="text-xs gap-1"
+                              >
+                                {!isEditable && <Lock className="h-3 w-3" />}
+                                {comp.lifecycle_status || 'pending'}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-center">
+                              {isEditable ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteItem(comp.stable_item_id)}
+                                  className="text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Locked</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="bg-muted/50 border-t-2">
+                      <tr>
+                        <td colSpan="4" className="p-3 text-right font-semibold">Total Weightage:</td>
+                        <td className="p-3 text-right font-semibold">
+                          {(estItem.components.reduce((sum, comp) => {
+                            const weightage = parseFloat(comp.link_info?.weightage || 0);
+                            return sum + weightage;
+                          }, 0) * 100).toFixed(1)}%
+                        </td>
+                        <td colSpan="2"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Direct Purchase Items */}
+      {directItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-green-600" />
+              <CardTitle>Direct Purchase Items</CardTitle>
+            </div>
+            <CardDescription>
+              Ad-hoc items not linked to estimation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="text-left p-3 font-medium">Item Name</th>
+                    <th className="text-left p-3 font-medium">Category</th>
+                    <th className="text-left p-3 font-medium">Room</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
+                    <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Unit Price</th>
+                    <th className="text-center p-3 font-medium">Status</th>
+                    <th className="text-center p-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {directItems.map((item) => {
+                    const isEditable = item.lifecycle_status === 'pending';
+                    
+                    return (
+                      <tr key={item.stable_item_id} className="border-t hover:bg-accent/50">
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              value={item.purchase_request_item_name}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'purchase_request_item_name', e.target.value)}
+                              className="h-8"
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">{item.purchase_request_item_name}</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <span className="capitalize">{item.category || '-'}</span>
+                        </td>
+                        <td className="p-3">{item.room_name || '-'}</td>
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'quantity', e.target.value)}
+                              className="h-8 text-right"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">{item.quantity}</span>
+                          )}
+                        </td>
+                        <td className="p-3">{item.unit}</td>
+                        <td className="p-3">
+                          {isEditable ? (
+                            <Input
+                              type="number"
+                              value={item.unit_price || ''}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'unit_price', e.target.value)}
+                              placeholder="0.00"
+                              className="h-8 text-right"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">
+                              {item.unit_price ? formatCurrency(item.unit_price) : '-'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge 
+                            variant={isEditable ? 'default' : 'secondary'}
+                            className="text-xs gap-1"
+                          >
+                            {!isEditable && <Lock className="h-3 w-3" />}
+                            {item.lifecycle_status || 'pending'}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-center">
+                          {isEditable ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.stable_item_id)}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Locked</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {fullUnitItems.length === 0 && Object.keys(componentGroups).length === 0 && directItems.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground">No items in this purchase request</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between sticky bottom-0 bg-background py-4 border-t">
         <Link href={`/projects/${projectId}/purchase-requests/${prId}/view`}>
           <Button variant="outline">
             Cancel
