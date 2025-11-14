@@ -179,11 +179,10 @@ export async function POST(request, { params }) {
             is_direct_purchase,
             version,
             lifecycle_status,
-            active,
             status,
             created_at,
             created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 1, 'pending', true, $15, NOW(), $16)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, 1, 'pending', $15, NOW(), $16)
         `, [
           purchaseRequestId,
           item.name,
@@ -233,11 +232,10 @@ export async function POST(request, { params }) {
             is_direct_purchase,
             version,
             lifecycle_status,
-            active,
             status,
             created_at,
             created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, 1, 'pending', true, $13, NOW(), $14)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, 1, 'pending', $13, NOW(), $14)
           RETURNING id, stable_item_id
         `, [
           purchaseRequestId,

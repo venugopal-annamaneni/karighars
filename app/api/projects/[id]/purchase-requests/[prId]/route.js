@@ -39,6 +39,7 @@ export async function GET(request, { params }) {
     const itemsResult = await query(`
       SELECT 
         pri.id,
+        pri.stable_item_id,
         pri.purchase_request_item_name,
         pri.category,
         pri.room_name,
@@ -54,6 +55,9 @@ export async function GET(request, { params }) {
         pri.item_total,
         pri.is_direct_purchase,
         pri.status,
+        pri.lifecycle_status,
+        pri.created_at,
+        pri.created_by,
         json_agg(
           json_build_object(
             'id', prel.id,

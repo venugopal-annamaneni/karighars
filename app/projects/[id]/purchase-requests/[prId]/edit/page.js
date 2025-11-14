@@ -113,6 +113,7 @@ export default function EditPurchaseRequestPage() {
 
   const handleSaveChanges = async () => {
     try {
+      debugger;
       setSaving(true);
 
       // Find items that were edited
@@ -311,6 +312,7 @@ export default function EditPurchaseRequestPage() {
               </thead>
               <tbody>
                 {items.map((item, index) => {
+                  debugger;
                   const isEditable = item.lifecycle_status === 'pending';
                   
                   return (

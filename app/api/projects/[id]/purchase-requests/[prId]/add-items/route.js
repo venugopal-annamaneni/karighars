@@ -98,11 +98,10 @@ export async function PUT(request, { params }) {
             is_direct_purchase,
             version,
             lifecycle_status,
-            active,
             status,
             created_at,
             created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, 'pending', true, 'draft', NOW(), $16)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, 'pending', 'draft', NOW(), $16)
         `, [
           prId,
           item.name,
@@ -160,11 +159,10 @@ export async function PUT(request, { params }) {
             is_direct_purchase,
             version,
             lifecycle_status,
-            active,
             status,
             created_at,
             created_by
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, $13, 'pending', true, 'draft', NOW(), $14)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, $13, 'pending', 'draft', NOW(), $14)
           RETURNING id, stable_item_id
         `, [
           prId,

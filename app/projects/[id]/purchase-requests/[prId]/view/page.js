@@ -301,6 +301,7 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
   const directPurchaseItems = [];
 
   items.forEach(item => {
+    debugger;
     // Check if it's a direct purchase item
     if (item.is_direct_purchase) {
       directPurchaseItems.push(item);
