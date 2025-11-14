@@ -120,8 +120,6 @@ export default function ViewPurchaseRequestPage() {
     );
   };
 
-  const canDeletePR = session?.user?.role === USER_ROLE.ADMIN;
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -141,6 +139,9 @@ export default function ViewPurchaseRequestPage() {
 
   const pr = prDetail.purchase_request;
   const items = prDetail.items || [];
+  debugger;
+  const canDeletePR = session?.user?.role === USER_ROLE.ADMIN && (pr.status !== PURCHASE_REQUEST_STATUS.CANCELLED);
+
 
   return (
     <div className="space-y-6">
@@ -172,7 +173,7 @@ export default function ViewPurchaseRequestPage() {
             </Link>
           )}
           
-          {canDeletePR && pr.status !== 'cancelled' && (
+          {canDeletePR && pr.status !== PURCHASE_REQUEST_STATUS.CANCELLED && (
             <Button
               variant="destructive"
               onClick={handleDeletePR}
@@ -301,7 +302,6 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
   const directPurchaseItems = [];
 
   items.forEach(item => {
-    debugger;
     // Check if it's a direct purchase item
     if (item.is_direct_purchase) {
       directPurchaseItems.push(item);

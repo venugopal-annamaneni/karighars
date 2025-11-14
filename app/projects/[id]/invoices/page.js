@@ -1,6 +1,6 @@
 "use client";
 
-import { INVOICE_RECORD_TYPE } from '@/app/constants';
+import { INVOICE_RECORD_TYPE, INVOICE_STATUS } from '@/app/constants';
 import { useProjectData } from '@/app/context/ProjectDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -224,9 +224,9 @@ export default function InvoicesPage() {
 
 
   const getStatusBadge = (status) => {
-    if (status === 'pending') return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>;
-    if (status === 'approved') return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Approved</Badge>;
-    if (status === 'cancelled') return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Cancelled</Badge>;
+    if (status === INVOICE_STATUS.PENDING) return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>;
+    if (status === INVOICE_STATUS.APPROVED) return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Approved</Badge>;
+    if (status === INVOICE_STATUS.CANCELLED) return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Cancelled</Badge>;
     return <Badge>{status}</Badge>;
   };
 

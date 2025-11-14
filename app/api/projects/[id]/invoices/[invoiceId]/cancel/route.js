@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
+import { INVOICE_STATUS } from '@/app/constants';
 
 // POST - Cancel invoice
 export async function POST(request, { params }) {
@@ -42,13 +43,13 @@ export async function POST(request, { params }) {
     // Update invoice status to cancelled
     const updateResult = await query(`
       UPDATE project_invoices
-      SET status = 'cancelled',
+      SET status = $4,
           cancelled_by = $1,
           cancelled_at = NOW(),
           cancellation_reason = $2
       WHERE id = $3
       RETURNING *
-    `, [session.user.id, body.cancellation_reason, invoiceId]);
+    `, [session.user.id, body.cancellation_reason, invoiceId, INVOICE_STATUS.CANCELLED]);
 
     // Log activity
     await query(`

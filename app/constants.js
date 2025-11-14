@@ -15,7 +15,8 @@ export const PAYMENT_STATUS = {
 
 export const INVOICE_STATUS = {
   APPROVED: 'approved',
-  PENDING: 'pending'
+  PENDING: 'pending',
+  CANCELLED: 'cancelled'
 };
 
 export const LEDGER_ENTRY_TYPE = {

@@ -128,16 +128,16 @@ export async function DELETE(request, { params }) {
     // Update status to cancelled
     await query(`
       UPDATE purchase_requests
-      SET status = 'cancelled', updated_at = NOW()
-      WHERE id = $1
-    `, [prId]);
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+    `, [PURCHASE_REQUEST_STATUS.CANCELLED, prId]);
 
     // Also mark all items as cancelled
     await query(`
       UPDATE purchase_request_items
-      SET status = 'cancelled', updated_at = NOW()
-      WHERE purchase_request_id = $1
-    `, [prId]);
+      SET status = $1, updated_at = NOW()
+      WHERE purchase_request_id = $2
+    `, [PURCHASE_REQUEST_STATUS.CANCELLED, prId]);
 
     await query('COMMIT');
 
