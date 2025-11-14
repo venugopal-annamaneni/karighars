@@ -139,7 +139,6 @@ export default function ViewPurchaseRequestPage() {
 
   const pr = prDetail.purchase_request;
   const items = prDetail.items || [];
-  debugger;
   const canDeletePR = session?.user?.role === USER_ROLE.ADMIN && (pr.status !== PURCHASE_REQUEST_STATUS.CANCELLED);
 
 
