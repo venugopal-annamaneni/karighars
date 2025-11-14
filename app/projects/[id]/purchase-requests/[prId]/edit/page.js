@@ -190,90 +190,55 @@ export default function EditPurchaseRequestPage() {
     try {
       setSaving(true);
 
-      // Prepare items with their links
-      const editedItemsWithLinks = [];
-      const deletedItemIds = [];
-
-      // Find deleted items
-      originalItems.forEach(original => {
-        if (!items.find(i => i.stable_item_id === original.stable_item_id)) {
-          deletedItemIds.push(original.stable_item_id);
-        }
-      });
-
-      // Find edited items
-      items.forEach(item => {
-        const original = originalItems.find(o => o.stable_item_id === item.stable_item_id);
-        
-        if (!original) {
-          // New item (shouldn't happen in edit page, but handle it)
-          return;
-        }
-
-        // Check if item or its links changed
-        const itemChanged = 
-          original.purchase_request_item_name !== item.purchase_request_item_name ||
-          original.quantity !== item.quantity ||
-          original.unit_price !== item.unit_price ||
-          original.category !== item.category ||
-          original.room_name !== item.room_name;
-
-        const linksChanged = JSON.stringify(original.estimation_links) !== JSON.stringify(item.estimation_links);
-
-        if (itemChanged || linksChanged) {
-          editedItemsWithLinks.push({
-            stable_item_id: item.stable_item_id,
-            purchase_request_item_name: item.purchase_request_item_name,
-            quantity: parseFloat(item.quantity),
-            unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
-            category: item.category,
-            room_name: item.room_name,
-            is_direct_purchase: item.is_direct_purchase,
-            estimation_links: item.estimation_links || []
-          });
-        }
-      });
-
-      if (editedItemsWithLinks.length === 0 && deletedItemIds.length === 0) {
+      // Check if there are changes
+      if (!hasChanges) {
         toast.info('No changes to save');
         setSaving(false);
         return;
       }
 
-      // Save edits
-      if (editedItemsWithLinks.length > 0) {
-        const res = await fetch(`/api/projects/${projectId}/purchase-requests/${prId}/edit`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: editedItemsWithLinks,
-            change_summary: `Edited ${editedItemsWithLinks.length} item(s)`,
-            vendor_id: prData.vendor_id,
-            expected_delivery_date: prData.expected_delivery_date,
-            notes: prData.notes
-          })
-        });
+      // Count deleted items for summary
+      const deletedCount = originalItems.length - items.length;
 
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.error || 'Failed to save changes');
-        }
+      // Prepare ALL remaining items with their links
+      // Items not included in this payload will be implicitly deleted
+      const allItemsWithLinks = items.map(item => ({
+        stable_item_id: item.stable_item_id,
+        purchase_request_item_name: item.purchase_request_item_name,
+        quantity: parseFloat(item.quantity),
+        unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+        category: item.category,
+        room_name: item.room_name,
+        is_direct_purchase: item.is_direct_purchase,
+        estimation_links: item.estimation_links || []
+      }));
+
+      // Build change summary
+      let changeSummary = '';
+      if (deletedCount > 0 && items.length > 0) {
+        changeSummary = `Edited items and deleted ${deletedCount} item(s)`;
+      } else if (deletedCount > 0) {
+        changeSummary = `Deleted ${deletedCount} item(s)`;
+      } else {
+        changeSummary = `Edited ${items.length} item(s)`;
       }
 
-      // Save deletions
-      if (deletedItemIds.length > 0) {
-        const res = await fetch(`/api/projects/${projectId}/purchase-requests/${prId}/edit`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            stable_item_ids: deletedItemIds
-          })
-        });
+      // Single API call to save all changes
+      const res = await fetch(`/api/projects/${projectId}/purchase-requests/${prId}/edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: allItemsWithLinks,
+          change_summary: changeSummary,
+          vendor_id: prData.vendor_id,
+          expected_delivery_date: prData.expected_delivery_date,
+          notes: prData.notes
+        })
+      });
 
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.error || 'Failed to delete items');
-        }
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to save changes');
       }
 
       toast.success('Purchase request updated successfully!');
