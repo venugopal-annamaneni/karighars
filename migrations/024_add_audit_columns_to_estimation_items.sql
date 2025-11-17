@@ -1,11 +1,9 @@
--- Migration 024: Add audit columns to estimation_items
--- These columns are needed for tracking who created/updated items and when
+-- Migration 024: Add missing audit columns to estimation_items
+-- created_at and updated_at already exist, adding created_by and updated_by
 
 ALTER TABLE estimation_items
-  ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW(),
-  ADD COLUMN created_by INTEGER,
-  ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW(),
-  ADD COLUMN updated_by INTEGER;
+  ADD COLUMN IF NOT EXISTS created_by INTEGER,
+  ADD COLUMN IF NOT EXISTS updated_by INTEGER;
 
 -- Add indexes for performance
 CREATE INDEX idx_estimation_items_created_at ON estimation_items(created_at);
