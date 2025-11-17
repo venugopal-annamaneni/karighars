@@ -25,12 +25,10 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  // Get latest estimation
+  // Get estimation (only one per project now)
   const estResult = await query(`
           SELECT * FROM project_estimations
           WHERE project_id = $1
-          ORDER BY version DESC
-          LIMIT 1
         `, [projectId]);
 
   // Get payment summary (only approved payments)
