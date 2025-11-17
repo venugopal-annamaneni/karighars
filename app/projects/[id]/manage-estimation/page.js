@@ -333,6 +333,7 @@ export default function ProjectEstimationPage() {
           const calc = calculateItemTotal(item);
           return {
             ...item,
+            stable_item_id: item.stable_item_id,  // IMPORTANT: Include for versioning
             item_name: item.item_name,
             subtotal: calc.subtotal,
             karighar_charges_amount: calc.karighar_charges_amount,
