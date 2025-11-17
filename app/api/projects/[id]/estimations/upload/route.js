@@ -96,22 +96,15 @@ export async function POST(request, { params }) {
         }, { status: 400 });
       }
 
-      // 3. Get next version number
-      const versionRes = await query(`
-        SELECT COALESCE(MAX(version), 0) as max_version
-        FROM project_estimations
-        WHERE project_id = $1
-      `, [projectId]);
-      const nextVersion = versionRes.rows[0].max_version + 1;
-
-      // 4. Create uploads directory if not exists
+      // 3. Create uploads directory if not exists
       const projectDir = path.join(process.cwd(), 'uploads', 'estimations', projectId.toString());
       if (!existsSync(projectDir)) {
         await mkdir(projectDir, { recursive: true });
       }
 
-      // 5. Save CSV file
-      const fileName = `v${nextVersion}_upload.csv`;
+      // 4. Save CSV file with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const fileName = `estimation_${timestamp}.csv`;
       const filePath = path.join(projectDir, fileName);
       const relativeFilePath = `uploads/estimations/${projectId}/${fileName}`;
 
