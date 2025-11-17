@@ -361,10 +361,18 @@ export default function ProjectEstimationPage() {
 
   const saveEstimation = async (data) => {
     try {
+      // Determine if creating new or updating existing
+      const method = estimation && estimation.id ? 'PUT' : 'POST';
+      const payloadData = estimation && estimation.id 
+        ? { ...data, estimation_id: estimation.id }
+        : data;
+      
+      console.log(`${method} estimation for project ${data.project_id}`);
+      
       const res = await fetch(`/api/projects/${data.project_id}/estimations`, {
-        method: 'POST',
+        method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payloadData)
       });
 
       if (res.ok) {
