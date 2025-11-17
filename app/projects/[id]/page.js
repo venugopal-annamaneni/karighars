@@ -116,7 +116,7 @@ export default function ProjectEstimationsPage() {
 
   const handleDownloadCSV = () => {
     const csvConfig = mkConfig({
-      filename: `${project?.name || 'Project'}_Estimation_v${estimation?.version || 1}_${new Date().toISOString().split('T')[0]}`,
+      filename: `${project?.name || 'Project'}_Estimation_${new Date().toISOString().split('T')[0]}`,
       useKeysAsHeaders: true,
       fieldSeparator: ',',
     });
