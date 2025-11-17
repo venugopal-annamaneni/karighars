@@ -66,7 +66,7 @@ export async function GET(request, { params }) {
         ei.status
       FROM estimation_items ei
       INNER JOIN project_estimations pe ON ei.estimation_id = pe.id
-      WHERE pe.project_id = $1 AND pe.is_active = true
+      WHERE pe.project_id = $1
       ORDER BY ei.category, ei.room_name, ei.item_name
     `, [projectId]);
 
