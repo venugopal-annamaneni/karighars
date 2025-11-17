@@ -63,9 +63,28 @@ export async function POST(request) {
     const currentEstimationId = currentEstimationResult.rows[0]?.id;
     const currentVersion = currentEstimationResult.rows[0]?.version || 0;
     
-    // 2. If there's an existing estimation, archive its items to history
+    // 2. Fetch old items (to preserve created_at/created_by for existing items)
+    let oldItemsMap = new Map(); // Map of stable_item_id -> {created_at, created_by}
+    
     if (currentEstimationId) {
-      console.log(`Archiving items from estimation ${currentEstimationId} (version ${currentVersion})`);
+      console.log(`Fetching items from estimation ${currentEstimationId} (version ${currentVersion})`);
+      
+      // Fetch old items with their creation audit data
+      const oldItemsResult = await query(`
+        SELECT stable_item_id, created_at, created_by
+        FROM estimation_items
+        WHERE estimation_id = $1
+      `, [currentEstimationId]);
+      
+      // Create map for quick lookup
+      oldItemsResult.rows.forEach(item => {
+        oldItemsMap.set(item.stable_item_id, {
+          created_at: item.created_at,
+          created_by: item.created_by
+        });
+      });
+      
+      console.log(`Archiving ${oldItemsResult.rows.length} items to history`);
       
       // Move current items to history
       await query(`
