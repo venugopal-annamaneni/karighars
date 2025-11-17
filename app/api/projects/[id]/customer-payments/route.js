@@ -92,7 +92,7 @@ export async function POST(request, { params }) {
         new Date(),
         'NA',
         `${body.payment_type}-${projectId}`,
-        `Receipt reversal for estimation v${estimation.version}. Overpayment: ₹${estimation.overpayment_amount}`,
+        `Receipt reversal for estimation. Overpayment: ₹${estimation.overpayment_amount}`,
         PAYMENT_STATUS.PENDING,
         session.user.id
       ]);
