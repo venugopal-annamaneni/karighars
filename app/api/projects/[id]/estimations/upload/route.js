@@ -133,14 +133,7 @@ export async function POST(request, { params }) {
       // 7. Calculate totals
       const totals = calculateCategoryTotals(calculatedItems, baseRates.category_rates.categories);
       
-      // 8. Mark all previous versions as inactive
-      await query(`
-        UPDATE project_estimations
-        SET is_active = false
-        WHERE project_id = $1 AND is_active = true
-      `, [projectId]);
-
-      // 8.1 Check for overpayment
+      // 8. Check for overpayment
       let hasOverpayment = false;
       let overpaymentAmount = 0;
       // Get total approved payments
