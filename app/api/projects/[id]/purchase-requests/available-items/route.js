@@ -14,17 +14,16 @@ export async function GET(request, { params }) {
   const projectId = params.id;
 
   try {
-    // Get active estimation for project
+    // Get estimation for project (only one per project now)
     const estimationResult = await query(`
       SELECT id FROM project_estimations
-      WHERE project_id = $1 AND is_active = true
-      LIMIT 1
+      WHERE project_id = $1
     `, [projectId]);
 
     if (estimationResult.rows.length === 0) {
       return NextResponse.json({
         items: [],
-        message: 'No active estimation found for this project'
+        message: 'No estimation found for this project'
       });
     }
 
