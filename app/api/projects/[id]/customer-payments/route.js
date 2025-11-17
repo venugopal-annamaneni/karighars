@@ -65,8 +65,6 @@ export async function POST(request, { params }) {
         FROM project_estimations e
         JOIN projects p ON e.project_id = p.id
         WHERE p.id = $1
-        ORDER BY e.version DESC
-        LIMIT 1
       `, [projectId]);
 
       if (estRes.rows.length === 0) {
