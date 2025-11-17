@@ -212,7 +212,7 @@ export default function ProjectEstimationsPage() {
               <div>
                 <CardTitle>Project Estimation</CardTitle>
                 <CardDescription>
-                  {estimation ? `Version ${estimation.version}`  : 'No estimation created yet'}
+                  {estimation ? 'Estimation Details'  : 'No estimation created yet'}
                 </CardDescription>
               </div>
 
