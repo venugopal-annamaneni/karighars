@@ -241,10 +241,10 @@ export async function POST(request, { params }) {
 
       return NextResponse.json({
         success: true,
-        version: nextVersion,
         estimation_id: estimationId,
         items_count: calculatedItems.length,
-        final_value: totals.final_value
+        final_value: totals.final_value,
+        file_name: fileName
       });
 
     } catch (error) {
