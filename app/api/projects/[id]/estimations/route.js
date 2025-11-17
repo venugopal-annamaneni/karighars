@@ -153,9 +153,9 @@ export async function POST(request) {
           unit, width, height, quantity, unit_price,
           subtotal, karighar_charges_percentage, karighar_charges_amount, item_discount_percentage, item_discount_amount, 
           discount_kg_charges_percentage, discount_kg_charges_amount, gst_percentage, gst_amount, amount_before_gst, item_total,
-          status
+          status, created_at, created_by, updated_at, updated_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), $24, NOW(), $24)`,
           [
             result.rows[0].id, 
             stableItemId,  // NEW: Preserve or generate stable_item_id
@@ -163,7 +163,8 @@ export async function POST(request) {
             item.unit, parseFloat(item.width) || null, parseFloat(item.height) || null, parseFloat(finalQuantity), parseFloat(item.unit_price),
             parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
             parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total),
-            ESTIMATION_ITEM_STATUS.QUEUED
+            ESTIMATION_ITEM_STATUS.QUEUED,
+            session.user.id  // created_by and updated_by
           ]
         );
       }
