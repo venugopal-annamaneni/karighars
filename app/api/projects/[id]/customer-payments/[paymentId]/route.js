@@ -84,13 +84,12 @@ export async function PUT(request, { params }) {
         );
       }
 
-      // Get the latest estimation id
+      // Get the estimation (only one per project now)
       const latestEstRes = await query(
         `SELECT e.id
           FROM project_estimations e
-          WHERE e.project_id = $1
-          ORDER BY e.version DESC
-          LIMIT 1`, [payment.project_id]
+          WHERE e.project_id = $1`, 
+        [payment.project_id]
       )
       if(latestEstRes.rows.length == 0) {
         return NextResponse.json({ error: 'This project does not have a valid estimation' }, { status: 500 });
