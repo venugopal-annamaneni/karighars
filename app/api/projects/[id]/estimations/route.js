@@ -169,6 +169,10 @@ export async function POST(request) {
       }
     }
 
+    // Commit transaction
+    await query("COMMIT");
+    console.log(`Transaction committed for estimation ${result.rows[0].id}`);
+    
     // If overpayment detected, return warning
     if (hasOverpayment) {
       return NextResponse.json({
@@ -181,12 +185,12 @@ export async function POST(request) {
         }
       });
     }
-    await query("COMMIT");
+    
     return NextResponse.json({ estimation: result.rows[0] });
 
   } catch (error) {
     await query("ROLLBACK");
-    console.error('API Error:', error);
+    console.error('API Error - Rolling back transaction:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
