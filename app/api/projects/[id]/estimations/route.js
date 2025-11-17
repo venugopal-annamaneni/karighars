@@ -166,6 +166,22 @@ export async function POST(request) {
         // If not, DB will generate new UUID (new item)
         const stableItemId = item.stable_item_id || null;
         
+        // Determine creation audit fields
+        let createdAt, createdBy;
+        
+        if (stableItemId && oldItemsMap.has(stableItemId)) {
+          // EXISTING ITEM: Preserve original created_at and created_by
+          const oldAudit = oldItemsMap.get(stableItemId);
+          createdAt = oldAudit.created_at;
+          createdBy = oldAudit.created_by;
+          console.log(`Preserving creation audit for item ${stableItemId}: created_at=${createdAt}, created_by=${createdBy}`);
+        } else {
+          // NEW ITEM: Set created_at and created_by to current values
+          createdAt = null; // Will use NOW() in query
+          createdBy = session.user.id;
+          console.log(`New item: setting created_at=NOW(), created_by=${createdBy}`);
+        }
+        
         await query(
           `INSERT INTO estimation_items (
           estimation_id, stable_item_id, category, room_name, vendor_type, item_name, 
@@ -174,16 +190,18 @@ export async function POST(request) {
           discount_kg_charges_percentage, discount_kg_charges_amount, gst_percentage, gst_amount, amount_before_gst, item_total,
           status, created_at, created_by, updated_at, updated_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), $24, NOW(), $24)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, COALESCE($24, NOW()), $25, NOW(), $26)`,
           [
             result.rows[0].id, 
-            stableItemId,  // NEW: Preserve or generate stable_item_id
+            stableItemId,  // Preserve or generate stable_item_id
             item.category, item.room_name, item.vendor_type, item.item_name,
             item.unit, parseFloat(item.width) || null, parseFloat(item.height) || null, parseFloat(finalQuantity), parseFloat(item.unit_price),
             parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
             parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total),
             ESTIMATION_ITEM_STATUS.QUEUED,
-            session.user.id  // created_by and updated_by
+            createdAt,      // Preserved for existing items, null for new items
+            createdBy,      // Preserved for existing items, current user for new items
+            session.user.id // updated_by: always current user
           ]
         );
       }
