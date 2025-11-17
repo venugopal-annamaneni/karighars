@@ -118,7 +118,9 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
   const duplicateItem = useCallback(
     (index) => {
       setData((prev) => {
-        const clone = { ...prev[index], id: Date.now() };
+        // Clone item but remove stable_item_id (treat as new item)
+        const { stable_item_id, ...itemWithoutStableId } = prev[index];
+        const clone = { ...itemWithoutStableId, id: Date.now() };
         toast.success("Item duplicated");
         return [
           ...prev.slice(0, index + 1),
