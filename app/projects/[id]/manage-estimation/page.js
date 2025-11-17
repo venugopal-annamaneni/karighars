@@ -125,6 +125,7 @@ export default function ProjectEstimationPage() {
           if (itemsData.items.length > 0) {
             const normalizedItems = itemsData.items.map(item => ({
               id: item.id || Date.now() + Math.random(),
+              stable_item_id: item.stable_item_id,  // IMPORTANT: Preserve stable_item_id for versioning
               room_name: item.room_name || '',
               category: item.category,
               item_name: item.item_name,
