@@ -49,17 +49,68 @@ export async function POST(request) {
   }
 
   try {
-
-
+    // Start transaction
     await query("BEGIN");
     
-    // Make all existing estimations inactive before creating new one
-    await query(`
-        UPDATE project_estimations
-        SET is_active = false
-        WHERE project_id = $1 AND is_active = true
-      `, [body.project_id]);
+    // 1. Get current active estimation (if exists)
+    const currentEstimationResult = await query(`
+      SELECT id, version
+      FROM project_estimations
+      WHERE project_id = $1 AND is_active = true
+      LIMIT 1
+    `, [body.project_id]);
     
+    const currentEstimationId = currentEstimationResult.rows[0]?.id;
+    const currentVersion = currentEstimationResult.rows[0]?.version || 0;
+    
+    // 2. If there's an existing estimation, archive its items to history
+    if (currentEstimationId) {
+      console.log(`Archiving items from estimation ${currentEstimationId} (version ${currentVersion})`);
+      
+      // Move current items to history
+      await query(`
+        INSERT INTO estimation_items_history (
+          id, stable_item_id, estimation_id,
+          category, room_name, vendor_type, item_name,
+          unit, width, height, quantity, unit_price,
+          subtotal, karighar_charges_percentage, karighar_charges_amount,
+          item_discount_percentage, item_discount_amount,
+          discount_kg_charges_percentage, discount_kg_charges_amount,
+          gst_percentage, gst_amount, amount_before_gst, item_total,
+          status, created_at, created_by, updated_at, updated_by,
+          archived_at, archived_by
+        )
+        SELECT 
+          id, stable_item_id, estimation_id,
+          category, room_name, vendor_type, item_name,
+          unit, width, height, quantity, unit_price,
+          subtotal, karighar_charges_percentage, karighar_charges_amount,
+          item_discount_percentage, item_discount_amount,
+          discount_kg_charges_percentage, discount_kg_charges_amount,
+          gst_percentage, gst_amount, amount_before_gst, item_total,
+          status, created_at, created_by, updated_at, updated_by,
+          NOW(), $2
+        FROM estimation_items
+        WHERE estimation_id = $1
+      `, [currentEstimationId, session.user.id]);
+      
+      // Delete current items (now safely in history)
+      await query(`
+        DELETE FROM estimation_items
+        WHERE estimation_id = $1
+      `, [currentEstimationId]);
+      
+      console.log(`Items archived and deleted from estimation ${currentEstimationId}`);
+    }
+    
+    // 3. Mark all existing estimations inactive
+    await query(`
+      UPDATE project_estimations
+      SET is_active = false
+      WHERE project_id = $1 AND is_active = true
+    `, [body.project_id]);
+    
+    // 4. Create new estimation
     const result = await query(
       `INSERT INTO project_estimations (
       project_id, created_by, version,
@@ -80,7 +131,9 @@ export async function POST(request) {
       ]
     );
 
-    // Add estimation items with all calculated fields including room_name, unit, width, height
+    console.log(`Created new estimation ${result.rows[0].id} (version ${nextVersion})`);
+
+    // 5. Add estimation items (no conflicts now since old items are in history)
     if (body.items && body.items.length > 0) {
       for (const item of body.items) {
         // Calculate quantity based on unit type
