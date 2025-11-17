@@ -31,7 +31,6 @@ export async function GET(request, { params }) {
         v.contact_person,
         v.phone as vendor_phone,
         u.name as created_by_name,
-        pe.version as estimation_version,
         (SELECT COUNT(*) FROM purchase_request_items WHERE purchase_request_id = pr.id) as items_count
       FROM purchase_requests pr
       LEFT JOIN vendors v ON pr.vendor_id = v.id
