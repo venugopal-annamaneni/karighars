@@ -165,24 +165,32 @@ export async function POST(request, { params }) {
       }
 
 
-      // 9. Create new project_estimations record
+      // 9. Check if estimation already exists
+      const existingEstimation = await query(`
+        SELECT id FROM project_estimations WHERE project_id = $1
+      `, [projectId]);
+      
+      if (existingEstimation.rows.length > 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({ 
+          error: 'Estimation already exists for this project. Please delete it first or use the edit functionality.' 
+        }, { status: 400 });
+      }
+      
+      // Create new project_estimations record
       const estimationRes = await query(`
         INSERT INTO project_estimations (
-          project_id, version, source, csv_file_path, uploaded_by,
-          is_active, status,
+          project_id, source, csv_file_path, uploaded_by,
           category_breakdown, items_value, kg_charges, 
           items_discount, kg_discount, discount, gst_amount, final_value,
-          created_at, updated_at, has_overpayment, overpayment_amount
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW(), $16, $17)
+          created_by, has_overpayment, overpayment_amount
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING id
       `, [
         projectId,
-        nextVersion,
         'csv_upload',
         relativeFilePath,
         userId,
-        true,          // is_active
-        'draft',
         JSON.stringify(totals.category_breakdown),
         totals.items_value,
         totals.kg_charges,
@@ -191,6 +199,7 @@ export async function POST(request, { params }) {
         totals.discount,
         totals.gst_amount,
         totals.final_value,
+        userId,          // created_by
         hasOverpayment,
         overpaymentAmount
       ]);
