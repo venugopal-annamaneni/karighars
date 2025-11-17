@@ -389,13 +389,13 @@ export default function ProjectEstimationsPage() {
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <p className="text-sm text-orange-900 font-medium mb-2">You are about to:</p>
                 <ul className="list-disc list-inside space-y-1 text-sm text-orange-800 ml-2">
-                  <li>Delete estimation version {estimation?.version}</li>
-                  <li>Revert to version {(estimation?.version || 1) - 1}</li>
-                  <li>Remove all items from the cancelled version</li>
+                  <li>Delete the estimation for this project</li>
+                  <li>Remove all items from the estimation</li>
+                  <li>This action cannot be undone</li>
                 </ul>
               </div>
               <p className="text-sm text-muted-foreground">
-                This will restore the previous estimation as active.
+                This will permanently delete the estimation. All item history will be preserved for audit purposes.
               </p>
             </div>
           </div>
