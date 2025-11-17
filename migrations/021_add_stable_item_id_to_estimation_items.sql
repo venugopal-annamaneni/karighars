@@ -5,7 +5,12 @@
 ALTER TABLE estimation_items
   ADD COLUMN stable_item_id UUID DEFAULT gen_random_uuid() NOT NULL;
 
+-- Add unique constraint on stable_item_id (required for foreign keys)
+ALTER TABLE estimation_items
+  ADD CONSTRAINT uq_estimation_items_stable_id UNIQUE (stable_item_id);
+
 -- Add index for performance (joins and lookups)
+-- Note: Unique constraint already creates an index, but explicit index can help with query planning
 CREATE INDEX idx_estimation_items_stable_id ON estimation_items(stable_item_id);
 
 -- Add unique constraint within an estimation version
