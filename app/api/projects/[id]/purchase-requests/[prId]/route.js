@@ -22,8 +22,7 @@ export async function GET(request, { params }) {
         v.contact_person,
         v.phone as vendor_phone,
         v.email as vendor_email,
-        u.name as created_by_name,
-        pe.version as estimation_version
+        u.name as created_by_name
       FROM purchase_requests pr
       LEFT JOIN vendors v ON pr.vendor_id = v.id
       LEFT JOIN users u ON pr.created_by = u.id
