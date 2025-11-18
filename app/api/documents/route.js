@@ -45,7 +45,7 @@ export async function POST(request, { params }) {
 
   try {
     const result = await query(
-      `INSERT INTO documents (group_type, group_id, related_entity, related_id, l, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
+      `INSERT INTO documents (group_type, group_id, related_entity, related_id, document_type, document_url, file_name, file_size, mime_type, uploaded_by, remarks)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [body.group_type, body.group_id, body.related_entity, body.related_id, body.document_type, body.document_url,
         body.file_name, body.file_size, body.mime_type, session.user.id,
