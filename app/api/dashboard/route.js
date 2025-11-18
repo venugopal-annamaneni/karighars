@@ -21,8 +21,7 @@ export async function GET(request, { params }) {
         SELECT 
           (SELECT COUNT(*) FROM projects WHERE status = 'active') as active_projects,
           (SELECT COALESCE(SUM(COALESCE(final_value)), 0) 
-           FROM project_estimations 
-           WHERE is_active = true) as total_project_value,
+           FROM project_estimations) as total_project_value,
           (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE status = $1) as total_received,
           (SELECT COALESCE(SUM(amount), 0) FROM payments_out) as total_paid
       `, [PAYMENT_STATUS.APPROVED]);
