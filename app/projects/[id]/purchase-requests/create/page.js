@@ -738,7 +738,7 @@ function ComponentFlow({ projectId, onBack }) {
           quantity: parseFloat(comp.quantity),
           unit: comp.unit,
           links: [{
-            estimation_item_id: selectedItem.id,
+            stable_estimation_item_id: selectedItem.stable_item_id,
             linked_qty: qty,
             weightage: parseFloat(comp.percentage) / 100,
             notes: `Component breakdown: ${comp.percentage}%`
