@@ -187,20 +187,24 @@ export async function PUT(request, { params }) {
 
         // Insert estimation links
         for (const link of item.links) {
+          const stableEstimationItemId = link.stable_estimation_item_id;
+          
+          if (!stableEstimationItemId) {
+            throw new Error(`stable_estimation_item_id is required for link`);
+          }
+          
           await query(`
             INSERT INTO purchase_request_estimation_links (
-              estimation_item_id,
-              purchase_request_item_id,
+              stable_estimation_item_id,
               stable_item_id,
               version,
               linked_qty,
               unit_purchase_request_item_weightage,
               notes,
               created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
           `, [
-            link.estimation_item_id,
-            prItemId,
+            stableEstimationItemId,
             stableItemId,
             currentVersion,
             link.linked_qty,
