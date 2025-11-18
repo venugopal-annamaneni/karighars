@@ -69,9 +69,9 @@ export async function GET(request, { params }) {
         ) as available_qty
       FROM estimation_items ei
       LEFT JOIN purchase_request_estimation_links prel 
-        ON ei.id = prel.estimation_item_id
+        ON ei.stable_item_id = prel.stable_estimation_item_id
       LEFT JOIN purchase_request_items pri 
-        ON prel.purchase_request_item_id = pri.id
+        ON prel.stable_item_id = pri.stable_item_id
       LEFT JOIN purchase_requests pr 
         ON pri.purchase_request_id = pr.id
       WHERE ei.estimation_id = $1
