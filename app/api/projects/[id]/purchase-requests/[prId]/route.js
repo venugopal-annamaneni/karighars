@@ -61,7 +61,7 @@ export async function GET(request, { params }) {
         json_agg(
           json_build_object(
             'id', prel.id,
-            'estimation_item_id', prel.estimation_item_id,
+            'stable_estimation_item_id', prel.stable_estimation_item_id,
             'estimation_item_name', ei.item_name,
             'estimation_item_category', ei.category,
             'estimation_item_room', ei.room_name,
@@ -74,8 +74,8 @@ export async function GET(request, { params }) {
           )
         ) FILTER (WHERE prel.id IS NOT NULL) as estimation_links
       FROM purchase_request_items pri
-      LEFT JOIN purchase_request_estimation_links prel ON pri.id = prel.purchase_request_item_id
-      LEFT JOIN estimation_items ei ON prel.estimation_item_id = ei.id
+      LEFT JOIN purchase_request_estimation_links prel ON pri.stable_item_id = prel.stable_item_id
+      LEFT JOIN estimation_items ei ON prel.stable_estimation_item_id = ei.stable_item_id
       WHERE pri.purchase_request_id = $1
       GROUP BY pri.id
       ORDER BY pri.id
