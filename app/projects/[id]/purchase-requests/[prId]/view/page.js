@@ -319,7 +319,7 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
       } else {
         // Component Flow - group by estimation item
         item.estimation_links.forEach(link => {
-          const estItemKey = link.estimation_item_id;
+          const estItemKey = link.stable_estimation_item_id;
           if (!componentFlowEstimationItems[estItemKey]) {
             componentFlowEstimationItems[estItemKey] = {
               category: link.estimation_item_category,
