@@ -95,6 +95,7 @@ export async function GET(request, { params }) {
       dataRows = categoryRates.categories
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
         .map(category => ({
+          stable_item_id: '', // Empty for new items
           category: category.id,
           room_name: 'Sample Room',
           item_name: `Sample ${category.category_name} Item`,
