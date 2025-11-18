@@ -34,6 +34,7 @@ export async function GET(request, { params }) {
     const items = await query(`
       SELECT 
         ei.id,
+        ei.stable_item_id,
         ei.category,
         ei.room_name,
         ei.item_name,
