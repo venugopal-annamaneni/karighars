@@ -114,6 +114,7 @@ export async function POST(request, { params }) {
       const calculatedItems = [];
       for (const row of rows) {
         const itemData = {
+          stable_item_id: row.stable_item_id?.trim() || null, // Parse stable_item_id from CSV
           category: row.category?.trim(),
           room_name: row.room_name?.trim(),
           item_name: row.item_name?.trim(),
