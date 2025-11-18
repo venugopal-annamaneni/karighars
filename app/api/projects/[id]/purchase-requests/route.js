@@ -259,33 +259,25 @@ export async function POST(request, { params }) {
 
         // Insert estimation links
         for (const link of item.links) {
-          // Get stable_estimation_item_id from estimation_item_id
-          const estItemResult = await query(`
-            SELECT stable_item_id FROM estimation_items WHERE id = $1
-          `, [link.estimation_item_id]);
+          // Frontend should now provide stable_estimation_item_id
+          const stableEstimationItemId = link.stable_estimation_item_id;
           
-          if (estItemResult.rows.length === 0) {
-            throw new Error(`Estimation item ${link.estimation_item_id} not found`);
+          if (!stableEstimationItemId) {
+            throw new Error(`stable_estimation_item_id is required for link`);
           }
-          
-          const stableEstimationItemId = estItemResult.rows[0].stable_item_id;
           
           await query(`
             INSERT INTO purchase_request_estimation_links (
-              estimation_item_id,
               stable_estimation_item_id,
-              purchase_request_item_id,
               stable_item_id,
               version,
               linked_qty,
               unit_purchase_request_item_weightage,
               notes,
               created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
           `, [
-            link.estimation_item_id,
-            stableEstimationItemId,  // NEW: version-independent reference
-            prItemId,
+            stableEstimationItemId,  // Version-independent reference
             stableItemId,
             1, // Initial version
             link.linked_qty,
