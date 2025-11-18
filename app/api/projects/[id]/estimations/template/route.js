@@ -77,6 +77,7 @@ export async function GET(request, { params }) {
     if (estimationItemsRes.rows.length > 0) {
       // Use actual estimation items
       dataRows = estimationItemsRes.rows.map(item => ({
+        stable_item_id: item.stable_item_id || '',
         category: item.category,
         room_name: item.room_name,
         item_name: item.item_name,
