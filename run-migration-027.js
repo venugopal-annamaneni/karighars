@@ -1,10 +1,18 @@
 // Run migration 027
-require('dotenv').config();
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const connectionString = process.env.MONGO_URL || process.env.DATABASE_URL;
+// Read connection string from .env file manually
+const envPath = path.join(__dirname, '.env');
+const envContent = fs.readFileSync(envPath, 'utf8');
+const mongoUrlMatch = envContent.match(/MONGO_URL=(.+)/);
+const connectionString = mongoUrlMatch ? mongoUrlMatch[1].trim() : null;
+
+if (!connectionString) {
+  console.error('❌ MONGO_URL not found in .env file');
+  process.exit(1);
+}
 
 async function runMigration() {
   const pool = new Pool({ connectionString });
