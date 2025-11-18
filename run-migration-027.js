@@ -1,9 +1,10 @@
 // Run migration 027
+require('dotenv').config();
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const connectionString = process.env.DATABASE_URL || process.env.MONGO_URL;
+const connectionString = process.env.MONGO_URL || process.env.DATABASE_URL;
 
 async function runMigration() {
   const pool = new Pool({ connectionString });
