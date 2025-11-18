@@ -4,6 +4,19 @@ import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import { ESTIMATION_STATUS, PAYMENT_STATUS, ESTIMATION_ITEM_STATUS } from '@/app/constants';
 
+// --- Helper: compute totals cleanly ---
+function computeTotals(body) {
+  const n = (v) => parseFloat(v) || 0;
+  const itemsValue = n(body.items_value);
+  const itemsDiscount = n(body.items_discount);
+  const kgCharges = n(body.kg_charges);
+  const kgDiscount = n(body.kg_charges_discount);
+  const discount = itemsDiscount + kgDiscount;
+  const gstAmount = n(body.gst_amount);
+  const finalValue = n(body.final_value);
+  return { itemsValue, itemsDiscount, kgCharges, kgDiscount, discount, gstAmount, finalValue };
+}
+
 // POST - Create new estimation (only if none exists for project)
 export async function POST(request) {
   const session = await getServerSession(authOptions);
