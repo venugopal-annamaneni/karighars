@@ -15,7 +15,10 @@ if (!connectionString) {
 }
 
 async function runMigration() {
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ 
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
   
   try {
     const migrationSQL = fs.readFileSync(
