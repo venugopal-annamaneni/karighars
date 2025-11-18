@@ -399,13 +399,23 @@ export async function POST(request, { params }) {
       // ===== COMMIT TRANSACTION =====
       await query('COMMIT');
 
-      return NextResponse.json({
+      const response = {
         success: true,
         estimation_id: estimationId,
         items_count: calculatedItems.length,
         final_value: totals.final_value,
-        file_name: fileName
-      });
+        file_name: fileName,
+        is_update: isUpdate
+      };
+      
+      if (isUpdate && versionNumber) {
+        response.version = versionNumber;
+        response.message = `Estimation updated successfully via CSV upload (version ${versionNumber})`;
+      } else {
+        response.message = 'Estimation created successfully via CSV upload';
+      }
+
+      return NextResponse.json(response);
 
     } catch (error) {
       // ===== ROLLBACK ON ERROR =====
