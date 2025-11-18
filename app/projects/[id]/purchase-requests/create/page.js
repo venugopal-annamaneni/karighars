@@ -285,7 +285,7 @@ function FullUnitFlow({ projectId, onBack }) {
         quantity: sel.quantity,
         unit: sel.item.unit,
         links: [{
-          estimation_item_id: sel.item.id,
+          stable_estimation_item_id: sel.item.stable_item_id,
           linked_qty: sel.quantity,
           weightage: 1.0,
           notes: 'Full unit fulfillment'
