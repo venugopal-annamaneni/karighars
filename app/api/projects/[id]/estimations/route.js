@@ -159,94 +159,66 @@ export async function POST(request) {
 // PUT - Update existing estimation
 export async function PUT(request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
-  const { project_id, estimation_id } = body;
-
-  // Build category_breakdown JSONB from items
+  const { project_id } = body;
+  const { itemsValue, itemsDiscount, kgCharges, kgDiscount, discount, gstAmount, finalValue } = computeTotals(body);
   const categoryBreakdown = body.category_breakdown || {};
 
-  // Aggregate totals
-  const itemsValue = parseFloat(body.items_value) || 0;
-  const itemsDiscount = parseFloat(body.items_discount) || 0;
-  const kgCharges = parseFloat(body.kg_charges) || 0;
-  const kgDiscount = parseFloat(body.kg_charges_discount) || 0;
-  const discount = itemsDiscount + kgDiscount;
-  const gstAmount = parseFloat(body.gst_amount) || 0;
-  const finalValue = parseFloat(body.final_value) || 0;
+  try {
+    await query('BEGIN');
 
-  let hasOverpayment = false;
-  let overpaymentAmount = 0;
-  
-  // Get total approved payments
-  const paymentsRes = await query(`
-      SELECT COALESCE(SUM(amount), 0) as total_collected
-      FROM customer_payments
-      WHERE project_id = $1 AND status = $2
+    // 1️⃣ Combined metadata query (estimation id, max version, total collected)
+    const meta = await query(`
+      SELECT 
+        pe.id AS estimation_id,
+        (SELECT COALESCE(MAX(version), 0) FROM estimation_items_history WHERE estimation_id = pe.id) AS max_version,
+        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE project_id = $1 AND status = $2) AS total_collected
+      FROM project_estimations pe
+      WHERE pe.project_id = $1
     `, [project_id, PAYMENT_STATUS.APPROVED]);
 
-  const totalCollected = parseFloat(paymentsRes.rows[0].total_collected || 0);
-
-  if (totalCollected > finalValue) {
-    hasOverpayment = true;
-    overpaymentAmount = totalCollected - finalValue;
-  }
-
-  try {
-    await query("BEGIN");
-    
-    // 1. Get existing estimation
-    const estimationResult = await query(`
-      SELECT id FROM project_estimations
-      WHERE project_id = $1
-    `, [project_id]);
-    
-    if (estimationResult.rows.length === 0) {
-      await query("ROLLBACK");
-      return NextResponse.json({
-        error: 'Estimation not found. Use POST to create.'
-      }, { status: 404 });
+    if (meta.rows.length === 0) {
+      await query('ROLLBACK');
+      return NextResponse.json({ error: 'Estimation not found. Use POST to create.' }, { status: 404 });
     }
-    
-    const estimationId = estimationResult.rows[0].id;
-    
-    // 2. Get current max version from history
-    const versionResult = await query(`
-      SELECT COALESCE(MAX(version), 0) as max_version
-      FROM estimation_items_history
-      WHERE estimation_id = $1
-    `, [estimationId]);
-    
-    const nextVersion = versionResult.rows[0].max_version + 1;
-    console.log(`Creating version ${nextVersion} for estimation ${estimationId}`);
-    
-    // 3. Fetch old items (for preserving created_at/created_by)
+
+    const { estimation_id, max_version, total_collected } = meta.rows[0];
+    const nextVersion = Number(max_version) + 1;
+    const totalCollected = parseFloat(total_collected || 0);
+    const hasOverpayment = totalCollected > finalValue;
+    const overpaymentAmount = hasOverpayment ? totalCollected - finalValue : 0;
+
+    // 2️⃣ Fetch old items to preserve created_at/created_by (needed before we delete them)
     const oldItemsResult = await query(`
       SELECT stable_item_id, created_at, created_by
       FROM estimation_items
       WHERE estimation_id = $1
-    `, [estimationId]);
-    
-    let oldItemsMap = new Map();
-    oldItemsResult.rows.forEach(item => {
-      oldItemsMap.set(item.stable_item_id, {
-        created_at: item.created_at,
-        created_by: item.created_by
-      });
+    `, [estimation_id]);
+
+    const oldItemsMap = new Map();
+    oldItemsResult.rows.forEach(row => {
+      // stable_item_id may be null for legacy rows; map only defined stable ids
+      if (row.stable_item_id) {
+        oldItemsMap.set(String(row.stable_item_id), {
+          created_at: row.created_at,
+          created_by: row.created_by
+        });
+      }
     });
-    
-    console.log(`Archiving ${oldItemsResult.rows.length} items to history (version ${nextVersion})`);
-    
-    // 4. Archive current items to history with version
+
+    // 3️⃣ Archive + delete existing items in one go
     await query(`
+      WITH deleted AS (
+        DELETE FROM estimation_items
+        WHERE estimation_id = $1
+        RETURNING *
+      )
       INSERT INTO estimation_items_history (
-        id, stable_item_id, estimation_id,
-        category, room_name, vendor_type, item_name,
-        unit, width, height, quantity, unit_price,
-        subtotal, karighar_charges_percentage, karighar_charges_amount,
+        id, stable_item_id, estimation_id, category, room_name, vendor_type, item_name,
+        unit, width, height, quantity, unit_price, subtotal,
+        karighar_charges_percentage, karighar_charges_amount,
         item_discount_percentage, item_discount_amount,
         discount_kg_charges_percentage, discount_kg_charges_amount,
         gst_percentage, gst_amount, amount_before_gst, item_total,
@@ -254,78 +226,106 @@ export async function PUT(request) {
         version, archived_at, archived_by
       )
       SELECT 
-        id, stable_item_id, estimation_id,
-        category, room_name, vendor_type, item_name,
+        id, stable_item_id, estimation_id, category, room_name, vendor_type, item_name,
+        unit, width, height, quantity, unit_price, subtotal,
+        karighar_charges_percentage, karighar_charges_amount,
+        item_discount_percentage, item_discount_amount,
+        discount_kg_charges_percentage, discount_kg_charges_amount,
+        gst_percentage, gst_amount, amount_before_gst, item_total,
+        status, created_at, created_by, updated_at, updated_by,
+        $2 AS version, NOW() AS archived_at, $3 AS archived_by
+      FROM deleted;
+    `, [estimation_id, nextVersion, session.user.id]);
+
+    // 4️⃣ Insert new items in bulk (but preserve created_at/created_by where stable_id existed)
+    if (body.items && body.items.length > 0) {
+      const insertCols = `
+        estimation_id, stable_item_id, category, room_name, vendor_type, item_name,
         unit, width, height, quantity, unit_price,
         subtotal, karighar_charges_percentage, karighar_charges_amount,
         item_discount_percentage, item_discount_amount,
         discount_kg_charges_percentage, discount_kg_charges_amount,
         gst_percentage, gst_amount, amount_before_gst, item_total,
-        status, created_at, created_by, updated_at, updated_by,
-        $2, NOW(), $3
-      FROM estimation_items
-      WHERE estimation_id = $1
-    `, [estimationId, nextVersion, session.user.id]);
-    
-    // 5. Delete current items
-    await query(`
-      DELETE FROM estimation_items
-      WHERE estimation_id = $1
-    `, [estimationId]);
-    
-    console.log(`Items archived and deleted from estimation ${estimationId}`);
-    
-    // 6. Insert new items
-    if (body.items && body.items.length > 0) {
+        status, created_at, created_by, updated_at, updated_by
+      `;
+
+      const placeholders = [];
+      const values = [];
+      let i = 1;
+
       for (const item of body.items) {
-        // Calculate quantity based on unit type
-        let finalQuantity = item.quantity;
-        if (item.unit === 'sqft' && item.width && item.height) {
-          finalQuantity = parseFloat(item.width) * parseFloat(item.height);
-        }
-        
-        const stableItemId = item.stable_item_id || null;
-        
-        // Determine creation audit fields
-        let createdAt, createdBy;
-        
-        if (stableItemId && oldItemsMap.has(stableItemId)) {
-          // EXISTING ITEM: Preserve original created_at and created_by
-          const oldAudit = oldItemsMap.get(stableItemId);
-          createdAt = oldAudit.created_at;
-          createdBy = oldAudit.created_by;
+        const finalQty =
+          item.unit === 'sqft' && item.width && item.height
+            ? parseFloat(item.width) * parseFloat(item.height)
+            : parseFloat(item.quantity) || 0;
+
+        // Preserve stable id if provided, or null (DB gen via COALESCE)
+        const stableId = item.stable_item_id ? String(item.stable_item_id) : null;
+
+        // If this stableId was present in oldItemsMap, preserve created_at/created_by
+        let preservedCreatedAt = null;
+        let preservedCreatedBy = session.user.id; // default for new items
+
+        if (stableId && oldItemsMap.has(stableId)) {
+          const oldAudit = oldItemsMap.get(stableId);
+          preservedCreatedAt = oldAudit.created_at;     // may be timestamp
+          preservedCreatedBy = oldAudit.created_by;     // user id
         } else {
-          // NEW ITEM: Set created_at and created_by to current values
-          createdAt = null;
-          createdBy = session.user.id;
+          preservedCreatedAt = null; // will use NOW() in SQL via COALESCE
+          preservedCreatedBy = session.user.id;
         }
-        
-        await query(
-          `INSERT INTO estimation_items (
-          estimation_id, stable_item_id, category, room_name, vendor_type, item_name, 
-          unit, width, height, quantity, unit_price,
-          subtotal, karighar_charges_percentage, karighar_charges_amount, item_discount_percentage, item_discount_amount, 
-          discount_kg_charges_percentage, discount_kg_charges_amount, gst_percentage, gst_amount, amount_before_gst, item_total,
-          status, created_at, created_by, updated_at, updated_by
-        )
-        VALUES ($1, COALESCE($2, gen_random_uuid()), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, COALESCE($24, NOW()), $25, NOW(), $26)`,
-          [
-            estimationId, 
-            stableItemId,
-            item.category, item.room_name, item.vendor_type, item.item_name,
-            item.unit, parseFloat(item.width) || null, parseFloat(item.height) || null, parseFloat(finalQuantity), parseFloat(item.unit_price),
-            parseFloat(item.subtotal), parseFloat(item.karighar_charges_percentage), parseFloat(item.karighar_charges_amount), parseFloat(item.item_discount_percentage), parseFloat(item.item_discount_amount),
-            parseFloat(item.discount_kg_charges_percentage), parseFloat(item.discount_kg_charges_amount), parseFloat(item.gst_percentage), parseFloat(item.gst_amount), parseFloat(item.amount_before_gst), parseFloat(item.item_total),
-            ESTIMATION_ITEM_STATUS.QUEUED,
-            createdAt,
-            createdBy,
-            session.user.id
-          ]
+
+        // Build placeholder tuple for this item.
+        // Note: stable_item_id uses COALESCE($n, gen_random_uuid())
+        placeholders.push(`(
+          $${i++}, COALESCE($${i++}, gen_random_uuid()), $${i++}, $${i++}, $${i++}, $${i++},
+          $${i++}, $${i++}, $${i++}, $${i++}, $${i++},
+          $${i++}, $${i++}, $${i++},
+          $${i++}, $${i++},
+          $${i++}, $${i++},
+          $${i++}, $${i++}, $${i++}, $${i++},
+          $${i++}, COALESCE($${i++}, NOW()), $${i++}, NOW(), $${i++}
+        )`);
+
+        // Push values in exactly the same order as placeholders above
+        values.push(
+          estimation_id,                     // $n: estimation_id
+          stableId,                          // $n+1: stable_item_id (or null)
+          item.category,                     // category
+          item.room_name,                    // room_name
+          item.vendor_type,                  // vendor_type
+          item.item_name,                    // item_name
+          item.unit,                         // unit
+          parseFloat(item.width) || null,    // width
+          parseFloat(item.height) || null,   // height
+          finalQty,                          // quantity
+          parseFloat(item.unit_price) || 0,  // unit_price
+          parseFloat(item.subtotal) || 0,    // subtotal
+          parseFloat(item.karighar_charges_percentage) || 0, // karighar_charges_percentage
+          parseFloat(item.karighar_charges_amount) || 0,     // karighar_charges_amount
+          parseFloat(item.item_discount_percentage) || 0,    // item_discount_percentage
+          parseFloat(item.item_discount_amount) || 0,        // item_discount_amount
+          parseFloat(item.discount_kg_charges_percentage) || 0,
+          parseFloat(item.discount_kg_charges_amount) || 0,
+          parseFloat(item.gst_percentage) || 0,
+          parseFloat(item.gst_amount) || 0,
+          parseFloat(item.amount_before_gst) || 0,
+          parseFloat(item.item_total) || 0,
+          ESTIMATION_ITEM_STATUS.QUEUED,  // status
+          preservedCreatedAt,             // created_at (or null -> SQL uses NOW())
+          preservedCreatedBy,             // created_by (user id)
+          session.user.id                 // updated_by
         );
       }
+
+      // Run the bulk insert
+      await query(
+        `INSERT INTO estimation_items (${insertCols}) VALUES ${placeholders.join(', ')}`,
+        values
+      );
     }
-    
-    // 7. Update estimation record with new totals
+
+    // 5️⃣ Update estimation header totals and metadata
     await query(`
       UPDATE project_estimations
       SET 
@@ -344,26 +344,25 @@ export async function PUT(request) {
         updated_by = $13
       WHERE id = $1
     `, [
-      estimationId,
+      estimation_id,
       JSON.stringify(categoryBreakdown),
       itemsValue, kgCharges, itemsDiscount, kgDiscount, discount, gstAmount, finalValue,
       hasOverpayment, overpaymentAmount,
       body.remarks,
       session.user.id
     ]);
-    
-    console.log(`Updated estimation ${estimationId} with new totals`);
-    
-    // Commit transaction
-    await query("COMMIT");
-    console.log(`Transaction committed for estimation ${estimationId}, version ${nextVersion}`);
-    
-    // If overpayment detected, return warning
+
+    // 6️⃣ Commit
+    await query('COMMIT');
+
+    console.log(`Estimation ${estimation_id} updated successfully, version ${nextVersion}`);
+
+    // Return response (including overpayment warning when relevant)
     if (hasOverpayment) {
       return NextResponse.json({
         success: true,
         message: 'Estimation updated successfully',
-        estimation_id: estimationId,
+        estimation_id,
         version: nextVersion,
         warning: 'overpayment_detected',
         overpayment: {
@@ -373,17 +372,17 @@ export async function PUT(request) {
         }
       });
     }
-    
+
     return NextResponse.json({
       success: true,
       message: 'Estimation updated successfully',
-      estimation_id: estimationId,
+      estimation_id,
       version: nextVersion
     });
 
   } catch (error) {
-    await query("ROLLBACK");
-    console.error('API Error - Rolling back transaction:', error);
+    await query('ROLLBACK');
+    console.error('PUT /estimations error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
