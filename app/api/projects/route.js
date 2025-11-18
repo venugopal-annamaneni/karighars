@@ -55,7 +55,16 @@ export async function POST(request) {
 
 
   const body = await request.json();
-  const projectCode = `KG-${Date.now()}`;
+  
+  // Validate project_code is provided
+  if (!body.project_code) {
+    return NextResponse.json(
+      { error: 'Project code is required' },
+      { status: 400 }
+    );
+  }
+  
+  const projectCode = body.project_code;
   const salesOrderId = `SO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
 
   // Use provided bizModel or default to V1
