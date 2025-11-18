@@ -120,10 +120,17 @@ export default function NewProjectPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Construct full project code with KG- prefix
+      const projectData = {
+        ...formData,
+        project_code: `KG-${formData.project_code_suffix}`,
+      };
+      delete projectData.project_code_suffix; // Remove the suffix field
+      
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(projectData),
       });
 
       if (res.ok) {
@@ -131,7 +138,8 @@ export default function NewProjectPage() {
         toast.success('Project created successfully');
         router.push(`/projects/${data.project.id}`);
       } else {
-        toast.error('Failed to create project');
+        const errorData = await res.json();
+        toast.error(errorData.error || 'Failed to create project');
       }
     } catch (error) {
       console.error('Error creating project:', error);
