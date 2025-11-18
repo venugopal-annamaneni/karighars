@@ -26,6 +26,7 @@ export default function NewProjectPage() {
   
   const [formData, setFormData] = useState({
     name: '',
+    project_code_suffix: '', // User enters the suffix, we'll prepend KG-
     customer_id: '',
     location: '',
     biz_model_id: '',
