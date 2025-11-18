@@ -199,6 +199,26 @@ export default function NewProjectPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="project_code">Project Code *</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center border rounded-md px-3 py-2 bg-muted text-muted-foreground">
+                    KG-
+                  </div>
+                  <Input
+                    id="project_code"
+                    placeholder="e.g., 2025001"
+                    value={formData.project_code_suffix}
+                    onChange={(e) => setFormData({ ...formData, project_code_suffix: e.target.value })}
+                    required
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enter a unique identifier (e.g., year + sequence number)
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="customer">Customer *</Label>
                   <Dialog open={showCustomerDialog} onOpenChange={setShowCustomerDialog}>
