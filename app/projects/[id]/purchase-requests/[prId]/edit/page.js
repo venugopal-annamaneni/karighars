@@ -109,7 +109,7 @@ export default function EditPurchaseRequestPage() {
         } else {
           // Component Flow - group by estimation item
           item.estimation_links.forEach(link => {
-            const estItemKey = link.estimation_item_id;
+            const estItemKey = link.stable_estimation_item_id;
             if (!componentGroupsMap[estItemKey]) {
               componentGroupsMap[estItemKey] = {
                 category: link.estimation_item_category,
@@ -119,7 +119,7 @@ export default function EditPurchaseRequestPage() {
                 width: link.estimation_item_width,
                 height: link.estimation_item_height,
                 linked_qty: link.linked_qty,
-                estimation_item_id: link.estimation_item_id,
+                stable_estimation_item_id: link.stable_estimation_item_id,
                 components: []
               };
             }
