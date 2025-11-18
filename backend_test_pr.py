@@ -13,7 +13,7 @@ import psycopg2
 from urllib.parse import urlparse
 
 # Configuration
-BASE_URL = "https://inventory-hub-423.preview.emergentagent.com"
+BASE_URL = "https://item-lineage.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 # Database connection from environment

@@ -1,138 +1,80 @@
 <analysis>
-The AI engineer effectively managed the evolution of the KG Interiors application from dynamic category refactoring to the advanced Purchase Request system. Key achievements include the robust implementation of a CSV upload feature with client-side validation, versioning, and a centralized calculation utility. Database migrations were handled, and conflicting API routes were resolved. Following user feedback, the architecture for Purchase Requests shifted significantly, moving from a simple 1:1 item mapping to a complex junction table with weightage, reflecting a deep understanding of evolving requirements. The engineer demonstrated strong problem-solving in resolving database connection issues, managing conflicting file paths, and adapting to user-initiated code changes and  operations. The current focus is on completing the API layer for the redesigned Purchase Request feature, with UI development pending.
+The trajectory details a significant architectural refactoring of the KG Interiors application, primarily focused on the Estimation and Purchase Request (PR) modules. The work began with a request to fix a bug in the PR editing feature, specifically by removing a flawed soft-delete implementation (, ) in favor of a cleaner history-table approach.
+
+This led to a series of user-driven architectural improvements. First, the concept of a  (a persistent UUID) was introduced to  to create a durable link between an estimation item and any PRs created from it, even across edits.
+
+Subsequently, a major refactor of the estimation versioning system was undertaken. The initial model, which created a new version of the entire  record on every save, was deemed overly complex. It was replaced with a single estimation per project model. Now, editing an estimation moves the old items to an  table and inserts the updated items into the main  table, all within a single database transaction. This mirrors the pattern already established for PRs. The work involved extensive database migrations, backend API refactoring (especially ), and frontend updates to handle the new logic.
+
+The user is technically proficient, providing precise file/line number references and architectural guidance. The final interaction before this summary was a request to apply the same history-table logic to the CSV upload feature for estimations, ensuring consistency across all edit paths.
+
+The user's primary language is English. The next agent must respond in English.
 </analysis>
 
 <product_requirements>
-KG Interiors requires a finance management platform to replace Excel, providing real-time cash flow, commissions, and project financial health. The platform supports various workflows (Sales, Design, Shopping, Civil Vendor) and includes a Finance Dashboard, Project Ledger, Reports, and role-based access.
+The application, KG Interiors, requires a robust system for managing project Estimations and Purchase Requests (PRs). The initial system was functional but had architectural flaws that made it difficult to maintain and audit.
 
-**Implemented features so far:**
-*   Google OAuth for user authentication.
-*   Customizable BizModel system with dynamic  (JSONB) for payment milestones and project stages, including discounts and Pay to vendor directly flags.
-*   Project-specific  with approval workflow.
-*   Advanced  calculations with dual-discount system.
-*    storing category-wise totals in a  JSONB column.
-*    page: Updated for dynamic rates and refactored to display items by dynamic categories.
-*   Dynamic display of all configured categories and percentage payables per milestone in BizModel.
-*    API and  UI refactored for dynamic categories.
-*   All hardcoded category references removed.
-*   **CSV Upload for Estimation Items:** Users can upload CSVs for estimations. The system processes and inserts items into  (new version) and . The original CSV is stored. Includes client-side validation and version management.
-*   **Estimation Item Status:** A  column (, ) has been added to , defaulting to  on creation/upload.
-*   **Purchase Requests (PRs) (Redesigned):** Allows creating PRs by linking  to  via a  junction table. This supports one estimation item breaking down into multiple PR items, with flexible quantities and component breakdown using . PR items no longer carry customer-facing pricing.
+The core product goal evolved into creating a living document system for both Estimations and PRs, where edits are non-destructive and a full history is preserved.
+
+**Key Requirements Implemented:**
+1.  **Stable Item Identity**: Every item in an Estimation and a PR now has a  (UUID) that persists across all versions and edits, ensuring a stable reference point.
+2.  **PR Versioning**: When a PR is edited, all its current items are moved to a history table, and the updated set of items is inserted as the new current version. This provides a complete, versioned audit trail for each PR.
+3.  **Simplified Estimation Management**: The initial concept of multiple, versioned estimations per project was removed. Now, each project has only one canonical estimation. When this estimation is edited (either through the UI or a CSV upload), its items are versioned using a history table, but the parent estimation record remains singular.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack:** Next.js (React frontend, API routes backend), PostgreSQL.
--   **Authentication:** NextAuth.js with Google OAuth.
--   **Styling:** Tailwind CSS and Shadcn UI components.
--   **Database:** Direct SQL queries via , custom migrations, JSONB, DB Transactions, composite unique constraints.
--   **CSV Processing:**  for client-side parsing,  for generation.
--   **Modularity:** Centralized calculation utilities ().
--   **Versioning:** Estimation item versioning, Git for code management.
+- **Backend**: Next.js API Routes.
+- **Database**: PostgreSQL, with direct queries via the  library.
+- **Database Schema Management**: Manual SQL migration scripts.
+- **Versioning Architecture**: A Stable ID + History Table pattern. Edits move previous item states to a  table and insert the new state into the primary table.  links an item's lineage.
+- **Transactional Integrity**: Critical database operations (like editing an estimation) are wrapped in , , and  blocks to ensure data consistency.
 </key_technical_concepts>
 
 <code_architecture>
+The application follows a standard Next.js structure. The recent work has been concentrated on refactoring the estimation and purchase request modules, touching database migrations, backend APIs, and related frontend components.
 
 
--   ****: Main database schema definition.
-    -   **Summary:** Defines PostgreSQL schema. Continually updated to reflect new features.
-    -   **Changes:**
-        -    and  now have  JSONB.  has  JSONB.
-        -    has  JSONB, .  removed.
-        -    now includes a  column (VARCHAR, default 'Queued').
-        -   New tables  and  created.
-        -   :  removed (now in junction table), pricing columns removed,  is .
-        -   New  junction table added.
--   ****: API for CSV uploads.
-    -   **Summary:** Handles processing uploaded estimation item CSVs, inserting data into  and  within a DB transaction.
-    -   **Changes:** Updated to use  for calculations and to set  from CSV or default to 'Queued'.
--   ****: API for CSV template download.
-    -   **Summary:** Provides a CSV template for estimation item uploads.
-    -   **Changes:** Updated to include the  column in the template.
--   ****: API for manual estimation item creation.
-    -   **Summary:** Handles creating individual estimation items.
-    -   **Changes:** Updated to set  to 'Queued' by default.
--   ****: **NEW** API for downloading a specific estimation version's CSV.
-    -   **Summary:** Allows downloading an archived CSV for a given estimation version.
--   ****: **NEW** API for Purchase Request CRUD (list and create).
-    -   **Summary:** Handles fetching all PRs for a project and creating new PRs based on the new architecture.
--   ****: **NEW** API for fetching estimation items available for PR creation.
-    -   **Summary:** Returns estimation items along with their available quantities, considering quantities already linked in PRs.
-    -   **Changes:** Modified to handle the new junction table based linking for calculating .
--   ****: **NEW** API for specific Purchase Request operations.
-    -   **Summary:** Handles GET, PUT, DELETE for a single purchase request.
--   ****: Project detail page.
-    -   **Summary:** Displays project info and estimation summary.
-    -   **Changes:** Incorporated version management UI (dropdown to select versions, conditional visibility for Upload CSV and Edit Estimation buttons).  updated to include status column.
--   ****: Project estimation form.
-    -   **Summary:** Critical for creating/modifying estimations.
-    -   **Changes:** Refactored to use  for calculation functions.
--   ****: UI page for CSV upload.
-    -   **Summary:** Provides an interface for users to upload estimation item CSVs, with client-side validation.
-    -   **Changes:**  field name fixed to  (matching API), description updated. Validation updated to include  as an optional column with allowed values.
--   ****: Project-specific layout with navigation tabs.
-    -   **Summary:** Provides layout and navigation for project sub-pages.
-    -   **Changes:** Added a new tab for Purchase Requests.
--   ****: **NEW** UI page for listing Purchase Requests.
-    -   **Summary:** Displays a table of Purchase Requests for the project.
-    -   **Changes:** Initial page created, designed to list PRs in a table format.
--   ****: **NEW** UI page for creating Purchase Requests.
-    -   **Summary:** Dedicated page for creating PRs, allowing users to select estimation items and define quantities/components.
-    -   **Changes:** Initial page created, designed to display estimation items grouped by category in tables with quantity inputs.
--   ****: **NEW** UI page for viewing a specific Purchase Request.
-    -   **Summary:** Dedicated page to view details of a single Purchase Request.
-    -   **Changes:** Initial page created.
--   ****: Application constants.
-    -   **Summary:** Centralizes static values.
-    -   **Changes:** Added  constants (, ). Added  constants (, , ).
--   ****: **NEW** Calculation utility functions.
-    -   **Summary:** Centralizes  and  for reuse across frontend and backend.
-    -   **Changes:** Created this file and moved calculation logic into it.
--   ****: **NEW** Database migration.
-    -   **Summary:** Adds the  column to the  table.
--   ****: **NEW** Database migration.
-    -   **Summary:** Creates  and  tables.
-    -   **Changes:** Modified to drop and recreate tables to fix previous  error.
--   ****: **NEW** Database migration.
-    -   **Summary:** Modifies unique constraint on  to be composite (, ).
--   ****: **NEW** Database migration.
-    -   **Summary:** Removes pricing-related columns from  and makes  .
--   ****: **NEW** Database migration.
-    -   **Summary:** Implements the new junction table () architecture for PR items, and removes  from .
--   ****: Directory.
-    -   **Summary:** Stores uploaded estimation CSV files.
 
+- ****
+    - **Importance**: These files document and apply the significant architectural shifts. They removed the old soft-delete and versioning columns (, ), introduced the  concept to estimations (, ), and created the history table (, ) that is central to the new single estimation model.
+    - **Changes**: New migration files were created and executed to evolve the database schema to its current state.
+
+- ****
+    - **Importance**: This is the core backend endpoint for managing estimations. It now handles both creating a new estimation (POST) and updating the single existing one (PUT).
+    - **Changes**: It was completely rewritten. The PUT handler now contains the transactional logic to: 1) move existing  to , 2) delete the old items, and 3) insert the new set of items from the payload, preserving  and original / values for existing items.
+
+- ****
+    - **Importance**: The primary frontend component for creating and editing a project estimation.
+    - **Changes**: The submission logic () was updated to use a  request if an estimation already exists for the project, and a  otherwise. It was also updated to fetch and send the  for each item to facilitate the backend's versioning logic. The duplicate item action was fixed to not copy the .
+
+- ****
+    - **Importance**: Contains the versioning logic for Purchase Requests.
+    - **Changes**: The logic was simplified by removing the  concept. It now only re-inserts items provided in the payload, implicitly deleting any that are omitted.
+
+- **Multiple other files** (, , , etc.)
+    - **Importance**: These files were connected to the old estimation versioning system.
+    - **Changes**: They were all refactored to remove references to the now-deleted  and  columns in the  table, aligning them with the new one estimation per project architecture.
 </code_architecture>
 
 <pending_tasks>
--   Complete the UI for the Create PR page () to allow users to select/define components and quantities with the new junction table architecture.
--   Implement the View PR page () to display PR details based on the new architecture.
--   Integrate validation in the PR creation UI (e.g., entered quantity <= available quantity).
--   Update PR financial summary displays based on vendor BOQ (future feature implied by removal of pricing columns from PR items).
+- **CSV Upload Refactor**: The user has requested that the estimation CSV upload functionality be updated to use the same move to history and insert logic as the main edit/save flow. This is the immediate next task.
+- **Vendor Communication**: Implement PDF download/email functionality for PRs.
+- **Audit UI**: Build a UI to view the version history of a PR or an estimation's items.
+- **Lifecycle Status Transitions**: Implement logic to change an item's .
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was implementing the  feature. The database schema for PRs has undergone several major architectural changes based on user feedback, moving from a simple 1:1 item mapping to a sophisticated component-based breakdown using a junction table.
+The AI engineer was in the process of analyzing the user's latest request. The user correctly identified an inconsistency: the Edit/Save Estimation flow in the UI correctly versions items by moving old ones to a history table, but the CSV Upload flow for estimations does not. The current upload logic was only partially updated and doesn't handle existing items correctly.
 
-**Current state:**
-1.  **Constants:** New  constants (, , ) have been added to .
-2.  **Database Migrations:**
-    *    created initial PR tables.
-    *    fixed the unique constraint on  to be composite (, ).
-    *    removed pricing columns (, , , , , ) from  and made  .
-    *    implemented the final, sophisticated architecture, creating the  junction table and removing the direct  from . All migrations have been successfully applied.
-3.  **Schema Update:**  has been updated to reflect all the new tables and column changes.
-4.  **API Routes:**
-    *    (for listing and creating PRs) has been created.
-    *    (for fetching estimation items available for PR creation with quantity tracking) has been updated to the new junction table architecture.
-    *    (for single PR operations) has been created.
-    *   The API implementation for the new Purchase Request architecture is confirmed as complete by the last AI message.
-5.  **Frontend (Initial Structure):**
-    *    has been updated to include a Purchase Requests navigation tab.
-    *    (main PR listing page),  (dedicated PR creation page), and  (dedicated PR view page) have been created as placeholders based on the refined UX design.
+The user's request is to refactor  to align it with the new architecture. This involves:
+1.  **Modifying the download template** () to include the  for existing items.
+2.  **Updating the upload processing logic** () to:
+    *   Read  from the uploaded CSV.
+    *   Treat rows with a  as updates to existing items and rows without it as new items.
+    *   Implement the same transactional move to history, then insert logic currently found in the main  PUT handler.
 
-The work paused after confirming that all necessary APIs for the redesigned Purchase Request feature have been implemented. The next phase is to build out the frontend components.
+The previous engineer had just acknowledged the request and was starting the analysis phase, but had not yet proposed a concrete implementation plan.
 </current_work>
 
 <optional_next_step>
-Proceed with implementing the UI for the Purchase Request feature, starting with the .
+Analyze the  and  files and present a detailed approach to the user on how to implement the required changes, ensuring the CSV upload feature aligns with the established item versioning pattern.
 </optional_next_step>
