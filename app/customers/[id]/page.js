@@ -395,11 +395,11 @@ export default function CustomerDetailPage() {
                 {/* Aadhar Card */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-medium mb-2">Aadhar Card</h3>
-                  {documents.find(d => d.document_type === DOCUMENT_TYPE.AADHAR) ? (
+                  {documents.find(d => d.document_type === DOCUMENT_TYPE.KYC_AADHAR) ? (
                     <div className="space-y-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700">✓ Uploaded</Badge>
                       <Button size="sm" variant="outline" className="w-full" asChild>
-                        <a href={documents.find(d => d.document_type === DOCUMENT_TYPE.AADHAR).document_url} target="_blank" rel="noopener noreferrer">
+                        <a href={documents.find(d => d.document_type === DOCUMENT_TYPE.KYC_AADHAR).document_url} target="_blank" rel="noopener noreferrer">
                           <FileText className="h-4 w-4 mr-2" />
                           View
                         </a>
@@ -412,7 +412,7 @@ export default function CustomerDetailPage() {
                         id="aadhar"
                         accept="image/*,.pdf"
                         className="hidden"
-                        onChange={(e) => handleFileUpload(DOCUMENT_TYPE.AADHAR, e.target.files[0])}
+                        onChange={(e) => handleFileUpload(DOCUMENT_TYPE.KYC_AADHAR, e.target.files[0])}
                         disabled={uploadingDoc}
                       />
                       <Button
