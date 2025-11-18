@@ -498,7 +498,7 @@ export default function EditPurchaseRequestPage() {
                     <tbody>
                       {estItem.components.map((comp) => {
                         const isEditable = comp.lifecycle_status === 'pending';
-                        const linkIndex = comp.estimation_links?.findIndex(l => l.estimation_item_id === parseInt(estItemId));
+                        const linkIndex = comp.estimation_links?.findIndex(l => l.stable_estimation_item_id === estItemId);
                         
                         return (
                           <tr key={comp.stable_item_id} className="border-t hover:bg-accent/50">
