@@ -35,8 +35,9 @@ export async function GET(request, { params }) {
       }, { status: 400 });
     }
 
-    // Define CSV headers
+    // Define CSV headers (stable_item_id first for existing items tracking)
     const headers = [
+      'stable_item_id',
       'category',
       'room_name',
       'item_name',
@@ -53,6 +54,7 @@ export async function GET(request, { params }) {
     // Fetch actual estimation items from the project's active estimation
     const estimationItemsRes = await query(`
       SELECT 
+        ei.stable_item_id,
         ei.category,
         ei.room_name,
         ei.item_name,
