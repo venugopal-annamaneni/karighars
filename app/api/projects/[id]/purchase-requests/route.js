@@ -104,7 +104,7 @@ export async function POST(request, { params }) {
     if (mode !== 'direct') {
       const estimationCheck = await query(`
         SELECT id FROM project_estimations
-        WHERE id = $1 AND project_id = $2 AND is_active = true
+        WHERE id = $1 AND project_id = $2
       `, [body.estimation_id, projectId]);
 
       if (estimationCheck.rows.length === 0) {
