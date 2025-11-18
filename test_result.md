@@ -337,6 +337,75 @@ misc,Kitchen,Electrical Work,1,lumpsum,15000,,,0,0
 - CSV files saved with correct version numbers
 - Latest version marked as is_active
 
+### Test Scenario 11: CSV Template with stable_item_id
+**Endpoint**: `GET /api/projects/{id}/estimations/template`
+**Description**: Verify CSV template includes stable_item_id column for existing items
+**Prerequisites**:
+- Project has an existing estimation with items
+
+**Expected Result**:
+- HTTP 200 response
+- CSV includes `stable_item_id` as first column
+- Existing items have UUID values in stable_item_id column
+- Sample rows have empty stable_item_id for new items
+
+### Test Scenario 12: CSV Upload - Create New Estimation
+**Endpoint**: `POST /api/projects/{id}/estimations/upload`
+**Description**: Upload CSV when no estimation exists (initial creation)
+**Prerequisites**:
+- Project has no existing estimation
+- Valid CSV file with estimation items (stable_item_id column can be empty)
+
+**Expected Result**:
+- HTTP 200 response with `is_update: false`
+- New project_estimations record created
+- All items get new generated stable_item_id (UUID)
+- All items have created_at = NOW(), created_by = current user
+- Response includes message: "Estimation created successfully via CSV upload"
+
+### Test Scenario 13: CSV Upload - Update Existing Estimation with Versioning
+**Endpoint**: `POST /api/projects/{id}/estimations/upload`
+**Description**: Upload CSV when estimation already exists (update with versioning)
+**Prerequisites**:
+- Project has existing estimation with items
+- CSV includes stable_item_id for existing items, empty for new items
+
+**Expected Result**:
+- HTTP 200 response with `is_update: true` and `version` number
+- Current items moved to estimation_items_history with version number
+- Old items deleted from estimation_items
+- New items inserted from CSV
+- Estimation totals updated
+- Response includes message with version number
+- Transaction committed successfully
+
+### Test Scenario 14: CSV Upload - Audit Trail Preservation
+**Endpoint**: `POST /api/projects/{id}/estimations/upload`
+**Description**: Verify created_at/created_by preserved for existing items during update
+**Prerequisites**:
+- Existing estimation with item created by User A at Time T1
+- CSV upload by User B at Time T2, including same item (with stable_item_id)
+
+**Expected Result**:
+- Item in estimation_items has created_at = T1, created_by = User A
+- Item has updated_at = T2, updated_by = User B
+- Original creator and creation time preserved across versions
+- New items have created_at = T2, created_by = User B
+
+### Test Scenario 15: CSV Upload - Mixed New and Existing Items
+**Endpoint**: `POST /api/projects/{id}/estimations/upload`
+**Description**: Upload CSV with both existing items (with stable_item_id) and new items (no stable_item_id)
+**Test Data**: CSV with:
+- 2 existing items (stable_item_id provided)
+- 2 new items (stable_item_id empty or not provided)
+
+**Expected Result**:
+- Existing items preserve created_at/created_by
+- New items get created_at = NOW(), created_by = current user
+- All items inserted successfully
+- Version incremented
+- History table contains previous state
+
 ---
 
 ## Test Cases for Backend Agent
