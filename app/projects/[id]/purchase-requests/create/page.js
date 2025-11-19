@@ -364,7 +364,14 @@ function FullUnitFlow({ projectId, onBack }) {
           toast.success(`${data.items_added} item(s) added to existing PR`);
           router.push(`/projects/${projectId}/purchase-requests/${selectedPR}/view`);
         } else {
-          toast.error(data.error || 'Failed to add items');
+          if (data.details && Array.isArray(data.details)) {
+            // Show all validation errors
+            data.details.forEach(detail => {
+              toast.error(detail, { duration: 6000 });
+            });
+          } else {
+            toast.error(data.error || 'Failed to add items');
+          }
         }
       }
     } catch (error) {
