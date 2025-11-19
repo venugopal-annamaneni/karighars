@@ -583,6 +583,17 @@ export default function EditPurchaseRequestPage() {
               const firstComp = estItem.components[0];
               const estLink = firstComp?.estimation_links?.[0];
               
+              // Calculate total weightage for this group
+              const totalWeightage = estItem.components.reduce((sum, comp) => {
+                const linkIndex = comp.estimation_links?.findIndex(l => l.stable_estimation_item_id === estItemId);
+                if (linkIndex !== -1) {
+                  return sum + (parseFloat(comp.estimation_links[linkIndex]?.weightage) || 0);
+                }
+                return sum;
+              }, 0);
+              
+              const isFullyFulfilled = Math.abs(totalWeightage - 1.0) < 0.01;
+              
               return (
               <div key={estItemId} className="border rounded-lg p-4 bg-slate-50">
                 {/* Estimation Item Header */}
