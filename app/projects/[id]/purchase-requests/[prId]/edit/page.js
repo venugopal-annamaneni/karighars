@@ -233,16 +233,27 @@ export default function EditPurchaseRequestPage() {
 
       // Prepare ALL remaining items with their links
       // Items not included in this payload will be implicitly deleted
-      const allItemsWithLinks = items.map(item => ({
-        stable_item_id: item.stable_item_id,
-        purchase_request_item_name: item.purchase_request_item_name,
-        quantity: parseFloat(item.quantity),
-        unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
-        category: item.category,
-        room_name: item.room_name,
-        is_direct_purchase: item.is_direct_purchase,
-        estimation_links: item.estimation_links || []
-      }));
+      const allItemsWithLinks = items.map(item => {
+        const itemQty = parseFloat(item.quantity);
+        
+        // Update linked_qty in estimation_links to match item quantity
+        // This is critical for validation
+        const updatedLinks = (item.estimation_links || []).map(link => ({
+          ...link,
+          linked_qty: itemQty  // Sync linked_qty with item quantity
+        }));
+        
+        return {
+          stable_item_id: item.stable_item_id,
+          purchase_request_item_name: item.purchase_request_item_name,
+          quantity: itemQty,
+          unit_price: item.unit_price ? parseFloat(item.unit_price) : null,
+          category: item.category,
+          room_name: item.room_name,
+          is_direct_purchase: item.is_direct_purchase,
+          estimation_links: updatedLinks
+        };
+      });
 
       // Build change summary
       let changeSummary = '';
