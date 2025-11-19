@@ -82,7 +82,32 @@ export async function PUT(request, { params }) {
       }, { status: 400 });
     }
 
-    // 3. Create new version with updated items
+    // 3. Get PR estimation_id for validation
+    const prResult = await query(`
+      SELECT estimation_id FROM purchase_requests WHERE id = $1
+    `, [prId]);
+    
+    const estimationId = prResult.rows[0]?.estimation_id;
+
+    // 4. Validate quantities (skip for direct purchase mode)
+    if (estimationId && itemsToEdit.length > 0) {
+      const validationErrors = await validatePRQuantities(
+        projectId,
+        itemsToEdit,
+        estimationId,
+        prId // Exclude this PR from draft calculations since we're editing it
+      );
+
+      if (validationErrors.length > 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({
+          error: 'Quantity validation failed',
+          details: validationErrors
+        }, { status: 400 });
+      }
+    }
+
+    // 5. Create new version with updated items
     const newVersion = await createNewPRVersion(
       prId,
       itemsToEdit,
