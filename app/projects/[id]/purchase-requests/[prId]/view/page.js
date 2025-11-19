@@ -428,7 +428,7 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
                 </tbody>
                 <tfoot className="bg-muted/50 border-t-2">
                   <tr>
-                    <td colSpan="6" className="p-3 text-right font-semibold">Total:</td>
+                    <td colSpan="9" className="p-3 text-right font-semibold">Total:</td>
                     <td className="p-3 text-right font-semibold">
                       {formatCurrency(fullItemFlowItems.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0))}
                     </td>
@@ -515,7 +515,7 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
                 </tbody>
                 <tfoot className="bg-muted/50 border-t-2">
                   <tr>
-                    <td colSpan="6" className="p-3 text-right font-semibold">Total:</td>
+                    <td colSpan="9" className="p-3 text-right font-semibold">Total:</td>
                     <td className="p-3 text-right font-semibold">
                       {formatCurrency(directPurchaseItems.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0))}
                     </td>
