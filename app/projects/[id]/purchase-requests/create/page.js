@@ -592,6 +592,10 @@ function ComponentFlow({ projectId, onBack }) {
 
   const [prSelections, setPRSelections] = useState({}); // {vendor_id: {pr_id: 'new' or prId, delivery_date, notes}}
 
+  // Validation state
+  const [allocationData, setAllocationData] = useState(new Map());
+  const [validationError, setValidationError] = useState(null);
+
   useEffect(() => {
     fetchVendors();
     fetchAvailableItems();
