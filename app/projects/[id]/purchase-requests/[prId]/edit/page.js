@@ -45,6 +45,10 @@ export default function EditPurchaseRequestPage() {
   const [componentGroups, setComponentGroups] = useState({});
   const [directItems, setDirectItems] = useState([]);
 
+  // Validation state
+  const [allocationData, setAllocationData] = useState(new Map());
+  const [validationErrors, setValidationErrors] = useState({});
+
   // Check permissions
   const canEdit = session?.user?.role === USER_ROLE.ESTIMATOR || session?.user?.role === USER_ROLE.ADMIN;
 
