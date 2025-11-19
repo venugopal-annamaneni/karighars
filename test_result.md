@@ -68,6 +68,106 @@
 
 ## Test Cases for Backend Agent
 
+### Phase 5: Component vs Full Unit Validation
+
+### Test Scenario COMP-1: Component Fulfillment - Weightage Validation
+**Description**: Test that component fulfillment validates weightage (not quantity)
+**Test Data**:
+- Estimation Item: Kitchen Floor Tiles, 100 sqft
+- PR1 Item: "Floor Section A", 60 sqft, weightage 0.6 (represents 60% of floor)
+- PR2 Item: "Floor Section B", 40 sqft, weightage 0.4 (represents 40% of floor)
+
+**Expected Result**:
+- Both PRs should be valid (total weightage = 1.0)
+- No quantity validation errors
+- Weightage calculation: 0.6 + 0.4 = 1.0 ✓
+
+### Test Scenario COMP-2: Component Fulfillment - Weightage Exceeds 100%
+**Description**: Test that system rejects components exceeding 100% weightage
+**Test Data**:
+- Estimation Item: Wardrobe Shutters, 50 sqft
+- Existing PR: weightage 0.7 (70%)
+- New PR: weightage 0.4 (40%)
+
+**Expected Result**:
+- Validation error: "Component weightage exceeds 100%"
+- Total weightage would be 1.1 (110%) - should be rejected
+- Error should show current allocation and requested allocation
+
+### Test Scenario COMP-3: Full Unit Fulfillment - Quantity Validation
+**Description**: Test that full unit fulfillment validates quantity (not weightage)
+**Test Data**:
+- Estimation Item: Door Handles, 20 units
+- PR1 Item: 12 units, weightage 1.0
+- PR2 Item: 8 units, weightage 1.0
+
+**Expected Result**:
+- Both PRs should be valid (total quantity = 20)
+- Weightage is ignored (always 1.0 for full units)
+- Quantity validation: 12 + 8 = 20 ✓
+
+### Test Scenario COMP-4: Full Unit Fulfillment - Quantity Exceeds Available
+**Description**: Test that system rejects quantities exceeding available
+**Test Data**:
+- Estimation Item: Hinges, 50 pieces
+- Existing PRs: 35 pieces allocated
+- New PR: 20 pieces requested
+
+**Expected Result**:
+- Validation error: "Requested quantity exceeds available"
+- Available: 50 - 35 = 15 pieces
+- Requested: 20 pieces (exceeds by 5)
+- Should be rejected with clear error message
+
+### Test Scenario COMP-5: Mixed PRs - Both Component and Full Unit
+**Description**: Test that estimation item can have both component and full unit PRs
+**Test Data**:
+- Estimation Item: Plywood Sheets, 100 sheets
+- Component PR: weightage 0.3 (30%)
+- Full Unit PR: 70 sheets, weightage 1.0
+
+**Expected Result**:
+- Both tracking systems should work independently
+- Component weightage: 0.3 (valid)
+- Full unit quantity: 70 sheets (valid if available)
+- No interference between the two fulfillment modes
+
+### Test Scenario COMP-6: Database Query Separation
+**Description**: Verify that database queries correctly separate component and full unit tracking
+**Expected Result**:
+- Confirmed weightage: `SUM(weightage) FILTER (WHERE weightage < 1.0 AND status = 'confirmed')`
+- Draft weightage: `SUM(weightage) FILTER (WHERE weightage < 1.0 AND status = 'draft')`
+- Confirmed quantity: `SUM(linked_qty) FILTER (WHERE weightage = 1.0 AND status = 'confirmed')`
+- Draft quantity: `SUM(linked_qty) FILTER (WHERE weightage = 1.0 AND status = 'draft')`
+- Each metric tracked independently
+
+### Test Scenario COMP-7: Available Weightage Calculation
+**Description**: Test that available weightage is correctly calculated
+**Test Data**:
+- Estimation Item: Wall Paint Area, 500 sqft
+- Confirmed PRs: weightage 0.4
+- Draft PRs: weightage 0.3
+
+**Expected Result**:
+- Total weightage used: 0.4 + 0.3 = 0.7
+- Available weightage: 1.0 - 0.7 = 0.3
+- New PR can request up to 30% more
+
+### Test Scenario COMP-8: Multiple Components from Same PR
+**Description**: Test validation when single PR has multiple components of same estimation item
+**Test Data**:
+- Estimation Item: Kitchen Countertop, 40 sqft
+- Single PR with 2 items:
+  - Item A: weightage 0.4
+  - Item B: weightage 0.3
+
+**Expected Result**:
+- Validation should accumulate: 0.4 + 0.3 = 0.7
+- Total 70% allocated in single PR (valid)
+- Should not count as separate PRs
+
+---
+
 ### Phase 4: Purchase Requests with Junction Table Architecture
 
 ### Test Scenario PR-1: List Purchase Requests
