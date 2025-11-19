@@ -182,11 +182,21 @@ export default function EditPurchaseRequestPage() {
 
   const handleItemChange = (stable_item_id, field, value) => {
     setItems(prev => {
-      const updated = prev.map(item => 
-        item.stable_item_id === stable_item_id 
-          ? { ...item, [field]: value }
-          : item
-      );
+      const updated = prev.map(item => {
+        if (item.stable_item_id === stable_item_id) {
+          const updatedItem = { ...item, [field]: value };
+          
+          // Auto-calculate quantity for sqft units when width or height changes
+          if ((field === 'width' || field === 'height') && isAreaBasedUnit(item.unit)) {
+            const w = parseFloat(field === 'width' ? value : (item.width || 0)) || 0;
+            const h = parseFloat(field === 'height' ? value : (item.height || 0)) || 0;
+            updatedItem.quantity = w * h;
+          }
+          
+          return updatedItem;
+        }
+        return item;
+      });
       return updated;
     });
     setHasChanges(true);
