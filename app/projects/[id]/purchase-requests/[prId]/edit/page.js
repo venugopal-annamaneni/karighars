@@ -594,8 +594,10 @@ export default function EditPurchaseRequestPage() {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-3 font-medium">Component Name</th>
-                        <th className="text-right p-3 font-medium">Qty</th>
                         <th className="text-left p-3 font-medium">Unit</th>
+                        <th className="text-right p-3 font-medium">Width</th>
+                        <th className="text-right p-3 font-medium">Height</th>
+                        <th className="text-right p-3 font-medium">Qty</th>
                         <th className="text-right p-3 font-medium">Unit Price</th>
                         <th className="text-right p-3 font-medium">Weightage (%)</th>
                         <th className="text-center p-3 font-medium">Status</th>
