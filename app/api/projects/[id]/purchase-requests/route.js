@@ -116,7 +116,25 @@ export async function POST(request, { params }) {
       }
     }
 
-    // 3. Generate PR number
+    // 3. Validate quantities against estimation (skip for direct mode)
+    if (mode !== 'direct' && body.items && body.items.length > 0) {
+      const validationErrors = await validatePRQuantities(
+        projectId,
+        body.items,
+        body.estimation_id,
+        null // No PR to exclude for new PR
+      );
+
+      if (validationErrors.length > 0) {
+        await query('ROLLBACK');
+        return NextResponse.json({
+          error: 'Quantity validation failed',
+          details: validationErrors
+        }, { status: 400 });
+      }
+    }
+
+    // 4. Generate PR number
     const prNumberResult = await query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(pr_number FROM 'PR-${projectId}-(\\d+)') AS INTEGER)), 0) + 1 as next_seq
       FROM purchase_requests
