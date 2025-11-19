@@ -79,6 +79,11 @@ export default function EditPurchaseRequestPage() {
         setPRData(data.purchase_request);
         setItems(data.items || []);
         setOriginalItems(JSON.parse(JSON.stringify(data.items || [])));
+        
+        // Fetch allocation data for validation
+        if (data.purchase_request?.estimation_id) {
+          fetchAllocationData(data.purchase_request.estimation_id);
+        }
       } else {
         toast.error('Failed to load purchase request');
       }
@@ -87,6 +92,28 @@ export default function EditPurchaseRequestPage() {
       toast.error('An error occurred while loading the purchase request');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllocationData = async (estimationId) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/purchase-requests/available-items`);
+      if (res.ok) {
+        const data = await res.json();
+        const allocMap = new Map();
+        (data.items || []).forEach(item => {
+          allocMap.set(item.stable_item_id, {
+            total_qty: item.total_qty,
+            confirmed_qty: item.confirmed_qty || 0,
+            draft_qty: item.draft_qty || 0,
+            available_qty: item.available_qty,
+            unit: item.unit
+          });
+        });
+        setAllocationData(allocMap);
+      }
+    } catch (error) {
+      console.error('Error fetching allocation data:', error);
     }
   };
 
