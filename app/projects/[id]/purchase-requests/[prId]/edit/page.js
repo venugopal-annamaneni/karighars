@@ -755,7 +755,8 @@ export default function EditPurchaseRequestPage() {
                   </table>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </CardContent>
         </Card>
       )}
