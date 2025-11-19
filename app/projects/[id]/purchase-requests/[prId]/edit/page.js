@@ -577,7 +577,11 @@ export default function EditPurchaseRequestPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {Object.entries(componentGroups).map(([estItemId, estItem]) => (
+            {Object.entries(componentGroups).map(([estItemId, estItem]) => {
+              const firstComp = estItem.components[0];
+              const estLink = firstComp?.estimation_links?.[0];
+              
+              return (
               <div key={estItemId} className="border rounded-lg p-4 bg-slate-50">
                 {/* Estimation Item Header */}
                 <div className="mb-4 pb-3 border-b">
