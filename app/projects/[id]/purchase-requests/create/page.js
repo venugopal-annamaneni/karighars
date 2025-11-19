@@ -1207,7 +1207,7 @@ function ComponentFlow({ projectId, onBack }) {
                                 step="0.1"
                                 placeholder="0"
                                 value={comp.percentage}
-                                onChange={(e) => updateComponent(index, 'percentage', e.target.value)}
+                                onChange={(e) => handleComponentUpdate(index, 'percentage', e.target.value)}
                                 className="h-9 w-20 text-right"
                               />
                             </td>
