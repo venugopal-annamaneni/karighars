@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import { USER_ROLE } from '@/app/constants';
 import { calculateItemPricing, calculatePRTotals } from '@/lib/pricing-utils';
+import { validatePRQuantities } from '@/lib/pr-validation-utils';
 
 // PUT /api/projects/[id]/purchase-requests/[prId]/add-items - Add items to existing draft PR
 export async function PUT(request, { params }) {
