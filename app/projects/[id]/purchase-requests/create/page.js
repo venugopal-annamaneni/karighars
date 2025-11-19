@@ -269,6 +269,26 @@ function FullUnitFlow({ projectId, onBack }) {
     setStep(2);
   };
 
+  // Validate quantity for full unit flow
+  const validateQuantity = (itemStableId, quantity) => {
+    const allocation = allocationData.get(itemStableId);
+    if (!allocation) {
+      return { isValid: true };
+    }
+
+    const qty = parseFloat(quantity) || 0;
+    const available = allocation.available_qty;
+
+    if (qty > available) {
+      return {
+        isValid: false,
+        message: `Exceeds available quantity. Available: ${available.toFixed(2)} ${allocation.unit} (Total: ${allocation.total_qty}, Confirmed: ${allocation.confirmed_qty.toFixed(2)}, Draft: ${allocation.draft_qty.toFixed(2)})`
+      };
+    }
+
+    return { isValid: true };
+  };
+
   const handleItemToggle = (itemId) => {
     const item = allItems.find(i => i.id === itemId);
     const existing = selectedItems.find(s => s.id === itemId);
