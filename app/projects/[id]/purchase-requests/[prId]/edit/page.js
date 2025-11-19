@@ -803,8 +803,43 @@ export default function EditPurchaseRequestPage() {
                           <span className="capitalize">{item.category || '-'}</span>
                         </td>
                         <td className="p-3">{item.room_name || '-'}</td>
+                        <td className="p-3">{item.unit}</td>
+                        
+                        {/* Width - only for sqft units */}
                         <td className="p-3">
-                          {isEditable ? (
+                          {isEditable && isAreaBasedUnit(item.unit) ? (
+                            <Input
+                              type="number"
+                              value={item.width || ''}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'width', e.target.value)}
+                              placeholder="Width"
+                              className="h-8 text-right w-20"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        
+                        {/* Height - only for sqft units */}
+                        <td className="p-3">
+                          {isEditable && isAreaBasedUnit(item.unit) ? (
+                            <Input
+                              type="number"
+                              value={item.height || ''}
+                              onChange={(e) => handleItemChange(item.stable_item_id, 'height', e.target.value)}
+                              placeholder="Height"
+                              className="h-8 text-right w-20"
+                              step="0.01"
+                            />
+                          ) : (
+                            <span className="text-right block text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        
+                        {/* Quantity - auto-calculated for sqft, manual for others */}
+                        <td className="p-3">
+                          {isEditable && !isAreaBasedUnit(item.unit) ? (
                             <Input
                               type="number"
                               value={item.quantity}
@@ -813,10 +848,9 @@ export default function EditPurchaseRequestPage() {
                               step="0.01"
                             />
                           ) : (
-                            <span className="text-right block text-muted-foreground">{item.quantity}</span>
+                            <span className="text-right block text-muted-foreground">{item.quantity || 0}</span>
                           )}
                         </td>
-                        <td className="p-3">{item.unit}</td>
                         <td className="p-3">
                           {isEditable ? (
                             <Input
