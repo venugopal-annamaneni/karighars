@@ -26,6 +26,13 @@ import { USER_ROLE } from '@/app/constants';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 
+// Helper function to check if unit is area-based (sqft)
+const isAreaBasedUnit = (unit) => {
+  if (!unit) return false;
+  const areaUnits = ['sqft', 'sq.ft', 'square feet', 'sq ft', 'sq. ft'];
+  return areaUnits.some(au => unit.toLowerCase().includes(au.toLowerCase()));
+};
+
 export default function EditPurchaseRequestPage() {
   const params = useParams();
   const router = useRouter();
