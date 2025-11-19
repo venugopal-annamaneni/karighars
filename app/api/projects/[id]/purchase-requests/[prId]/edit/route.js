@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { query } from '@/lib/db';
 import { USER_ROLE } from '@/app/constants';
 import { createNewPRVersion, canEditItem } from '@/lib/versioning-utils';
+import { validatePRQuantities } from '@/lib/pr-validation-utils';
 
 // PUT /api/projects/[id]/purchase-requests/[prId]/edit - Edit PR items (creates new version)
 export async function PUT(request, { params }) {
