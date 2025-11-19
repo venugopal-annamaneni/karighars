@@ -228,6 +228,7 @@ export default function EditPurchaseRequestPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          project_id: projectId,
           items: allItemsWithLinks,
           change_summary: changeSummary,
           vendor_id: prData.vendor_id,
