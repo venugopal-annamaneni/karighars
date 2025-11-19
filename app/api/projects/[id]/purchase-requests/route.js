@@ -143,7 +143,7 @@ export async function POST(request, { params }) {
     const nextSeq = prNumberResult.rows[0].next_seq;
     const prNumber = `PR-${projectId}-${String(nextSeq).padStart(3, '0')}`;
 
-    // 4. Create purchase request (will update totals after items are created)
+    // 5. Create purchase request (will update totals after items are created)
     const status = body.status || 'draft'; // Default to draft
     const prResult = await query(`
       INSERT INTO purchase_requests (
