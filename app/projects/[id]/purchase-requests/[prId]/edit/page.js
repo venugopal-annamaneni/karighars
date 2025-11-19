@@ -622,8 +622,43 @@ export default function EditPurchaseRequestPage() {
                                 <span className="text-muted-foreground">{comp.purchase_request_item_name}</span>
                               )}
                             </td>
+                            <td className="p-3">{comp.unit}</td>
+                            
+                            {/* Width - only for sqft units */}
                             <td className="p-3">
-                              {isEditable ? (
+                              {isEditable && isAreaBasedUnit(comp.unit) ? (
+                                <Input
+                                  type="number"
+                                  value={comp.width || ''}
+                                  onChange={(e) => handleItemChange(comp.stable_item_id, 'width', e.target.value)}
+                                  placeholder="Width"
+                                  className="h-8 text-right w-20"
+                                  step="0.01"
+                                />
+                              ) : (
+                                <span className="text-right block text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            
+                            {/* Height - only for sqft units */}
+                            <td className="p-3">
+                              {isEditable && isAreaBasedUnit(comp.unit) ? (
+                                <Input
+                                  type="number"
+                                  value={comp.height || ''}
+                                  onChange={(e) => handleItemChange(comp.stable_item_id, 'height', e.target.value)}
+                                  placeholder="Height"
+                                  className="h-8 text-right w-20"
+                                  step="0.01"
+                                />
+                              ) : (
+                                <span className="text-right block text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            
+                            {/* Quantity - auto-calculated for sqft, manual for others */}
+                            <td className="p-3">
+                              {isEditable && !isAreaBasedUnit(comp.unit) ? (
                                 <Input
                                   type="number"
                                   value={comp.quantity}
@@ -632,10 +667,9 @@ export default function EditPurchaseRequestPage() {
                                   step="0.01"
                                 />
                               ) : (
-                                <span className="text-right block text-muted-foreground">{comp.quantity}</span>
+                                <span className="text-right block text-muted-foreground">{comp.quantity || 0}</span>
                               )}
                             </td>
-                            <td className="p-3">{comp.unit}</td>
                             <td className="p-3">
                               {isEditable ? (
                                 <Input
