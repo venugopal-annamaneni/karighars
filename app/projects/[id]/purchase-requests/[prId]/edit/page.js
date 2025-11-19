@@ -238,6 +238,17 @@ export default function EditPurchaseRequestPage() {
 
       if (!res.ok) {
         const error = await res.json();
+        
+        // Handle validation errors specifically
+        if (error.details && Array.isArray(error.details)) {
+          // Show all validation errors
+          error.details.forEach(detail => {
+            toast.error(detail, { duration: 6000 });
+          });
+          setSaving(false);
+          return;
+        }
+        
         throw new Error(error.error || 'Failed to save changes');
       }
 
