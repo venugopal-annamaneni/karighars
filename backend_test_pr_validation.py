@@ -44,7 +44,7 @@ def setup_test_data():
             SELECT p.id, pe.id as estimation_id, p.project_code
             FROM projects p
             JOIN project_estimations pe ON p.id = pe.project_id
-            WHERE pe.status = 'finalized'
+            WHERE pe.final_value > 0
             ORDER BY p.created_at DESC
             LIMIT 1;
         """)
