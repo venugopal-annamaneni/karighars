@@ -475,8 +475,10 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
                     <th className="text-left p-3 font-medium" width="10%">Room Name</th>
                     <th className="text-left p-3 font-medium" width="10%">Category</th>
                     <th className="text-left p-3 font-medium" width="20%">Item Name</th>
+                    <th className="text-left p-3 font-medium" width="5%">Unit</th>
+                    <th className="text-right p-3 font-medium" width="5%">Width</th>
+                    <th className="text-right p-3 font-medium" width="5%">Height</th>
                     <th className="text-right p-3 font-medium" width="5%">Qty</th>
-                    <th className="text-left p-3 font-medium" width="5%"> Unit</th>
                     <th className="text-right p-3 font-medium" width="7%">Unit Price</th>
                     <th className="text-right p-3 font-medium" width="8%">Subtotal</th>
                     <th className="text-right p-3 font-medium">GST ({directPurchaseItems[0]?.gst_percentage || 0}%)</th>
@@ -490,8 +492,14 @@ function PRItemsByFlowType({ items, getStatusBadge }) {
                       <td className="p-3">{item.room_name || '-'}</td>
                       <td className="p-3 capitalize">{item.category || '-'}</td>
                       <td className="p-3 font-medium">{item.purchase_request_item_name}</td>
-                      <td className="p-3 text-right">{item.quantity}</td>
                       <td className="p-3">{item.unit}</td>
+                      <td className="p-3 text-right">
+                        {isAreaBasedUnit(item.unit) ? (item.width || '-') : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {isAreaBasedUnit(item.unit) ? (item.height || '-') : '-'}
+                      </td>
+                      <td className="p-3 text-right">{item.quantity}</td>
                       <td className="p-3 text-right">
                         {item.unit_price ? formatCurrency(item.unit_price) : '-'}
                       </td>
