@@ -578,7 +578,7 @@ def test_database_query_separation():
             ON pri.purchase_request_id = pr.id
         WHERE ei.estimation_id = (
             SELECT id FROM project_estimations 
-            WHERE status = 'finalized' 
+            WHERE final_value > 0 
             ORDER BY created_at DESC 
             LIMIT 1
         )
