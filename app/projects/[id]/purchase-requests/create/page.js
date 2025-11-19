@@ -224,6 +224,19 @@ function FullUnitFlow({ projectId, onBack }) {
         setGroupedItems(data.grouped_by_category || {});
         setAllItems(data.items || []);
         setEstimationId(data.estimation_id);
+        
+        // Build allocation map for validation
+        const allocMap = new Map();
+        (data.items || []).forEach(item => {
+          allocMap.set(item.stable_item_id, {
+            total_qty: item.total_qty,
+            confirmed_qty: item.confirmed_qty || 0,
+            draft_qty: item.draft_qty || 0,
+            available_qty: item.available_qty,
+            unit: item.unit
+          });
+        });
+        setAllocationData(allocMap);
       } else {
         toast.error('Failed to load items');
       }
@@ -585,6 +598,19 @@ function ComponentFlow({ projectId, onBack }) {
         setGroupedItems(data.grouped_by_category || {});
         setAllItems(data.items || []);
         setEstimationId(data.estimation_id);
+        
+        // Build allocation map for validation
+        const allocMap = new Map();
+        (data.items || []).forEach(item => {
+          allocMap.set(item.stable_item_id, {
+            total_qty: item.total_qty,
+            confirmed_qty: item.confirmed_qty || 0,
+            draft_qty: item.draft_qty || 0,
+            available_qty: item.available_qty,
+            unit: item.unit
+          });
+        });
+        setAllocationData(allocMap);
       } else {
         toast.error('Failed to load items');
       }
