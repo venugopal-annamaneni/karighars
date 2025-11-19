@@ -773,8 +773,10 @@ export default function EditPurchaseRequestPage() {
                     <th className="text-left p-3 font-medium">Item Name</th>
                     <th className="text-left p-3 font-medium">Category</th>
                     <th className="text-left p-3 font-medium">Room</th>
-                    <th className="text-right p-3 font-medium">Qty</th>
                     <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Width</th>
+                    <th className="text-right p-3 font-medium">Height</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
                     <th className="text-right p-3 font-medium">Unit Price</th>
                     <th className="text-center p-3 font-medium">Status</th>
                     <th className="text-center p-3 font-medium">Actions</th>
