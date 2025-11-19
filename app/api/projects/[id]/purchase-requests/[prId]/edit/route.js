@@ -115,7 +115,7 @@ export async function PUT(request, { params }) {
       body.change_summary || `Edited ${itemsToEdit.length} item(s)`
     );
 
-    // 4. Update PR header if provided
+    // 6. Update PR header if provided
     if (body.vendor_id || body.expected_delivery_date || body.notes) {
       await query(`
         UPDATE purchase_requests
