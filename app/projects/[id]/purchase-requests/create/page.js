@@ -1238,7 +1238,16 @@ function ComponentFlow({ projectId, onBack }) {
             </CardContent>
           </Card>
 
-          <Button onClick={handleNextToPRSelection} disabled={components.length === 0}>
+          {validationError && (
+            <div className="p-4 bg-destructive/10 border border-destructive rounded-lg text-sm text-destructive">
+              {validationError}
+            </div>
+          )}
+
+          <Button 
+            onClick={handleNextToPRSelection} 
+            disabled={components.length === 0 || validationError !== null}
+          >
             Next: Choose Purchase Requests
           </Button>
         </>
