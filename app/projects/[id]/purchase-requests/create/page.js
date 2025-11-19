@@ -665,6 +665,57 @@ function ComponentFlow({ projectId, onBack }) {
     setStep(2);
   };
 
+  // Validate component breakdown quantities
+  const validateComponentQuantities = () => {
+    if (!selectedItem) return { isValid: true };
+
+    const allocation = allocationData.get(selectedItem.stable_item_id);
+    if (!allocation) return { isValid: true };
+
+    // Calculate total allocated based on fulfill qty and component percentages
+    const fulfill = parseFloat(fulfillQty) || 0;
+    const totalAllocated = components.reduce((sum, comp) => {
+      const percentage = parseFloat(comp.percentage) || 0;
+      return sum + (fulfill * (percentage / 100));
+    }, 0);
+
+    const available = allocation.available_qty;
+
+    if (totalAllocated > available) {
+      return {
+        isValid: false,
+        message: `Total allocated (${totalAllocated.toFixed(2)} ${allocation.unit}) exceeds available (${available.toFixed(2)} ${allocation.unit}). Total: ${allocation.total_qty}, Confirmed: ${allocation.confirmed_qty.toFixed(2)}, Draft: ${allocation.draft_qty.toFixed(2)}`
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  // Validate on fulfill qty or component changes
+  const handleFulfillQtyChange = (value) => {
+    setFulfillQty(value);
+    // Validate after state update
+    setTimeout(() => {
+      const validation = validateComponentQuantities();
+      setValidationError(validation.isValid ? null : validation.message);
+      if (!validation.isValid) {
+        toast.error(validation.message);
+      }
+    }, 0);
+  };
+
+  const handleComponentUpdate = (index, field, value) => {
+    updateComponent(index, field, value);
+    // Validate after state update
+    setTimeout(() => {
+      const validation = validateComponentQuantities();
+      setValidationError(validation.isValid ? null : validation.message);
+      if (!validation.isValid) {
+        toast.error(validation.message);
+      }
+    }, 0);
+  };
+
   const addComponent = () => {
     setComponents([...components, { name: '', width: '', height: '', quantity: '', unit: '', vendor_id: '', percentage: '' }]);
   };
