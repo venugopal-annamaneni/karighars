@@ -16,7 +16,7 @@ import csv
 import uuid
 
 # Configuration
-BASE_URL = "https://item-lineage.preview.emergentagent.com"
+BASE_URL = "https://project-versioning.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 # Database connection from environment
