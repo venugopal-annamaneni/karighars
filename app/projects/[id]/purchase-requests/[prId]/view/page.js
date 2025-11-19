@@ -623,7 +623,7 @@ function ComponentFlowTable({ estimationItems }) {
                 </tbody>
                 <tfoot className="bg-muted/50 border-t-2">
                   <tr>
-                    <td colSpan="4" className="p-3 text-right font-semibold">Total:</td>
+                    <td colSpan="6" className="p-3 text-right font-semibold">Total:</td>
                     <td className="p-3 text-right font-semibold">
                       {formatCurrency(estItem.components.reduce((sum, comp) => sum + (parseFloat(comp.subtotal) || 0), 0))}
                     </td>
