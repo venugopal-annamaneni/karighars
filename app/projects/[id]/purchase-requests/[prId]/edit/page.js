@@ -742,17 +742,62 @@ export default function EditPurchaseRequestPage() {
                     </tbody>
                     <tfoot className="bg-muted/50 border-t-2">
                       <tr>
-                        <td colSpan="4" className="p-3 text-right font-semibold">Total Weightage:</td>
+                        <td colSpan="7" className="p-3 text-right font-semibold">Total Weightage:</td>
                         <td className="p-3 text-right font-semibold">
-                          {(estItem.components.reduce((sum, comp) => {
-                            const weightage = parseFloat(comp.link_info?.weightage || 0);
-                            return sum + weightage;
-                          }, 0) * 100).toFixed(1)}%
+                          {(totalWeightage * 100).toFixed(1)}%
                         </td>
-                        <td colSpan="2"></td>
+                        <td colSpan="1"></td>
                       </tr>
                     </tfoot>
                   </table>
+                </div>
+                
+                {/* Linked Estimation Item Footer */}
+                <div className="bg-blue-50 border-t-2 border-blue-200">
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100">
+                        <Link2 className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="text-sm font-semibold text-blue-900">Linked Estimation Item</h4>
+                          {isFullyFulfilled ? (
+                            <Badge variant="default" className="bg-green-600 text-xs">
+                              ✓ 100% Fulfilled
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              {(totalWeightage * 100).toFixed(1)}% Fulfilled
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium">Room</p>
+                            <p className="text-blue-900">{estLink?.estimation_item_room || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium">Category</p>
+                            <p className="text-blue-900 capitalize">{estLink?.estimation_item_category || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium">Item Name</p>
+                            <p className="text-blue-900 font-medium">{estLink?.estimation_item_name || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium">Dimensions</p>
+                            <p className="text-blue-900">
+                              {estLink?.estimation_item_width && estLink?.estimation_item_height 
+                                ? `${estLink.estimation_item_width} × ${estLink.estimation_item_height} = ${estLink.linked_qty} ${estLink.estimation_item_unit}`
+                                : `${estLink?.linked_qty || '-'} ${estLink?.estimation_item_unit || ''}`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
