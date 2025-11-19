@@ -194,6 +194,10 @@ function FullUnitFlow({ projectId, onBack }) {
     notes: ''
   });
 
+  // Validation state
+  const [allocationData, setAllocationData] = useState(new Map());
+  const [validationErrors, setValidationErrors] = useState({});
+
   useEffect(() => {
     fetchVendors();
     fetchAvailableItems();
