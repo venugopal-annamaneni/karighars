@@ -576,8 +576,10 @@ function ComponentFlowTable({ estimationItems }) {
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="text-left p-3 font-medium">Component Name</th>
-                    <th className="text-right p-3 font-medium">Qty</th>
                     <th className="text-left p-3 font-medium">Unit</th>
+                    <th className="text-right p-3 font-medium">Width</th>
+                    <th className="text-right p-3 font-medium">Height</th>
+                    <th className="text-right p-3 font-medium">Qty</th>
                     <th className="text-right p-3 font-medium">Unit Price</th>
                     <th className="text-right p-3 font-medium">Subtotal</th>
                     <th className="text-right p-3 font-medium">GST ({estItem.components[0]?.gst_percentage || 0}%)</th>
@@ -590,8 +592,14 @@ function ComponentFlowTable({ estimationItems }) {
                   {estItem.components.map((comp, idx) => (
                     <tr key={`${comp.pr_item_id}-${idx}`} className="border-t hover:bg-accent/50">
                       <td className="p-3 font-medium">{comp.pr_item_name}</td>
-                      <td className="p-3 text-right">{comp.quantity}</td>
                       <td className="p-3">{comp.unit}</td>
+                      <td className="p-3 text-right">
+                        {isAreaBasedUnit(comp.unit) ? (comp.width || '-') : '-'}
+                      </td>
+                      <td className="p-3 text-right">
+                        {isAreaBasedUnit(comp.unit) ? (comp.height || '-') : '-'}
+                      </td>
+                      <td className="p-3 text-right">{comp.quantity}</td>
                       <td className="p-3 text-right">
                         {comp.unit_price ? formatCurrency(comp.unit_price) : '-'}
                       </td>
