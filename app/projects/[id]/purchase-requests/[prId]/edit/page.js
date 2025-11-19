@@ -19,7 +19,9 @@ import {
   Edit3,
   Package,
   Layers,
-  ShoppingCart
+  ShoppingCart,
+  Link2,
+  PackagePlus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { USER_ROLE } from '@/app/constants';
