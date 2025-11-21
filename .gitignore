@@ -87,3 +87,7 @@ node_modules/@next/swc-linux-arm64-gnu/next-swc.linux-arm64-gnu.node
 public/
 public/uploads/
 uploads
+-e 
+# Environment files
+*.env
+*.env.*
