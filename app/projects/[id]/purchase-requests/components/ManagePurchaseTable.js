@@ -298,7 +298,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
         if (mode === 'component') {
           // Show CSV of statuses
           const statuses = (row.original.components || [])
-            .map(c => c.status || 'Draft')
+            .map(c => c.status)
             .filter((v, i, a) => a.indexOf(v) === i)
             .join(', ');
           return <div className="text-sm">{statuses || 'Draft'}</div>;
@@ -402,6 +402,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
 
 // Component Sub-table
 function ComponentsSubTable({ components, itemIndex, updateComponent, removeComponent, vendors }) {
+  debugger;
   const totalWeightage = components.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
   const isValid = Math.abs(totalWeightage - 1.0) < 0.001;
 

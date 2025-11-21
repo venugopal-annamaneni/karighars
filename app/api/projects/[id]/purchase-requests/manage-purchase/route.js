@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
     const estimationResult = await query(`
       SELECT id, final_value
       FROM project_estimations
-      WHERE project_id = $1 AND is_active = true
+      WHERE project_id = $1
       LIMIT 1
     `, [projectId]);
 
@@ -45,8 +45,8 @@ export async function GET(request, { params }) {
         ei.unit,
         ei.width,
         ei.height,
-        ei.quantity as estimation_qty,
-        ei.rate,
+        ei.quantity,
+        ei.unit_price,
         ei.item_total as estimation_item_total
       FROM estimation_items ei
       WHERE ei.estimation_id = $1
