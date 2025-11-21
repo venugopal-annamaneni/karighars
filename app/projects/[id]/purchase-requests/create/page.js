@@ -349,7 +349,15 @@ function FullUnitFlow({ projectId, onBack }) {
           toast.success(`Draft PR ${data.purchase_request.pr_number} created`);
           router.push(`/projects/${projectId}/purchase-requests/${data.purchase_request.id}/view`);
         } else {
-          toast.error(data.error || 'Failed to create PR');
+          //toast.error(data.error || 'Failed to create PR');
+          if (data.details && Array.isArray(data.details)) {
+            // Show all validation errors
+            data.details.forEach(detail => {
+              toast.error(detail, { duration: 6000 });
+            });
+          } else {
+            toast.error(data.error || 'Failed to add items');
+          }
         }
       } else {
         // Add to existing PR

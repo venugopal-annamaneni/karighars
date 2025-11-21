@@ -461,6 +461,8 @@ export default function EditPurchaseRequestPage() {
                         <td className="p-3">
                           {isEditable ? (
                             <Input
+                              readOnly
+                              disabled
                               value={item.purchase_request_item_name}
                               onChange={(e) => handleItemChange(item.stable_item_id, 'purchase_request_item_name', e.target.value)}
                               className="h-8"
@@ -475,6 +477,8 @@ export default function EditPurchaseRequestPage() {
                         <td className="p-3">
                           {isEditable && isAreaBasedUnit(item.unit) ? (
                             <Input
+                              readOnly
+                              disabled
                               type="number"
                               value={item.width || ''}
                               onChange={(e) => handleItemChange(item.stable_item_id, 'width', e.target.value)}
@@ -491,6 +495,8 @@ export default function EditPurchaseRequestPage() {
                         <td className="p-3">
                           {isEditable && isAreaBasedUnit(item.unit) ? (
                             <Input
+                              readOnly
+                              disabled
                               type="number"
                               value={item.height || ''}
                               onChange={(e) => handleItemChange(item.stable_item_id, 'height', e.target.value)}
@@ -507,6 +513,8 @@ export default function EditPurchaseRequestPage() {
                         <td className="p-3">
                           {isEditable && !isAreaBasedUnit(item.unit) ? (
                             <Input
+                              readOnly
+                              disabled
                               type="number"
                               value={item.quantity}
                               onChange={(e) => handleItemChange(item.stable_item_id, 'quantity', e.target.value)}
@@ -709,6 +717,8 @@ export default function EditPurchaseRequestPage() {
                             <td className="p-3">
                               {isEditable && linkIndex !== -1 ? (
                                 <Input
+                                  readOnly
+                                  disabled
                                   type="number"
                                   value={(parseFloat(comp.estimation_links[linkIndex].weightage) * 100).toFixed(1)}
                                   onChange={(e) => {

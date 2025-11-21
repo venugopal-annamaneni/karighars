@@ -416,7 +416,6 @@ export const EditableEstimationItems = memo(function EditableEstimationItems({
     const right = document.getElementById(rightFixed);
     const middle = document.getElementById(middleScroll);
     if (!left || !right || !middle) return;
-    debugger;
     const syncLeftRight = () => {
       left.scrollTop = middle.scrollTop;
       right.scrollTop = middle.scrollTop;

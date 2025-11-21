@@ -71,7 +71,8 @@ export async function PUT(request, { params }) {
         projectId,
         body.items,
         estimationId,
-        prId // Exclude this PR from draft calculations since we're adding to it
+        null
+        //prId // Exclude this PR from draft calculations since we're adding to it
       );
 
       if (validationErrors.length > 0) {
