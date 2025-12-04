@@ -21,75 +21,134 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   };
 
   return (
-    <div className="border rounded-lg">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="text-left p-3 text-sm font-medium"
-                    style={{ width: header.getSize() }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
+    <div className="border rounded-lg overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-muted">
+          <tr>
+            <th className="text-left p-3 text-sm font-medium w-[40px]"></th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Category</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Room</th>
+            <th className="text-left p-3 text-sm font-medium w-[180px]">Item Name</th>
+            <th className="text-left p-3 text-sm font-medium w-[80px]">Unit</th>
+            <th className="text-left p-3 text-sm font-medium w-[60px]">W</th>
+            <th className="text-left p-3 text-sm font-medium w-[60px]">H</th>
+            <th className="text-left p-3 text-sm font-medium w-[80px]">Qty</th>
+            <th className="text-left p-3 text-sm font-medium w-[100px]">Est. Price</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Mode</th>
+            <th className="text-left p-3 text-sm font-medium w-[200px]">Vendor</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Unit Price</th>
+            <th className="text-left p-3 text-sm font-medium w-[80px]">GST%</th>
+            <th className="text-left p-3 text-sm font-medium w-[100px]">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, index) => (
+            <>
+              {/* Parent Row */}
+              <tr key={index} className="border-t hover:bg-accent/50">
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' && (
+                    <button
+                      onClick={() => toggleRow(index)}
+                      className="p-1 hover:bg-accent rounded"
+                    >
+                      {expandedRows[index] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
                       )}
-                  </th>
-                ))}
+                    </button>
+                  )}
+                </td>
+                <td className="p-3 text-sm font-medium">{item.category}</td>
+                <td className="p-3 text-sm">{item.room_name}</td>
+                <td className="p-3 text-sm font-medium">{item.item_name}</td>
+                <td className="p-3 text-sm">{item.unit}</td>
+                <td className="p-3 text-sm">{item.width || '-'}</td>
+                <td className="p-3 text-sm">{item.height || '-'}</td>
+                <td className="p-3 text-sm">{parseFloat(item.quantity || 0).toFixed(2)}</td>
+                <td className="p-3 text-sm">{formatCurrency(item.estimation_item_total)}</td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode ? (
+                    <Badge variant={item.fulfillmentMode === 'full' ? 'default' : 'secondary'}>
+                      {item.fulfillmentMode === 'full' ? 'Full Item' : 
+                       item.fulfillmentMode === 'component' ? 'Components' : 'None'}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' ? (
+                    <div className="flex flex-wrap gap-1">
+                      {(item.prItems || []).map((prItem, idx) => (
+                        <Badge key={idx} variant="outline">
+                          {getVendorName(prItem.vendor_id)}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : item.fulfillmentMode === 'full' ? (
+                    getVendorName(item.prItems?.[0]?.vendor_id)
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' ? (
+                    formatCurrency(
+                      (item.prItems || []).reduce((sum, c) => sum + (parseFloat(c.unit_price) || 0), 0)
+                    )
+                  ) : item.fulfillmentMode === 'full' ? (
+                    formatCurrency(item.prItems?.[0]?.unit_price || 0)
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'full' ? (
+                    `${item.prItems?.[0]?.gst_percentage || 18}%`
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' ? (
+                    <div className="flex flex-wrap gap-1">
+                      {[...new Set((item.prItems || []).map(c => c.status || 'Draft'))].map((status, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {status}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : item.fulfillmentMode === 'full' ? (
+                    <Badge variant="outline" className="text-xs">
+                      {item.prItems?.[0]?.status || 'Draft'}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
               </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map(row => (
-              <React.Fragment key={row.id}>
-                <tr className="border-t hover:bg-accent/50">
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="p-3 text-sm">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+
+              {/* Component Child Table */}
+              {expandedRows[index] && item.fulfillmentMode === 'component' && item.prItems && (
+                <tr>
+                  <td colSpan="14" className="bg-accent/20 p-0">
+                    <div className="p-4 ml-10">
+                      <h4 className="font-semibold text-xs mb-3">Components</h4>
+                      <ComponentsSubTable
+                        prItems={item.prItems}
+                        vendors={vendors}
+                        getVendorName={getVendorName}
+                      />
+                    </div>
+                  </td>
                 </tr>
-
-                {/* Component Child Table */}
-                {row.getIsExpanded() && row.original.fulfillmentMode === 'component' && (
-                  <tr>
-                    <td colSpan={columns.length} className="bg-accent/20 p-0">
-                      <div className="p-4 ml-10">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-semibold text-xs">Components</h4>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => addComponent(row.index)}
-                            className="gap-2 text-xs"
-                          >
-                            <Plus className="h-3 w-3" />
-                            Add Component
-                          </Button>
-                        </div>
-
-                        <ComponentsSubTable
-                          prItems={row.original.prItems || []}
-                          itemIndex={row.index}
-                          updateComponent={updateComponent}
-                          removeComponent={removeComponent}
-                          vendors={vendors}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                )}
-
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 });
