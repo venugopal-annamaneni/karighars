@@ -113,112 +113,39 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   };
 
   return (
-    <div className="border rounded-lg overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-muted">
-          <tr>
-            <th className="text-left p-3 text-sm font-medium w-[40px]"></th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Category</th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Room</th>
-            <th className="text-left p-3 text-sm font-medium w-[180px]">Item Name</th>
-            <th className="text-left p-3 text-sm font-medium w-[80px]">Unit</th>
-            <th className="text-left p-3 text-sm font-medium w-[60px]">W</th>
-            <th className="text-left p-3 text-sm font-medium w-[60px]">H</th>
-            <th className="text-left p-3 text-sm font-medium w-[80px]">Qty</th>
-            <th className="text-left p-3 text-sm font-medium w-[100px]">Est. Price</th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Mode</th>
-            <th className="text-left p-3 text-sm font-medium w-[200px]">Vendor</th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Cost</th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Margin %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, index) => (
-            <>
-              {/* Parent Row */}
-              <tr key={index} className="border-t hover:bg-accent/50">
-                <td className="p-3 text-sm">
-                  {item.fulfillmentMode === 'component' && (
-                    <button
-                      onClick={() => toggleRow(index)}
-                      className="p-1 hover:bg-accent rounded"
-                    >
-                      {expandedRows[index] ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                  )}
-                </td>
-                <td className="p-3 text-sm font-medium">{item.category}</td>
-                <td className="p-3 text-sm">{item.room_name}</td>
-                <td className="p-3 text-sm font-medium">{item.item_name}</td>
-                <td className="p-3 text-sm">{item.unit}</td>
-                <td className="p-3 text-sm">{item.width || '-'}</td>
-                <td className="p-3 text-sm">{item.height || '-'}</td>
-                <td className="p-3 text-sm">{parseFloat(item.quantity || 0).toFixed(2)}</td>
-                <td className="p-3 text-sm">{formatCurrency(item.estimation_item_total)}</td>
-                <td className="p-3 text-sm">
-                  {item.fulfillmentMode ? (
-                    <Badge variant={item.fulfillmentMode === 'full' ? 'default' : 'secondary'}>
-                      {item.fulfillmentMode === 'full' ? 'Full Item' :
-                        item.fulfillmentMode === 'component' ? 'Components' : 'None'}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </td>
-                <td className="p-3 text-sm">
-                  {item.fulfillmentMode === 'component' ? (
-                    <div className="flex flex-wrap gap-1">
-                      {(item.prItems || []).map((prItem, idx) => (
-                        <Badge key={idx} variant="outline">
-                          {getVendorName(prItem.vendor_id)}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : item.fulfillmentMode === 'full' ? (
-                    <Badge variant="outline">{getVendorName(item.prItems?.[0]?.vendor_id)}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </td>
-                <td className="p-3 text-sm">
-                  {item.fulfillmentMode === 'component' ? (
-                    formatCurrency(
-                      (item.prItems || []).reduce((sum, c) => sum + (parseFloat(c.item_total) || 0), 0)
-                    )
-                  ) : item.fulfillmentMode === 'full' ? (
-                    formatCurrency(item.prItems?.[0]?.item_total || 0)
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </td>
-                <td className="p-3 text-sm">
-                  {getItemMargin(item)}
-                </td>
-              </tr>
+    <div className="space-y-6">
+      {/* Category Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {categorySummaries.map(summary => (
+          <CategorySummaryCard key={summary.category} summary={summary} />
+        ))}
+      </div>
 
-              {/* Component Child Table */}
-              {expandedRows[index] && item.fulfillmentMode === 'component' && item.prItems && (
-                <tr>
-                  <td colSpan="14" className="bg-accent/20 p-0">
-                    <div className="p-4 ml-10">
-                      <h4 className="font-semibold text-xs mb-3">Components</h4>
-                      <ComponentsSubTable
-                        prItems={item.prItems}
-                        vendors={vendors}
-                        getVendorName={getVendorName}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </>
-          ))}
-        </tbody>
-      </table>
+      {/* Category-wise Tables */}
+      {sortedCategories.map(category => {
+        const items = itemsByCategory[category];
+        return (
+          <Card key={category}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>{category}</CardTitle>
+                <Badge variant="outline">{items.length} items</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CategoryItemsTable
+                items={items}
+                category={category}
+                vendors={vendors}
+                expandedRows={expandedRows[category] || {}}
+                toggleRow={(index) => toggleCategoryRow(category, index)}
+                getVendorName={getVendorName}
+                getItemMargin={getItemMargin}
+              />
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 });
