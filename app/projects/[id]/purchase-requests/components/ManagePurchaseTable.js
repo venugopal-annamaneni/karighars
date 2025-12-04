@@ -20,6 +20,33 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
     return vendors.find(v => v.id == vendorId)?.name || '-';
   };
 
+  const getItemMargin = (item) => {
+    let itemPrice = 0;
+    let itemCost = 0;
+
+    if (item.fulfillmentMode === "component") {
+      itemPrice = Number(item.estimation_item_total) || 0;
+      itemCost = (item.prItems || [])
+        .reduce((sum, c) => sum + (Number(c.item_total) || 0), 0);
+    }
+    else if (item.fulfillmentMode === "full") {
+      itemPrice = Number(item.estimation_item_total) || 0;
+      itemCost = Number(item.prItems?.[0]?.item_total) || 0;
+    }
+    else {
+      return "-";
+    }
+
+    if (!itemPrice) return "-"; // avoid divide by zero
+
+    const margin = Math.round(((itemPrice - itemCost) / itemPrice) * 100);
+    if (margin > 0) {
+      return <span className='text-green-600 font-bold'>{margin} %</span>
+    } else {
+      return <span className='text-red-600 font-bold'>{margin} %</span>
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-x-auto">
       <table className="w-full">
@@ -36,9 +63,8 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
             <th className="text-left p-3 text-sm font-medium w-[100px]">Est. Price</th>
             <th className="text-left p-3 text-sm font-medium w-[120px]">Mode</th>
             <th className="text-left p-3 text-sm font-medium w-[200px]">Vendor</th>
-            <th className="text-left p-3 text-sm font-medium w-[120px]">Unit Price</th>
-            <th className="text-left p-3 text-sm font-medium w-[80px]">GST%</th>
-            <th className="text-left p-3 text-sm font-medium w-[100px]">Status</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Cost</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Margin %</th>
           </tr>
         </thead>
         <tbody>
@@ -71,8 +97,8 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
                 <td className="p-3 text-sm">
                   {item.fulfillmentMode ? (
                     <Badge variant={item.fulfillmentMode === 'full' ? 'default' : 'secondary'}>
-                      {item.fulfillmentMode === 'full' ? 'Full Item' : 
-                       item.fulfillmentMode === 'component' ? 'Components' : 'None'}
+                      {item.fulfillmentMode === 'full' ? 'Full Item' :
+                        item.fulfillmentMode === 'component' ? 'Components' : 'None'}
                     </Badge>
                   ) : (
                     <span className="text-muted-foreground">-</span>
@@ -88,7 +114,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
                       ))}
                     </div>
                   ) : item.fulfillmentMode === 'full' ? (
-                    getVendorName(item.prItems?.[0]?.vendor_id)
+                    <Badge variant="outline">{getVendorName(item.prItems?.[0]?.vendor_id)}</Badge>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
@@ -96,37 +122,16 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
                 <td className="p-3 text-sm">
                   {item.fulfillmentMode === 'component' ? (
                     formatCurrency(
-                      (item.prItems || []).reduce((sum, c) => sum + (parseFloat(c.unit_price) || 0), 0)
+                      (item.prItems || []).reduce((sum, c) => sum + (parseFloat(c.item_total) || 0), 0)
                     )
                   ) : item.fulfillmentMode === 'full' ? (
-                    formatCurrency(item.prItems?.[0]?.unit_price || 0)
+                    formatCurrency(item.prItems?.[0]?.item_total || 0)
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </td>
                 <td className="p-3 text-sm">
-                  {item.fulfillmentMode === 'full' ? (
-                    `${item.prItems?.[0]?.gst_percentage || 18}%`
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </td>
-                <td className="p-3 text-sm">
-                  {item.fulfillmentMode === 'component' ? (
-                    <div className="flex flex-wrap gap-1">
-                      {[...new Set((item.prItems || []).map(c => c.status || 'Draft'))].map((status, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {status}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : item.fulfillmentMode === 'full' ? (
-                    <Badge variant="outline" className="text-xs">
-                      {item.prItems?.[0]?.status || 'Draft'}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  {getItemMargin(item)}
                 </td>
               </tr>
 
