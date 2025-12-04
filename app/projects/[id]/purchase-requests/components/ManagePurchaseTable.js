@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 
 export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   data,
@@ -9,16 +11,79 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
 }) {
   const [expandedRows, setExpandedRows] = useState({});
 
-  const toggleRow = (index) => {
+  const toggleCategoryRow = (category, index) => {
     setExpandedRows(prev => ({
       ...prev,
-      [index]: !prev[index]
+      [category]: {
+        ...(prev[category] || {}),
+        [index]: !(prev[category]?.[index])
+      }
     }));
   };
 
   const getVendorName = (vendorId) => {
     return vendors.find(v => v.id == vendorId)?.name || '-';
   };
+
+  // Group items by category
+  const itemsByCategory = useMemo(() => {
+    return data.reduce((acc, item) => {
+      const category = item.category || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {});
+  }, [data]);
+
+  // Calculate category summaries
+  const categorySummaries = useMemo(() => {
+    return Object.entries(itemsByCategory).map(([category, items]) => {
+      // Total estimation price
+      const estimationTotal = items.reduce((sum, item) => 
+        sum + (parseFloat(item.estimation_item_total) || 0), 0
+      );
+      
+      // Total purchase cost
+      const purchaseTotal = items.reduce((sum, item) => {
+        if (!item.fulfillmentMode || item.fulfillmentMode === 'none') return sum;
+        
+        if (item.fulfillmentMode === 'full') {
+          // Full mode: single item total
+          return sum + (parseFloat(item.prItems?.[0]?.item_total) || 0);
+        }
+        
+        if (item.fulfillmentMode === 'component') {
+          // Component mode: sum all component totals
+          const componentTotal = (item.prItems || []).reduce((compSum, comp) => 
+            compSum + (parseFloat(comp.item_total) || 0), 0
+          );
+          return sum + componentTotal;
+        }
+        
+        return sum;
+      }, 0);
+      
+      const margin = estimationTotal - purchaseTotal;
+      const marginPercent = estimationTotal > 0 ? (margin / estimationTotal) * 100 : 0;
+      
+      return {
+        category,
+        estimationTotal,
+        purchaseTotal,
+        margin,
+        marginPercent,
+        itemsCount: items.length,
+        purchasedCount: items.filter(i => i.fulfillmentMode && i.fulfillmentMode !== 'none').length
+      };
+    });
+  }, [itemsByCategory]);
+
+  // Sort categories alphabetically
+  const sortedCategories = useMemo(() => {
+    return Object.keys(itemsByCategory).sort();
+  }, [itemsByCategory]);
 
   const getItemMargin = (item) => {
     let itemPrice = 0;
