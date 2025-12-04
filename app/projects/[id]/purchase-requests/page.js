@@ -212,31 +212,10 @@ export default function ManagePurchasePage() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Manage Purchase Requests</CardTitle>
-              <CardDescription>
-                Select items to purchase and assign vendors. Items will be grouped by vendor.
-              </CardDescription>
-            </div>
-            <Button 
-              onClick={handleSave} 
-              disabled={saving}
-              className="gap-2"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Save All PRs
-                </>
-              )}
-            </Button>
-          </div>
+          <CardTitle>Manage Purchase Requests</CardTitle>
+          <CardDescription>
+            View purchase requests status for all estimation items. Use CSV upload feature (coming soon) to create or edit purchase requests in bulk.
+          </CardDescription>
         </CardHeader>
       </Card>
 
