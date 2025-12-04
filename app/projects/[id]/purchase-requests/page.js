@@ -87,17 +87,17 @@ export default function ManagePurchasePage() {
         }
         
         if (item.fulfillmentMode === 'component') {
-          if (!item.components || item.components.length === 0) {
+          if (!item.prItems || item.prItems.length === 0) {
             errors.push(`Row ${idx + 1}: Please add components`);
           } else {
-            const totalWeightage = item.components.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
+            const totalWeightage = item.prItems.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
             if (Math.abs(totalWeightage - 1.0) > 0.001) {
               errors.push(`Row ${idx + 1}: Component weightage must equal 100% (currently ${(totalWeightage * 100).toFixed(1)}%)`);
             }
-            
-            item.components.forEach((comp, cIdx) => {
+
+            item.prItems.forEach((comp, cIdx) => {
               if (!comp.vendor_id) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please select vendor`);
-              if (!comp.name) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please enter component name`);
+              if (!comp.item_name) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please enter component name`);
               if (!comp.unit_price) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please enter unit price`);
               if (!comp.quantity || comp.quantity <= 0) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please enter quantity`);
               if (!comp.weightage || comp.weightage <= 0) errors.push(`Row ${idx + 1}, Component ${cIdx + 1}: Please enter weightage`);

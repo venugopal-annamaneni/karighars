@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency } from '@/lib/utils';
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, getExpandedRowModel } from '@tanstack/react-table';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import { memo, useCallback, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
 export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   data,
@@ -17,34 +17,52 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   const updateItem = useCallback((index, field, value) => {
     setData(prev => prev.map((item, i) => {
       if (i !== index) return item;
-      
+
       const updated = { ...item, [field]: value };
-      
+
       // Reset fields when mode changes
       if (field === 'fulfillmentMode') {
         if (value === 'full') {
-          updated.components = [];
+          updated.prItems = [];
+
+        } else if (value === 'component') {
           updated.vendor_id = null;
           updated.unit_price = null;
           updated.gst_percentage = 18;
         } else if (value === 'component') {
           updated.vendor_id = null;
           updated.unit_price = null;
-          updated.components = [];
+          updated.prItems = [];
         } else if (value === 'none' || !value) {
           updated.vendor_id = null;
           updated.unit_price = null;
-          updated.components = [];
+          updated.prItems = [];
         }
       }
-      
+
+      if( updated.fulfillmentMode === 'full' ) {
+        if( field === 'vendor_id' ) {
+          updated.prItems.forEach(item => {
+            item.vendor_id = value;
+          });
+        } else if( field === 'unit_price' ) {
+          updated.prItems.forEach(item => {
+            item.unit_price = value;
+          });
+        } else if( field === 'gst_percentage' ) {
+          updated.prItems.forEach(item => {
+            item.gst_percentage = value;
+          });
+        }
+      }
+
       // Auto-calculate sqft quantity
       if (['width', 'height'].includes(field) && updated.unit === 'sqft') {
         if (updated.width && updated.height) {
           updated.quantity = parseFloat(updated.width) * parseFloat(updated.height);
         }
       }
-      
+
       return updated;
     }));
   }, [setData]);
@@ -52,12 +70,12 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   const addComponent = useCallback((index) => {
     setData(prev => prev.map((item, i) => {
       if (i !== index) return item;
-      
-      const components = item.components || [];
+
+      const prItems = item.prItems || [];
       return {
         ...item,
-        components: [
-          ...components,
+        prItems: [
+          ...prItems,
           {
             id: `comp-${Date.now()}`,
             name: '',
@@ -78,31 +96,31 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   const updateComponent = useCallback((itemIndex, compIndex, field, value) => {
     setData(prev => prev.map((item, i) => {
       if (i !== itemIndex) return item;
-      
-      const components = [...(item.components || [])];
-      components[compIndex] = {
-        ...components[compIndex],
+
+      const prItems = [...(item.prItems || [])];
+      prItems[compIndex] = {
+        ...prItems[compIndex],
         [field]: value
       };
-      
+
       // Auto-calculate sqft quantity for component
-      if (['width', 'height'].includes(field) && components[compIndex].unit === 'sqft') {
-        if (components[compIndex].width && components[compIndex].height) {
-          components[compIndex].quantity = 
-            parseFloat(components[compIndex].width) * parseFloat(components[compIndex].height);
+      if (['width', 'height'].includes(field) && prItems[compIndex].unit === 'sqft') {
+        if (prItems[compIndex].width && prItems[compIndex].height) {
+          prItems[compIndex].quantity =
+            parseFloat(prItems[compIndex].width) * parseFloat(prItems[compIndex].height);
         }
       }
-      
-      return { ...item, components };
+
+      return { ...item, prItems };
     }));
   }, [setData]);
 
   const removeComponent = useCallback((itemIndex, compIndex) => {
     setData(prev => prev.map((item, i) => {
       if (i !== itemIndex) return item;
-      
-      const components = item.components.filter((_, ci) => ci !== compIndex);
-      return { ...item, components };
+
+      const prItems = item.prItems.filter((_, ci) => ci !== compIndex);
+      return { ...item, prItems };
     }));
   }, [setData]);
 
@@ -205,21 +223,27 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
       header: 'Vendor',
       cell: ({ row }) => {
         const mode = row.original.fulfillmentMode;
-        
+        //debugger;
         if (mode === 'component') {
           // Show CSV of vendors
-          const vendorNames = (row.original.components || [])
+          const vendorNames = (row.original.prItems || [])
             .map(c => vendors.find(v => v.id == c.vendor_id)?.name)
-            .filter(Boolean)
-            .join(', ');
-          return <div className="text-sm">{vendorNames || '-'}</div>;
+            .filter(Boolean);
+          return vendorNames.length === 0 ? '-' : (
+            <>
+              {vendorNames.map(name => (
+                <Badge key={name} variant="outline" className="mr-1">{name}</Badge>
+              ))}
+            </>
+          );
         }
-        
+
         if (mode === 'full') {
+          const vendorId = row.original.prItems?.[0]?.vendor_id;
           return (
             <Select
-              value={row.original.vendor_id?.toString()}
-              onValueChange={(value) => updateItem(row.index, 'vendor_id', parseInt(value))}
+              value={vendorId?.toString()}
+              onValueChange={(value) => {debugger; updateItem(row.index, 'vendor_id', parseInt(value))}}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Select vendor" />
@@ -234,7 +258,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
             </Select>
           );
         }
-        
+
         return '-';
       },
       size: 160
@@ -244,14 +268,14 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
       header: 'Unit Price',
       cell: ({ row }) => {
         const mode = row.original.fulfillmentMode;
-        
+
         if (mode === 'component') {
           // Show sum of component prices
-          const total = (row.original.components || [])
+          const total = (row.original.prItems || [])
             .reduce((sum, c) => sum + (parseFloat(c.unit_price) || 0), 0);
           return formatCurrency(total);
         }
-        
+
         if (mode === 'full') {
           return (
             <Input
@@ -263,7 +287,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
             />
           );
         }
-        
+
         return '-';
       },
       size: 120
@@ -273,7 +297,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
       header: 'GST%',
       cell: ({ row }) => {
         const mode = row.original.fulfillmentMode;
-        
+
         if (mode === 'full') {
           return (
             <Input
@@ -284,7 +308,7 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
             />
           );
         }
-        
+
         return '-';
       },
       size: 80
@@ -294,20 +318,20 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
       header: 'Status',
       cell: ({ row }) => {
         const mode = row.original.fulfillmentMode;
-        
+
         if (mode === 'component') {
           // Show CSV of statuses
-          const statuses = (row.original.components || [])
+          const statuses = (row.original.prItems || [])
             .map(c => c.status)
             .filter((v, i, a) => a.indexOf(v) === i)
             .join(', ');
           return <div className="text-sm">{statuses || 'Draft'}</div>;
         }
-        
+
         if (mode === 'full') {
           return <div className="text-sm">{row.original.prItems?.[0]?.status || 'Draft'}</div>;
         }
-        
+
         return '-';
       },
       size: 100
@@ -343,9 +367,9 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </th>
                 ))}
               </tr>
@@ -353,35 +377,35 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
           </thead>
           <tbody>
             {table.getRowModel().rows.map(row => (
-              <>
-                <tr key={row.id} className="border-t hover:bg-accent/50">
+              <React.Fragment key={row.id}>
+                <tr className="border-t hover:bg-accent/50">
                   {row.getVisibleCells().map(cell => (
                     <td key={cell.id} className="p-3 text-sm">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
-                
+
                 {/* Component Child Table */}
                 {row.getIsExpanded() && row.original.fulfillmentMode === 'component' && (
                   <tr>
                     <td colSpan={columns.length} className="bg-accent/20 p-0">
-                      <div className="p-4">
+                      <div className="p-4 ml-10">
                         <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-semibold text-sm">Components</h4>
+                          <h4 className="font-semibold text-xs">Components</h4>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => addComponent(row.index)}
-                            className="gap-2"
+                            className="gap-2 text-xs"
                           >
                             <Plus className="h-3 w-3" />
                             Add Component
                           </Button>
                         </div>
-                        
+
                         <ComponentsSubTable
-                          components={row.original.components || []}
+                          prItems={row.original.prItems || []}
                           itemIndex={row.index}
                           updateComponent={updateComponent}
                           removeComponent={removeComponent}
@@ -391,7 +415,8 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
                     </td>
                   </tr>
                 )}
-              </>
+
+              </React.Fragment>
             ))}
           </tbody>
         </table>
@@ -401,14 +426,13 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
 });
 
 // Component Sub-table
-function ComponentsSubTable({ components, itemIndex, updateComponent, removeComponent, vendors }) {
-  debugger;
-  const totalWeightage = components.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
+function ComponentsSubTable({ prItems, itemIndex, updateComponent, removeComponent, vendors }) {
+  const totalWeightage = prItems.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
   const isValid = Math.abs(totalWeightage - 1.0) < 0.001;
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
+      <table className="w-full text-xs">
         <thead className="bg-muted/50">
           <tr>
             <th className="text-left p-2">Component Name</th>
@@ -424,12 +448,12 @@ function ComponentsSubTable({ components, itemIndex, updateComponent, removeComp
           </tr>
         </thead>
         <tbody>
-          {components.map((comp, compIndex) => (
-            <tr key={comp.id} className="border-t">
+          {prItems.map((comp, compIndex) => (
+            <tr key={compIndex} className="border-t">
               <td className="p-2">
                 <Input
-                  value={comp.name}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'name', e.target.value)}
+                  value={comp.item_name}
+                  onChange={(e) => updateComponent(itemIndex, compIndex, 'item_name', e.target.value)}
                   placeholder="Component name"
                   className="w-full"
                 />
