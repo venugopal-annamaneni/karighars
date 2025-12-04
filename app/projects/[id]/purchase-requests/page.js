@@ -238,27 +238,14 @@ export default function ManagePurchasePage() {
       {/* Additional Purchases */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Additional Purchases</CardTitle>
-              <CardDescription>
-                Items not linked to estimation (direct purchases)
-              </CardDescription>
-            </div>
-            <Button 
-              onClick={handleAddAdditionalPurchase}
-              variant="outline"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Item
-            </Button>
-          </div>
+          <CardTitle>Additional Purchases</CardTitle>
+          <CardDescription>
+            Direct purchase items not linked to estimation. Use CSV upload to add or modify items.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <AdditionalPurchasesTable 
             data={additionalPurchases}
-            setData={setAdditionalPurchases}
             vendors={vendors}
           />
         </CardContent>
