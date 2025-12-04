@@ -153,8 +153,8 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   );
 });
 
-// Component Sub-table
-function ComponentsSubTable({ prItems, itemIndex, updateComponent, removeComponent, vendors }) {
+// Component Sub-table (Non-Editable)
+function ComponentsSubTable({ prItems, vendors, getVendorName }) {
   const totalWeightage = prItems.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
   const isValid = Math.abs(totalWeightage - 1.0) < 0.001;
 
@@ -172,134 +172,40 @@ function ComponentsSubTable({ prItems, itemIndex, updateComponent, removeCompone
             <th className="text-left p-2">Vendor</th>
             <th className="text-left p-2">Unit Price</th>
             <th className="text-left p-2">GST%</th>
-            <th className="text-right p-2">Actions</th>
+            <th className="text-left p-2">Subtotal</th>
+            <th className="text-left p-2">Item Total</th>
           </tr>
         </thead>
         <tbody>
           {prItems.map((comp, compIndex) => (
-            <tr key={compIndex} className="border-t">
+            <tr key={compIndex} className="border-t hover:bg-accent/30">
+              <td className="p-2">{comp.item_name || comp.purchase_request_item_name || '-'}</td>
+              <td className="p-2">{comp.unit}</td>
+              <td className="p-2">{comp.width || '-'}</td>
+              <td className="p-2">{comp.height || '-'}</td>
+              <td className="p-2">{parseFloat(comp.quantity || 0).toFixed(2)}</td>
+              <td className="p-2">{((parseFloat(comp.weightage) || 0) * 100).toFixed(1)}%</td>
               <td className="p-2">
-                <Input
-                  value={comp.item_name}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'item_name', e.target.value)}
-                  placeholder="Component name"
-                  className="w-full"
-                />
+                <Badge variant="outline" className="text-xs">{getVendorName(comp.vendor_id)}</Badge>
               </td>
-              <td className="p-2">
-                <Select
-                  value={comp.unit}
-                  onValueChange={(value) => updateComponent(itemIndex, compIndex, 'unit', value)}
-                >
-                  <SelectTrigger className="w-[80px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sqft">sqft</SelectItem>
-                    <SelectItem value="pcs">pcs</SelectItem>
-                    <SelectItem value="sheet">sheet</SelectItem>
-                    <SelectItem value="lumpsum">lumpsum</SelectItem>
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="p-2">
-                {comp.unit === 'sqft' ? (
-                  <Input
-                    type="number"
-                    value={comp.width || ''}
-                    onChange={(e) => updateComponent(itemIndex, compIndex, 'width', parseFloat(e.target.value) || null)}
-                    className="w-[60px]"
-                  />
-                ) : '-'}
-              </td>
-              <td className="p-2">
-                {comp.unit === 'sqft' ? (
-                  <Input
-                    type="number"
-                    value={comp.height || ''}
-                    onChange={(e) => updateComponent(itemIndex, compIndex, 'height', parseFloat(e.target.value) || null)}
-                    className="w-[60px]"
-                  />
-                ) : '-'}
-              </td>
-              <td className="p-2">
-                <Input
-                  type="number"
-                  value={comp.quantity}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'quantity', parseFloat(e.target.value) || 0)}
-                  className="w-[80px]"
-                  disabled={comp.unit === 'sqft' && comp.width && comp.height}
-                />
-              </td>
-              <td className="p-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="1"
-                  value={comp.weightage}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'weightage', parseFloat(e.target.value) || 0)}
-                  className="w-[80px]"
-                  placeholder="0.5"
-                />
-              </td>
-              <td className="p-2">
-                <Select
-                  value={comp.vendor_id?.toString()}
-                  onValueChange={(value) => updateComponent(itemIndex, compIndex, 'vendor_id', parseInt(value))}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map(vendor => (
-                      <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </td>
-              <td className="p-2">
-                <Input
-                  type="number"
-                  value={comp.unit_price}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'unit_price', parseFloat(e.target.value) || 0)}
-                  className="w-[100px]"
-                />
-              </td>
-              <td className="p-2">
-                <Input
-                  type="number"
-                  value={comp.gst_percentage}
-                  onChange={(e) => updateComponent(itemIndex, compIndex, 'gst_percentage', parseFloat(e.target.value) || 18)}
-                  className="w-[70px]"
-                />
-              </td>
-              <td className="p-2 text-right">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => removeComponent(itemIndex, compIndex)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </td>
+              <td className="p-2">{formatCurrency(comp.unit_price)}</td>
+              <td className="p-2">{comp.gst_percentage}%</td>
+              <td className="p-2">{formatCurrency(comp.subtotal)}</td>
+              <td className="p-2 font-medium">{formatCurrency(comp.item_total)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot className="bg-muted/30">
           <tr>
-            <td colSpan="5" className="p-2 text-right font-semibold">
+            <td colSpan="5" className="p-2 text-right font-semibold text-xs">
               Total Weightage:
             </td>
             <td className="p-2">
-              <span className={isValid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+              <span className={isValid ? 'text-green-600 font-semibold text-xs' : 'text-red-600 font-semibold text-xs'}>
                 {(totalWeightage * 100).toFixed(1)}%
               </span>
             </td>
-            <td colSpan="4"></td>
+            <td colSpan="5"></td>
           </tr>
         </tfoot>
       </table>
