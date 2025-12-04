@@ -72,10 +72,21 @@ export default function ManagePurchasePage() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle>Manage Purchase Requests</CardTitle>
-          <CardDescription>
-            View purchase requests status for all estimation items. Use CSV upload feature (coming soon) to create or edit purchase requests in bulk.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Manage Purchase Requests</CardTitle>
+              <CardDescription>
+                View purchase requests status for all estimation items. Use CSV upload to create or edit purchase requests in bulk.
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => router.push(`/projects/${projectId}/purchase-requests/upload`)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
