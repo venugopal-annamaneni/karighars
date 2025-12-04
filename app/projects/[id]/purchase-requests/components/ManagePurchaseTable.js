@@ -1,18 +1,13 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrency } from '@/lib/utils';
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, getExpandedRowModel } from '@tanstack/react-table';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import { formatCurrency } from '@/lib/utils';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { memo, useState } from 'react';
 
 export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   data,
-  setData,
   vendors
 }) {
-  const [expanded, setExpanded] = useState({});
+  const [expandedRows, setExpandedRows] = useState({});
 
   const updateItem = useCallback((index, field, value) => {
     setData(prev => prev.map((item, i) => {
