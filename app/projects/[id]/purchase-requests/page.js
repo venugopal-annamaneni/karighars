@@ -245,13 +245,12 @@ export default function ManagePurchasePage() {
         <CardHeader>
           <CardTitle>Estimation Items</CardTitle>
           <CardDescription>
-            Select fulfillment mode for each item and assign vendors
+            View current purchase requests status. Use CSV upload for bulk edits.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ManagePurchaseTable 
             data={estimationItems}
-            setData={setEstimationItems}
             vendors={vendors}
           />
         </CardContent>
