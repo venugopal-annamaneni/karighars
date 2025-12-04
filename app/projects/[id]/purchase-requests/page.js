@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Save, Loader2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 import { ManagePurchaseTable } from './components/ManagePurchaseTable';
 import { AdditionalPurchasesTable } from './components/AdditionalPurchasesTable';
 
@@ -18,7 +16,6 @@ export default function ManagePurchasePage() {
   const projectId = params.id;
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [estimationId, setEstimationId] = useState(null);
   const [estimationItems, setEstimationItems] = useState([]);
   const [additionalPurchases, setAdditionalPurchases] = useState([]);
