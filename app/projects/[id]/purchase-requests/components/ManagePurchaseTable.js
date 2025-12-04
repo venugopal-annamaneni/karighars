@@ -150,6 +150,153 @@ export const ManagePurchaseTable = memo(function ManagePurchaseTable({
   );
 });
 
+// Category Summary Card Component
+function CategorySummaryCard({ summary }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">{summary.category}</CardTitle>
+        <CardDescription>
+          {summary.purchasedCount}/{summary.itemsCount} items purchased
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Estimation:</span>
+          <span className="font-medium">{formatCurrency(summary.estimationTotal)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Purchase:</span>
+          <span className="font-medium">{formatCurrency(summary.purchaseTotal)}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between items-start pt-1">
+          <span className="font-semibold">Margin:</span>
+          <div className="text-right">
+            <div className={`font-semibold ${summary.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {summary.margin >= 0 ? '+' : '-'}{formatCurrency(Math.abs(summary.margin))}
+            </div>
+            <div className={`text-xs ${summary.marginPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {summary.marginPercent >= 0 ? '↑' : '↓'} {Math.abs(summary.marginPercent).toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Category Items Table Component (without Category column)
+function CategoryItemsTable({ items, category, vendors, expandedRows, toggleRow, getVendorName, getItemMargin }) {
+  return (
+    <div className="border rounded-lg overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-muted">
+          <tr>
+            <th className="text-left p-3 text-sm font-medium w-[40px]"></th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Room</th>
+            <th className="text-left p-3 text-sm font-medium w-[180px]">Item Name</th>
+            <th className="text-left p-3 text-sm font-medium w-[80px]">Unit</th>
+            <th className="text-left p-3 text-sm font-medium w-[60px]">W</th>
+            <th className="text-left p-3 text-sm font-medium w-[60px]">H</th>
+            <th className="text-left p-3 text-sm font-medium w-[80px]">Qty</th>
+            <th className="text-left p-3 text-sm font-medium w-[100px]">Est. Price</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Mode</th>
+            <th className="text-left p-3 text-sm font-medium w-[200px]">Vendor</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Cost</th>
+            <th className="text-left p-3 text-sm font-medium w-[120px]">Margin %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, index) => (
+            <>
+              {/* Parent Row */}
+              <tr key={index} className="border-t hover:bg-accent/50">
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' && (
+                    <button
+                      onClick={() => toggleRow(index)}
+                      className="p-1 hover:bg-accent rounded"
+                    >
+                      {expandedRows[index] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+                </td>
+                <td className="p-3 text-sm">{item.room_name}</td>
+                <td className="p-3 text-sm font-medium">{item.item_name}</td>
+                <td className="p-3 text-sm">{item.unit}</td>
+                <td className="p-3 text-sm">{item.width || '-'}</td>
+                <td className="p-3 text-sm">{item.height || '-'}</td>
+                <td className="p-3 text-sm">{parseFloat(item.quantity || 0).toFixed(2)}</td>
+                <td className="p-3 text-sm">{formatCurrency(item.estimation_item_total)}</td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode ? (
+                    <Badge variant={item.fulfillmentMode === 'full' ? 'default' : 'secondary'}>
+                      {item.fulfillmentMode === 'full' ? 'Full Item' :
+                        item.fulfillmentMode === 'component' ? 'Components' : 'None'}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' ? (
+                    <div className="flex flex-wrap gap-1">
+                      {(item.prItems || []).map((prItem, idx) => (
+                        <Badge key={idx} variant="outline">
+                          {getVendorName(prItem.vendor_id)}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : item.fulfillmentMode === 'full' ? (
+                    <Badge variant="outline">{getVendorName(item.prItems?.[0]?.vendor_id)}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {item.fulfillmentMode === 'component' ? (
+                    formatCurrency(
+                      (item.prItems || []).reduce((sum, c) => sum + (parseFloat(c.item_total) || 0), 0)
+                    )
+                  ) : item.fulfillmentMode === 'full' ? (
+                    formatCurrency(item.prItems?.[0]?.item_total || 0)
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </td>
+                <td className="p-3 text-sm">
+                  {getItemMargin(item)}
+                </td>
+              </tr>
+
+              {/* Component Child Table */}
+              {expandedRows[index] && item.fulfillmentMode === 'component' && item.prItems && (
+                <tr>
+                  <td colSpan="12" className="bg-accent/20 p-0">
+                    <div className="p-4 ml-10">
+                      <h4 className="font-semibold text-xs mb-3">Components</h4>
+                      <ComponentsSubTable
+                        prItems={item.prItems}
+                        vendors={vendors}
+                        getVendorName={getVendorName}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // Component Sub-table (Non-Editable)
 function ComponentsSubTable({ prItems, vendors, getVendorName }) {
   const totalWeightage = prItems.reduce((sum, c) => sum + (parseFloat(c.weightage) || 0), 0);
